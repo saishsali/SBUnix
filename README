@@ -1,3 +1,5 @@
+https://compas.cs.stonybrook.edu/courses/cse506-operating-systems-fall-17/cse506-project-hints/
+
 * The provided Makefile:
   1) builds a kernel
   2) copies it into rootfs/boot/kernel/kernel
