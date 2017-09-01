@@ -3,8 +3,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/wait.h>
 
-char *readl() {
+char *read_input() {
     char *input = NULL;
     size_t len = 0;
     ssize_t n;
@@ -21,39 +22,61 @@ char **parse(char *input) {
     char *token;
     char **tokens = malloc(sizeof(char*) * 1024);
 
-    token = strtok(input, " \t");
+    token = strtok(input, " \t\n");
 
     while (token != NULL) {
         tokens[i++] = token;
-        token = strtok(NULL, " \t");
+        token = strtok(NULL, " \t\n");
     }
     tokens[i] = NULL;
 
     return tokens;
 }
 
-void change_directory(char **tokens) {
+int change_directory(char **tokens) {
     if (chdir(tokens[1]) != 0) {
-        perror("sbush");
+        puts("Error changing directory");
     }
+
+    return 1;
 }
 
-void execute(char **tokens) {
-    if (strcmp(tokens[1], "cd") == 0) {
-        change_directory(tokens);
+int execute(char **tokens) {
+    pid_t cpid, pid;
+
+    if (strcmp(tokens[0], "cd") == 0) {
+        return change_directory(tokens);
+    } else if (strcmp(tokens[0], "exit") == 0) {
+        return 0;
+    } else {
+        pid = fork();
+
+        if (pid == 0) {
+            if (execvp(tokens[0], tokens) == -1) {
+                puts("Error executing command");
+            }
+        } else if (pid < 0) {
+            puts("Fork error");
+        } else {
+            cpid = wait(NULL);
+            return cpid;
+        }
     }
+
+    return 1;
 }
 
 int main(int argc, char* argv[]) {
     char *input;
     char **tokens;
+    int flag;
 
-    while (1) {
+    do {
         printf("%s", "sbush> ");
-        input = readl();
+        input = read_input();
         tokens = parse(input);
-        execute(tokens);
-    }
+        flag = execute(tokens);
+    } while (flag);
 
     return 0;
 }
