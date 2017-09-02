@@ -4,6 +4,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <sys/stat.h>
 
 char **read_script(char *filename) {
     FILE *fp;
@@ -18,7 +19,7 @@ char **read_script(char *filename) {
         exit(EXIT_FAILURE);
 
     while ((n = getline(&command, &len, fp)) != -1) {
-        if (command[0] != '#')
+        if (command[0] != '#' && command[0] != '\n')
             commands[i++] = command;
         command = NULL;
     }
