@@ -22,11 +22,11 @@ char **parse(char *input) {
     char *token;
     char **tokens = malloc(sizeof(char*) * 1024);
 
-    token = strtok(input, " \t\n");
+    token = strtok(input, " \t\r\n");
 
     while (token != NULL) {
         tokens[i++] = token;
-        token = strtok(NULL, " \t\n");
+        token = strtok(NULL, " \t\r\n");
     }
     tokens[i] = NULL;
 
@@ -53,13 +53,13 @@ int execute(char **tokens) {
 
         if (pid == 0) {
             if (execvp(tokens[0], tokens) == -1) {
-                puts("Error executing command");
+                printf("-sbush: %s: command not found\n", tokens[0]);
             }
+            exit(EXIT_FAILURE);
         } else if (pid < 0) {
             puts("Fork error");
         } else {
-            cpid = wait(NULL);
-            return cpid;
+            while((cpid = wait(NULL)) > 0);
         }
     }
 
