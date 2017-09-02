@@ -18,7 +18,8 @@ char **read_script(char *filename) {
         exit(EXIT_FAILURE);
 
     while ((n = getline(&command, &len, fp)) != -1) {
-        commands[i++] = command;
+        if (command[0] != '#')
+            commands[i++] = command;
         command = NULL;
     }
     commands[i] = NULL;
