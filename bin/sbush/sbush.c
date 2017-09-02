@@ -40,7 +40,7 @@ char *get_command() {
     return command;
 }
 
-char **parse(char *input) {
+char **parse(char *input, int *is_bg) {
     int i = 0;
     char *token;
     char **tokens = malloc(sizeof(char*) * 1024);
@@ -50,6 +50,11 @@ char **parse(char *input) {
         input = NULL;
     }
     tokens[i] = NULL;
+
+    if (strcmp(tokens[i-1], "&") == 0) {
+        *is_bg = 1;
+        tokens[i-1] = NULL;
+    }
 
     return tokens;
 }
@@ -62,8 +67,16 @@ int change_directory(char **tokens) {
     return 1;
 }
 
-int execute(char **tokens) {
+int execute(char **tokens, int is_bg) {
     pid_t cpid, pid;
+    int fd[2];
+
+    if (is_bg == 1) {
+        if (pipe(fd)) {
+            fprintf(stderr, "Pipe failed\n");
+            exit(EXIT_FAILURE);
+        }
+    }
 
     if (strcmp(tokens[0], "cd") == 0) {
         return change_directory(tokens);
@@ -80,7 +93,10 @@ int execute(char **tokens) {
         } else if (pid < 0) {
             puts("Fork error");
         } else {
-            while((cpid = wait(NULL)) > 0);
+            while(is_bg == 0 && (cpid = wait(NULL)) > 0);
+            // Understand and implement
+            // close(fd[0]);
+            // close(fd[1]);
         }
     }
 
@@ -89,20 +105,21 @@ int execute(char **tokens) {
 
 void lifetime(int argc, char* argv[]) {
     char **commands, **tokens, *command;
-    int flag = 0, i = 0;
+    int flag = 0, i = 0, is_bg = 0;
 
     if (argc >= 2) {
         commands = read_script(argv[1]);
         while (commands[i] != NULL) {
-            tokens = parse(commands[i++]);
-            flag = execute(tokens);
+            tokens = parse(commands[i++], &is_bg);
+            flag = execute(tokens, is_bg);
         }
     } else {
         do {
             printf("%s", "sbush> ");
             command = get_command();
-            tokens = parse(command);
-            flag = execute(tokens);
+            tokens = parse(command, &is_bg);
+            flag = execute(tokens, is_bg);
+            is_bg = 0;
         } while (flag);
     }
 }
