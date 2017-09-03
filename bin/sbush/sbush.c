@@ -21,16 +21,22 @@ char *trim_quotes(char *val) {
     return val;
 }
 
+int isalphabet(char c) {
+	if ((c >='a' && c <='z' ) || ( c >= 'A' && c <= 'Z'))
+		return 1;
+	return 0;
+}
+
 char *decode_dollar_variables(char *val) {
     char *text = val;
     char *return_value = (char*) malloc(1024 * sizeof(char));
     int i=0, j=0;
     while(*text) {
-        if(*text == '$') {
+        if(*text == '$' && (isalphabet(*text+1))) {
             char *key = (char*) malloc(1024 * sizeof(char));
             text++;
             i=0;
-            while( ( *text>='a' && *text<='z' ) || ( *text>='A' && *text<='Z' ) ) {
+            while(isalphabet(*text)) {
                 key[i] = *text;
                 text++;
                 i++;
