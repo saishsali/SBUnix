@@ -23,22 +23,21 @@ char *trim_quotes(char *val) {
 
 char *decode_dollar_variables(char *val) {
     char *text = val;
-    char *return_value = (char*) malloc(1024*sizeof(char));
-    int i=0;
-    int j=0;
+    char *return_value = (char*) malloc(1024 * sizeof(char));
+    int i=0, j=0;
     while(*text) {
         if(*text == '$') {
-            char *key = (char*) malloc(1024*sizeof(char));
+            char *key = (char*) malloc(1024 * sizeof(char));
             text++;
             i=0;
-            while((*text>='a' && *text<='z') || (*text>='A' && *text<='Z')) {
+            while( ( *text>='a' && *text<='z' ) || ( *text>='A' && *text<='Z' ) ) {
                 key[i] = *text;
                 text++;
                 i++;
             }
             char *key_value = getenv(key);
             strcat(return_value, key_value);
-            j=j+strlen(key_value);
+            j = j + strlen(key_value);
             free(key);
         }
         else {
@@ -95,6 +94,7 @@ int builtin_func(char **tokens) {
     else if (strcmp(tokens[0], "exit") == 0) {
         return 0;
     }
+    return 1;
 }
 
 char **read_script(char *filename) {
@@ -131,7 +131,7 @@ char *get_command() {
     return command;
 }
 
-char **parse(char *input, int *is_bg) {
+char **parse(char *input, int *is_bg, int *input_length) {
     int i = 0;
     char *token;
     char **tokens = malloc(sizeof(char*) * 1024);
@@ -146,6 +146,7 @@ char **parse(char *input, int *is_bg) {
         input = NULL;
     }
     tokens[i] = NULL;
+    *input_length = i + 1;
 
     if (strcmp(tokens[i-1], "&") == 0) {
         *is_bg = 1;
@@ -166,7 +167,81 @@ int check_pipes(char **tokens) {
     return 0;
 }
 
-int execute(char **tokens, int is_bg) {
+void execute_pipes(char **tokens, int tokens_len) {
+    int num_cmnds = 0, k, i=0, iterate=0;
+    pid_t pid;
+    int pipe1[2], pipe2[2];
+    char **commands = (char**) malloc(100*sizeof(char*));
+
+    for(k = 0; k < tokens_len-1; k++)
+        if(strcmp(tokens[k], "|")==0)
+            num_cmnds++;
+
+    num_cmnds++;
+    for(k = 0; k < tokens_len; k++) {
+        i=0;
+        while(k<tokens_len-1 && strcmp(tokens[k], "|") != 0) {
+            commands[i++] = tokens[k++];
+        }
+        commands[i++] = NULL;
+
+        // pipe1 or pipe2 depends on which pipe was active previously
+        if(iterate & 1) {
+            if(pipe(pipe1)==-1)
+                perror("Something went wrong");
+        }
+        else {
+            if(pipe(pipe2)==-1)
+                perror("Something went wrong");
+        }
+
+        //pipe1 is for odd commands and pipe2 is for even commands
+        pid = fork();
+
+        if(pid == 0) {
+            if(iterate == 0) {
+                dup2(pipe2[1], 1);
+
+            }
+            else {
+                if(iterate & 1) { //odd
+                    dup2(pipe2[0], 0);
+                    if (iterate != num_cmnds - 1)
+                        dup2(pipe1[1], 1);
+                } else {
+                    dup2(pipe1[0], 0);
+                    if(iterate != num_cmnds - 1)
+                        dup2(pipe2[1], 1);
+                }
+            }
+            if (execvp(commands[0], commands) == -1) {
+                printf("-sbush: %s: command not found\n", commands[0]);
+            }
+        }
+        else {
+            if (iterate == 0){
+                close(pipe2[1]);
+            } else{
+                if (iterate & 1){
+                    close(pipe2[0]);
+                        if(iterate != num_cmnds - 1)
+                            close(pipe1[1]);
+                }else{
+                    close(pipe1[0]);
+                        if(iterate != num_cmnds - 1)
+                            close(pipe2[1]);
+                }
+            }
+            waitpid(pid,NULL,0);
+        }
+
+        iterate++;
+    }
+
+}
+
+
+int execute(char **tokens, int is_bg, int tokens_len) {
     pid_t cpid, pid;
     int fd[2];
     int pipe_present = 0, builtin_i = 0;
@@ -180,15 +255,14 @@ int execute(char **tokens, int is_bg) {
 
     for (builtin_i = 0; builtin_i < num_builtins(); builtin_i++) {
         if (strcmp(tokens[0], builtins[builtin_i]) == 0) {
-            builtin_func(tokens);
-            return 1;
+            return builtin_func(tokens);
         }
     }
 
     pipe_present = check_pipes(tokens);
 
     if (pipe_present == 1) {
-        //execute_pipes();
+        execute_pipes(tokens, tokens_len);
     } else {
         pid = fork();
 
@@ -211,26 +285,26 @@ int execute(char **tokens, int is_bg) {
 
 void lifetime(int argc, char* argv[]) {
     char **commands, **tokens, *command;
-    int flag = 0, i = 0, is_bg = 0;
+    int flag = 0, i = 0, is_bg = 0, tokens_len;
 
     if (argc >= 2) {
         commands = read_script(argv[1]);
         while (commands[i] != NULL) {
-            tokens = parse(commands[i++], &is_bg);
-            flag = execute(tokens, is_bg);
+            tokens = parse(commands[i++], &is_bg, &tokens_len);
+            flag = execute(tokens, is_bg, tokens_len);
         }
     } else {
         do {
             printf("%s", "sbush> ");
             command = get_command();
-            tokens = parse(command, &is_bg);
-            flag = execute(tokens, is_bg);
+            tokens = parse(command, &is_bg, &tokens_len);
+            flag = execute(tokens, is_bg, tokens_len);
             is_bg = 0;
         } while (flag);
+        free(command);
     }
 
     // Free pointers
-    free(command);
 }
 
 int main(int argc, char* argv[]) {
