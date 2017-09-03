@@ -6,8 +6,6 @@
 #include <sys/wait.h>
 #include <sys/stat.h>
 
-char *builtin_commands[] = {"cd", "export", "echo", "exit"};
-
 char *trim_quotes(char *str) {
     if(str[0] == '\"' || str[0] == '\'') {
         str++;
@@ -105,23 +103,23 @@ char *get_command() {
     return command;
 }
 
-char **parse(char *input, int *is_bg) {
+char **parse(char *command, int *is_bg) {
     int i = 0;
     char *token;
     char **tokens = malloc(sizeof(char*) * 1024);
 
-    while ((token = strtok(input, " \t\r\n")) != NULL) {
+    while ((token = strtok(command, " \t\r\n")) != NULL) {
         tokens[i++] = token;
         // Special case when export statement has extra spaces in it
         if (strcmp(token, "export") == 0) {
             tokens[i++] = strtok(NULL, "");
             break;
         }
-        input = NULL;
+        command = NULL;
     }
     tokens[i] = NULL;
 
-    if (strcmp(tokens[i-1], "&") == 0) {
+    if (i > 0 && strcmp(tokens[i-1], "&") == 0) {
         *is_bg = 1;
         tokens[i-1] = NULL;
     }
@@ -157,7 +155,10 @@ int builtin_command(char **tokens) {
 int execute(char **tokens, int is_bg) {
     pid_t cpid, pid;
     int fd[2];
-    int pipe_present = 0;
+    int pipe_present = 0, builtin;
+
+    if (tokens[0] == NULL)
+        return 1;
 
     if (is_bg == 1) {
         if (pipe(fd)) {
@@ -166,8 +167,8 @@ int execute(char **tokens, int is_bg) {
         }
     }
 
-    if (builtin_command(tokens) != -1)
-        return 1;
+    if ((builtin = builtin_command(tokens)) != -1)
+        return builtin;
 
     pipe_present = check_pipes(tokens);
 
