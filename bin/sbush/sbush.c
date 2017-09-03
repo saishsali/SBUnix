@@ -6,6 +6,71 @@
 #include <sys/wait.h>
 #include <sys/stat.h>
 
+char *builtin_commands[] = {"cd", "export", "echo", "exit"};
+
+char *trim_quotes(char *str) {
+    if(str[0] == '\"' || str[0] == '\'') {
+        str++;
+        str[strlen(str) - 1] = 0;
+    }
+
+    return str;
+}
+
+char *decode_environment_variable(char *var) {
+    char *decoded_var = (char*) malloc(1024 * sizeof(char));
+    int i = 0, j = 0;
+
+    while(*var) {
+        if(*var == '$') {
+            char *name = (char*) malloc(1024 * sizeof(char));
+            var++;
+            i = 0;
+            while((*var >= 'a' && *var <= 'z') || (*var >= 'A' && *var <= 'Z')) {
+                name[i++] = *var;
+                var++;
+            }
+            char *value = getenv(name);
+            strcat(decoded_var, value);
+            j = j + strlen(value);
+        } else {
+            decoded_var[j++] = *var;
+            var++;
+        }
+    }
+    decoded_var[j] = '\0';
+
+    return decoded_var;
+}
+
+int set_environment_variable(char *line) {
+    char *name = strtok(line, "=");
+    char *value = strtok(NULL, "=");
+    value = decode_environment_variable(trim_quotes(value));
+    setenv(name, value, 1);
+
+    return 1;
+}
+
+int get_environment_variable(char *name) {
+    if(name[0] == '$') {
+        name++;
+        printf("%s\n", getenv(name));
+    } else {
+        printf("%s\n", name);
+    }
+
+    return 1;
+}
+
+int change_directory(char **tokens) {
+    if (chdir(tokens[1]) != 0) {
+        printf("%s\n", "Error changing directory");
+    }
+
+    return 1;
+}
+
 char **read_script(char *filename) {
     FILE *fp;
     int i = 0;
@@ -47,6 +112,11 @@ char **parse(char *input, int *is_bg) {
 
     while ((token = strtok(input, " \t\r\n")) != NULL) {
         tokens[i++] = token;
+        // Special case when export statement has extra spaces in it
+        if (strcmp(token, "export") == 0) {
+            tokens[i++] = strtok(NULL, "");
+            break;
+        }
         input = NULL;
     }
     tokens[i] = NULL;
@@ -59,17 +129,35 @@ char **parse(char *input, int *is_bg) {
     return tokens;
 }
 
-int change_directory(char **tokens) {
-    if (chdir(tokens[1]) != 0) {
-        puts("Error changing directory");
+int check_pipes(char **tokens) {
+    int i = 0;
+
+    while (tokens[i] != NULL) {
+        if(strcmp(tokens[i++], "|") == 0)
+            return 1;
     }
 
-    return 1;
+    return 0;
+}
+
+int builtin_command(char **tokens) {
+    if (strcmp(tokens[0], "export") == 0) {
+        return set_environment_variable(tokens[1]);
+    } else if (strcmp(tokens[0], "echo") == 0) {
+        return get_environment_variable(tokens[1]);
+    } else if (strcmp(tokens[0], "cd") == 0) {
+        return change_directory(tokens);
+    } else if (strcmp(tokens[0], "exit") == 0) {
+        return 0;
+    }
+
+    return -1;
 }
 
 int execute(char **tokens, int is_bg) {
     pid_t cpid, pid;
     int fd[2];
+    int pipe_present = 0;
 
     if (is_bg == 1) {
         if (pipe(fd)) {
@@ -78,10 +166,13 @@ int execute(char **tokens, int is_bg) {
         }
     }
 
-    if (strcmp(tokens[0], "cd") == 0) {
-        return change_directory(tokens);
-    } else if (strcmp(tokens[0], "exit") == 0) {
-        return 0;
+    if (builtin_command(tokens) != -1)
+        return 1;
+
+    pipe_present = check_pipes(tokens);
+
+    if (pipe_present == 1) {
+        //execute_pipes();
     } else {
         pid = fork();
 
@@ -99,7 +190,6 @@ int execute(char **tokens, int is_bg) {
             // close(fd[1]);
         }
     }
-
     return 1;
 }
 
@@ -121,7 +211,10 @@ void lifetime(int argc, char* argv[]) {
             flag = execute(tokens, is_bg);
             is_bg = 0;
         } while (flag);
+        free(command);
     }
+
+    // Free pointers
 }
 
 int main(int argc, char* argv[]) {
