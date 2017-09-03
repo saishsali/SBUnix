@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
+#define BUFSIZE 1024
 
 char *trim_quotes(char *str) {
     if(str[0] == '\"' || str[0] == '\'') {
@@ -23,12 +24,12 @@ int is_alphabet(char c) {
 }
 
 char *decode_environment_variable(char *var) {
-    char *decoded_var = (char*) malloc(1024 * sizeof(char));
+    char *decoded_var = (char*) malloc(BUFSIZE * sizeof(char));
     int i = 0, j = 0;
 
     while(*var) {
         if(*var == '$' && (is_alphabet(*var + 1) == 1)) {
-            char *name = (char*) malloc(1024 * sizeof(char));
+            char *name = (char*) malloc(BUFSIZE * sizeof(char));
             var++;
             i = 0;
             while(is_alphabet(*var) == 1) {
@@ -82,7 +83,7 @@ char **read_script(char *filename) {
     char *command;
     ssize_t n;
     size_t len = 0;
-    char **commands = malloc(sizeof(char*) * 1024);
+    char **commands = malloc(sizeof(char*) * BUFSIZE);
 
     fp = fopen(filename, "r");
     if (fp == NULL)
@@ -113,7 +114,7 @@ char *get_command() {
 char **parse(char *command, int *is_bg) {
     int i = 0;
     char *token;
-    char **tokens = malloc(sizeof(char*) * 1024);
+    char **tokens = malloc(sizeof(char*) * BUFSIZE);
 
     while ((token = strtok(command, " \t\r\n")) != NULL) {
         tokens[i++] = token;
@@ -162,7 +163,7 @@ int builtin_command(char **tokens) {
 void execute_pipes(char **tokens) {
     int num_cmnds = 0, i = 0, j = 0, iterate = 0, pipe1[2], pipe2[2];
     pid_t pid;
-    char **command = (char**) malloc(1024 * sizeof(char*));
+    char **command = (char**) malloc(BUFSIZE * sizeof(char*));
 
     while (tokens[i] != NULL) {
         if(strcmp(tokens[i++], "|") == 0)
