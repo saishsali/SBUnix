@@ -187,7 +187,7 @@ int execute(char **tokens, int is_bg) {
 }
 
 void lifetime(int argc, char* argv[]) {
-    char **commands, **tokens, *command;
+    char *command, **commands, **tokens;
     int flag = 0, i = 0, is_bg = 0;
 
     if (argc >= 2) {
@@ -195,7 +195,9 @@ void lifetime(int argc, char* argv[]) {
         while (commands[i] != NULL) {
             tokens = parse(commands[i++], &is_bg);
             flag = execute(tokens, is_bg);
+            free(tokens);
         }
+        free(commands);
     } else {
         do {
             printf("%s", "sbush> ");
@@ -203,11 +205,10 @@ void lifetime(int argc, char* argv[]) {
             tokens = parse(command, &is_bg);
             flag = execute(tokens, is_bg);
             is_bg = 0;
+            free(command);
+            free(tokens);
         } while (flag);
-        free(command);
     }
-
-    // Free pointers
 }
 
 int main(int argc, char* argv[]) {
