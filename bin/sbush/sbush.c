@@ -1,41 +1,43 @@
-#include <unistd.h>
+#define _GNU_SOURCE
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
-#include <sys/types.h>
+#include <string.h>
+#include <unistd.h>
 #include <sys/wait.h>
+#include <sys/stat.h>
 
-char *builtins[] = {"cd", "export", "echo"};
+char *builtins[] = {"cd", "export", "echo", "exit"};
+
 int num_builtins() {
     return (sizeof(builtins)/sizeof(builtins[0]));
 }
 
 char *trim_quotes(char *val) {
-    if(val[0]=='\"' || val[0]=='\'') {
+    if(val[0] == '\"' || val[0] == '\'') {
         val++;
-        val[strlen(val)-1] = 0;
+        val[strlen(val) - 1] = 0;
     }
+
     return val;
 }
 
 char *decode_dollar_variables(char *val) {
     char *text = val;
-    char *return_value = (char*) malloc(1024*sizeof(char));
-    int i=0;
-    int j=0;
+    char *return_value = (char*) malloc(1024 * sizeof(char));
+    int i=0, j=0;
     while(*text) {
         if(*text == '$') {
-            char *key = (char*) malloc(1024*sizeof(char));
+            char *key = (char*) malloc(1024 * sizeof(char));
             text++;
             i=0;
-            while((*text>='a' && *text<='z') || (*text>='A' && *text<='Z')) {
+            while( ( *text>='a' && *text<='z' ) || ( *text>='A' && *text<='Z' ) ) {
                 key[i] = *text;
                 text++;
                 i++;
             }
             char *key_value = getenv(key);
             strcat(return_value, key_value);
-            j=j+strlen(key_value);
+            j = j + strlen(key_value);
             free(key);
         }
         else {
@@ -45,149 +47,268 @@ char *decode_dollar_variables(char *val) {
         }
     }
     return_value[j]='\0';
+
     return return_value;
 }
 
-void set_env(char *line) {
+int set_env(char *line) {
     char *key = strtok(line, "=");
     char *value = strtok(NULL, "=");
     value = trim_quotes(value);
     value = decode_dollar_variables(value);
     setenv(key, value, 1);
+
+    return 1;
 }
 
-void get_env(char *line) {
-    char *key = strtok(line, "=");
-    key++;
-    printf("%s\n", getenv(key));
+int get_env(char *key) {
+    if(key[0] == '$') {
+        key++;
+        printf("%s\n", getenv(key));
+    }
+    else {
+        printf("%s\n", key);
+    }
+
+    return 1;
 }
 
-void builtin_func(char **line) {
-    if (strcmp(line[0], "export") == 0) {
-        set_env(line[1]);
+int change_directory(char **tokens) {
+    if (chdir(tokens[1]) != 0) {
+        puts("Error changing directory");
     }
-    else if (strcmp(line[0], "echo") == 0) {
-        get_env(line[1]);
-    }
+
+    return 1;
 }
 
-int main(int argc, char* argv[])
-{
-    pid_t pid, pid1;
-    int i = 0, c, j = 0, pos = 0, builtin_i, is_builtin = 0, pipe_present=0;
-    char *path = getenv("PATH");
-    char *envp[] = { path, NULL };
-    int link[2];
-    if (pipe(link) == -1){
-        exit(1);
+int builtin_func(char **tokens) {
+    if (strcmp(tokens[0], "export") == 0) {
+        return set_env(tokens[1]);
+    }
+    else if (strcmp(tokens[0], "echo") == 0) {
+        return get_env(tokens[1]);
+    }
+    else if (strcmp(tokens[0], "cd") == 0){
+        return change_directory(tokens);
+    }
+    else if (strcmp(tokens[0], "exit") == 0) {
+        return 0;
+    }
+    return 1;
+}
+
+char **read_script(char *filename) {
+    FILE *fp;
+    int i = 0;
+    char *command;
+    ssize_t n;
+    size_t len = 0;
+    char **commands = malloc(sizeof(char*) * 1024);
+
+    fp = fopen(filename, "r");
+    if (fp == NULL)
+        exit(EXIT_FAILURE);
+
+    while ((n = getline(&command, &len, fp)) != -1) {
+        if (command[0] != '#' && command[0] != '\n')
+            commands[i++] = command;
+        command = NULL;
+    }
+    commands[i] = NULL;
+
+    return commands;
+}
+
+char *get_command() {
+    size_t len = 0;
+    ssize_t n;
+    char *command;
+
+    if ((n = getline(&command, &len, stdin)) == -1) {
+        exit(EXIT_FAILURE);
     }
 
-    while(i<15) {
-        j=0;
-        pos=0;
-        is_builtin = 0;
-        pipe_present = 0;
-        char *line = (char*) malloc(200*sizeof(char));
-        char **line1 = (char**) malloc(100*sizeof(char*));
-        char *token = (char*) malloc(100*sizeof(char));
-        
-        puts("sbush> ");
-        while( ( c = getchar() )!=EOF && c != '\n' ) {
-            line[pos] = c;
-            pos++;
-        }
-        line[pos] = '\0';
+    return command;
+}
 
-        if(strlen(line)==0) {
-            continue;
-        }
+char **parse(char *input, int *is_bg, int *input_length) {
+    int i = 0;
+    char *token;
+    char **tokens = malloc(sizeof(char*) * 1024);
 
-        token = strtok(line, " ");
-        line1[j] = token;
-        j++;
-        // Special case when export statement has space in it
+    while ((token = strtok(input, " \t\r\n")) != NULL) {
+        tokens[i++] = token;
+        // Special case when export statement has extra spaces in it
         if (strcmp(token, "export") == 0) {
-            line1[j] = strtok(NULL, "");
-            j++;
+            tokens[i++] = strtok(NULL, "");
+            break;
+        }
+        input = NULL;
+    }
+    tokens[i] = NULL;
+    *input_length = i + 1;
+
+    if (strcmp(tokens[i-1], "&") == 0) {
+        *is_bg = 1;
+        tokens[i-1] = NULL;
+    }
+
+    return tokens;
+}
+
+int check_pipes(char **tokens) {
+    int i = 0;
+
+    while (tokens[i] != NULL) {
+        if(strcmp(tokens[i++], "|") == 0)
+            return 1;
+    }
+
+    return 0;
+}
+
+void execute_pipes(char **tokens, int tokens_len) {
+    int num_cmnds = 0, k, i=0, iterate=0;
+    pid_t pid;
+    int pipe1[2], pipe2[2];
+    char **commands = (char**) malloc(100*sizeof(char*));
+
+    for(k = 0; k < tokens_len-1; k++)
+        if(strcmp(tokens[k], "|")==0)
+            num_cmnds++;
+
+    num_cmnds++;
+    for(k = 0; k < tokens_len; k++) {
+        i=0;
+        while(k<tokens_len-1 && strcmp(tokens[k], "|") != 0) {
+            commands[i++] = tokens[k++];
+        }
+        commands[i++] = NULL;
+
+        // pipe1 or pipe2 depends on which pipe was active previously
+        if(iterate & 1) {
+            if(pipe(pipe1)==-1)
+                perror("Something went wrong");
         }
         else {
-            while((token = strtok(NULL, " ")) != NULL) {
-                line1[j] = token;
-                j++;
-            }
-            free(token);
+            if(pipe(pipe2)==-1)
+                perror("Something went wrong");
         }
-        
-        line1[j] = NULL;
-        
-        //Check for builtin variables
-        for(builtin_i = 0; builtin_i < num_builtins(); builtin_i++) {
-            if (strcmp(line1[0], builtins[builtin_i]) == 0) {
-                builtin_func(line1);
-                is_builtin = 1;
-            }
-        }
-        if(is_builtin == 0){
-            int k;
-            for(k=0; k<j; k++) {
-                if(strcmp(line1[k], "|")==0) {
-                    int fds[2];
-                    char **part1 = line1;
-                    part1[2] = NULL;
-                    char **part2 = line1+k+1;
 
-                    if(pipe(fds) == -1) {
-                        perror("Something went wrong");
-                        exit(1);
-                    }
-                    pid = fork(); 
-                    if(pid==0) {
-                        dup2(fds[1], 1);
-                        close(fds[0]);
-                        if(execvpe(part1[0], part1, envp) == -1) {
-                            printf("-bash: %s: Command not found\n", part1[0]);
-                        }
-                    }
-                    else {
-                        pid1 = fork();
-                        waitpid(pid, 0, 0);
-                        if(pid1 == 0) {
-                            dup2(fds[0], 0);
-                            close(fds[1]);
-                            if(execvpe(part2[0], part2, envp) == -1) {
-                                printf("-bash: %s: Command not found\n", part2[0]);
-                            }
-                        }
-                        
-                    }
-                    close(fds[0]);
-                    close(fds[1]);
-                    pipe_present = 1;
+        //pipe1 is for odd commands and pipe2 is for even commands
+        pid = fork();
 
-                    break;
-                }
-                
+        if(pid == 0) {
+            if(iterate == 0) {
+                dup2(pipe2[1], 1);
 
             }
-            if (pipe_present == 0) {
-                pid = fork(); 
-                if (pid==0) {
-                    if(execvpe(line1[0], line1, envp)==-1) {
-                        printf("-bash: %s: Command not found\n", line1[0]);
-                    }
-                    exit(1);
-                }
-                else {
-                    waitpid(pid, 0, 0);
+            else {
+                if(iterate & 1) { //odd
+                    dup2(pipe2[0], 0);
+                    if (iterate != num_cmnds - 1)
+                        dup2(pipe1[1], 1);
+                } else {
+                    dup2(pipe1[0], 0);
+                    if(iterate != num_cmnds - 1)
+                        dup2(pipe2[1], 1);
                 }
             }
+            if (execvp(commands[0], commands) == -1) {
+                printf("-sbush: %s: command not found\n", commands[0]);
+            }
         }
-        
-        i++;
-        free(line);
-        free(line1);
+        else {
+            if (iterate == 0){
+                close(pipe2[1]);
+            } else{
+                if (iterate & 1){
+                    close(pipe2[0]);
+                        if(iterate != num_cmnds - 1)
+                            close(pipe1[1]);
+                }else{
+                    close(pipe1[0]);
+                        if(iterate != num_cmnds - 1)
+                            close(pipe2[1]);
+                }
+            }
+            waitpid(pid,NULL,0);
+        }
 
+        iterate++;
     }
+
+}
+
+
+int execute(char **tokens, int is_bg, int tokens_len) {
+    pid_t cpid, pid;
+    int fd[2];
+    int pipe_present = 0, builtin_i = 0;
+
+    if (is_bg == 1) {
+        if (pipe(fd)) {
+            fprintf(stderr, "Pipe failed\n");
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    for (builtin_i = 0; builtin_i < num_builtins(); builtin_i++) {
+        if (strcmp(tokens[0], builtins[builtin_i]) == 0) {
+            return builtin_func(tokens);
+        }
+    }
+
+    pipe_present = check_pipes(tokens);
+
+    if (pipe_present == 1) {
+        execute_pipes(tokens, tokens_len);
+    } else {
+        pid = fork();
+
+        if (pid == 0) {
+            if (execvp(tokens[0], tokens) == -1) {
+                printf("-sbush: %s: command not found\n", tokens[0]);
+            }
+            exit(EXIT_FAILURE);
+        } else if (pid < 0) {
+            puts("Fork error");
+        } else {
+            while(is_bg == 0 && (cpid = wait(NULL)) > 0);
+            // Understand and implement
+            // close(fd[0]);
+            // close(fd[1]);
+        }
+    }
+    return 1;
+}
+
+void lifetime(int argc, char* argv[]) {
+    char **commands, **tokens, *command;
+    int flag = 0, i = 0, is_bg = 0, tokens_len;
+
+    if (argc >= 2) {
+        commands = read_script(argv[1]);
+        while (commands[i] != NULL) {
+            tokens = parse(commands[i++], &is_bg, &tokens_len);
+            flag = execute(tokens, is_bg, tokens_len);
+        }
+    } else {
+        do {
+            printf("%s", "sbush> ");
+            command = get_command();
+            tokens = parse(command, &is_bg, &tokens_len);
+            flag = execute(tokens, is_bg, tokens_len);
+            is_bg = 0;
+        } while (flag);
+        free(command);
+    }
+
+    // Free pointers
+}
+
+int main(int argc, char* argv[]) {
+    lifetime(argc, argv);
 
     return 0;
 }
