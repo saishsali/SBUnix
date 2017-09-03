@@ -160,13 +160,6 @@ int execute(char **tokens, int is_bg) {
     if (tokens[0] == NULL)
         return 1;
 
-    if (is_bg == 1) {
-        if (pipe(fd)) {
-            fprintf(stderr, "Pipe failed\n");
-            exit(EXIT_FAILURE);
-        }
-    }
-
     if ((builtin = builtin_command(tokens)) != -1)
         return builtin;
 
@@ -185,12 +178,11 @@ int execute(char **tokens, int is_bg) {
         } else if (pid < 0) {
             puts("Fork error");
         } else {
-            while(is_bg == 0 && (cpid = wait(NULL)) > 0);
-            // Understand and implement
-            // close(fd[0]);
-            // close(fd[1]);
+            if (is_bg == 0)
+                while((cpid = waitpid(pid, NULL, 0)) > 0);
         }
     }
+
     return 1;
 }
 
