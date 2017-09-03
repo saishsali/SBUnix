@@ -1,7 +1,7 @@
 include Makefile.config
 
 CC=gcc
-CFLAGS=-O1 -std=c99 -Wall -Werror -fPIC -march=amdfam10 -g3
+CFLAGS=-O1 -std=c99 -Wall -Werror -fPIC -march=amdfam10 -g3 -Wno-deprecated-declarations -D_XOPEN_SOURCE=600
 CFLAGS_FULL=-nostdinc -Iinclude -msoft-float -mno-sse -mno-red-zone -fno-builtin -fno-stack-protector
 LD=ld
 LDLAGS=-nostdlib
@@ -30,7 +30,7 @@ ifneq "$(ASSIGNMENT)" "wp1p1"
 CFLAGS+= $(CFLAGS_FULL)
 endif
 
-wp1: rootfs/bin/sbush
+wp1: $(BINS)
 
 wp2: project
 
