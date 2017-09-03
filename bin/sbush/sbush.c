@@ -5,75 +5,65 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
+#define BUFSIZE 1024
 
-char *builtins[] = {"cd", "export", "echo", "exit"};
-
-int num_builtins() {
-    return (sizeof(builtins)/sizeof(builtins[0]));
-}
-
-char *trim_quotes(char *val) {
-    if(val[0] == '\"' || val[0] == '\'') {
-        val++;
-        val[strlen(val) - 1] = 0;
+char *trim_quotes(char *str) {
+    if(str[0] == '\"' || str[0] == '\'') {
+        str++;
+        str[strlen(str) - 1] = 0;
     }
 
-    return val;
+    return str;
 }
 
-int isalphabet(char c) {
-	if ((c >='a' && c <='z' ) || ( c >= 'A' && c <= 'Z'))
-		return 1;
-	return 0;
+int is_alphabet(char c) {
+    if ((c >='a' && c <='z' ) || ( c >= 'A' && c <= 'Z'))
+        return 1;
+
+    return -1;
 }
 
-char *decode_dollar_variables(char *val) {
-    char *text = val;
-    char *return_value = (char*) malloc(1024 * sizeof(char));
-    int i=0, j=0;
-    while(*text) {
-        if(*text == '$' && (isalphabet(*text+1))) {
-            char *key = (char*) malloc(1024 * sizeof(char));
-            text++;
-            i=0;
-            while(isalphabet(*text)) {
-                key[i] = *text;
-                text++;
-                i++;
+char *decode_environment_variable(char *var) {
+    char *decoded_var = (char*) malloc(BUFSIZE * sizeof(char));
+    int i = 0, j = 0;
+
+    while(*var) {
+        if(*var == '$' && (is_alphabet(*var + 1) == 1)) {
+            char *name = (char*) malloc(BUFSIZE * sizeof(char));
+            var++;
+            i = 0;
+            while(is_alphabet(*var) == 1) {
+                name[i++] = *var;
+                var++;
             }
-            char *key_value = getenv(key);
-            strcat(return_value, key_value);
-            j = j + strlen(key_value);
-            free(key);
-        }
-        else {
-            return_value[j] = *text;
-            text++;
-            j++;
+            char *value = getenv(name);
+            strcat(decoded_var, value);
+            j = j + strlen(value);
+        } else {
+            decoded_var[j++] = *var;
+            var++;
         }
     }
-    return_value[j]='\0';
+    decoded_var[j] = '\0';
 
-    return return_value;
+    return decoded_var;
 }
 
-int set_env(char *line) {
-    char *key = strtok(line, "=");
+int set_environment_variable(char *line) {
+    char *name = strtok(line, "=");
     char *value = strtok(NULL, "=");
-    value = trim_quotes(value);
-    value = decode_dollar_variables(value);
-    setenv(key, value, 1);
+    value = decode_environment_variable(trim_quotes(value));
+    setenv(name, value, 1);
 
     return 1;
 }
 
-int get_env(char *key) {
-    if(key[0] == '$') {
-        key++;
-        printf("%s\n", getenv(key));
-    }
-    else {
-        printf("%s\n", key);
+int get_environment_variable(char *name) {
+    if(name[0] == '$') {
+        name++;
+        printf("%s\n", getenv(name));
+    } else {
+        printf("%s\n", name);
     }
 
     return 1;
@@ -81,25 +71,9 @@ int get_env(char *key) {
 
 int change_directory(char **tokens) {
     if (chdir(tokens[1]) != 0) {
-        puts("Error changing directory");
+        printf("%s\n", "Error changing directory");
     }
 
-    return 1;
-}
-
-int builtin_func(char **tokens) {
-    if (strcmp(tokens[0], "export") == 0) {
-        return set_env(tokens[1]);
-    }
-    else if (strcmp(tokens[0], "echo") == 0) {
-        return get_env(tokens[1]);
-    }
-    else if (strcmp(tokens[0], "cd") == 0){
-        return change_directory(tokens);
-    }
-    else if (strcmp(tokens[0], "exit") == 0) {
-        return 0;
-    }
     return 1;
 }
 
@@ -109,7 +83,7 @@ char **read_script(char *filename) {
     char *command;
     ssize_t n;
     size_t len = 0;
-    char **commands = malloc(sizeof(char*) * 1024);
+    char **commands = malloc(sizeof(char*) * BUFSIZE);
 
     fp = fopen(filename, "r");
     if (fp == NULL)
@@ -137,24 +111,23 @@ char *get_command() {
     return command;
 }
 
-char **parse(char *input, int *is_bg, int *input_length) {
+char **parse(char *command, int *is_bg) {
     int i = 0;
     char *token;
-    char **tokens = malloc(sizeof(char*) * 1024);
+    char **tokens = malloc(sizeof(char*) * BUFSIZE);
 
-    while ((token = strtok(input, " \t\r\n")) != NULL) {
+    while ((token = strtok(command, " \t\r\n")) != NULL) {
         tokens[i++] = token;
         // Special case when export statement has extra spaces in it
         if (strcmp(token, "export") == 0) {
             tokens[i++] = strtok(NULL, "");
             break;
         }
-        input = NULL;
+        command = NULL;
     }
     tokens[i] = NULL;
-    *input_length = i + 1;
 
-    if (strcmp(tokens[i-1], "&") == 0) {
+    if (i > 0 && strcmp(tokens[i-1], "&") == 0) {
         *is_bg = 1;
         tokens[i-1] = NULL;
     }
@@ -166,48 +139,62 @@ int check_pipes(char **tokens) {
     int i = 0;
 
     while (tokens[i] != NULL) {
-        if(strcmp(tokens[i++], "|") == 0)
+        if (strcmp(tokens[i++], "|") == 0)
             return 1;
     }
 
-    return 0;
+    return -1;
 }
 
-void execute_pipes(char **tokens, int tokens_len) {
-    int num_cmnds = 0, k, i=0, iterate=0;
-    pid_t pid;
-    int pipe1[2], pipe2[2];
-    char **commands = (char**) malloc(100*sizeof(char*));
+int gibuiltin_command(char **tokens) {
+    if (strcmp(tokens[0], "export") == 0) {
+        return set_environment_variable(tokens[1]);
+    } else if (strcmp(tokens[0], "echo") == 0) {
+        return get_environment_variable(tokens[1]);
+    } else if (strcmp(tokens[0], "cd") == 0) {
+        return change_directory(tokens);
+    } else if (strcmp(tokens[0], "exit") == 0) {
+        return 0;
+    }
 
-    for(k = 0; k < tokens_len-1; k++)
-        if(strcmp(tokens[k], "|")==0)
+    return -1;
+}
+
+void execute_pipes(char **tokens) {
+    int num_cmnds = 0, i = 0, j = 0, iterate = 0, pipe1[2], pipe2[2];
+    pid_t pid;
+    char **command = (char**) malloc(BUFSIZE * sizeof(char*));
+
+    while (tokens[i] != NULL) {
+        if(strcmp(tokens[i++], "|") == 0)
             num_cmnds++;
+    }
 
     num_cmnds++;
-    for(k = 0; k < tokens_len; k++) {
-        i=0;
-        while(k<tokens_len-1 && strcmp(tokens[k], "|") != 0) {
-            commands[i++] = tokens[k++];
+    i = 0;
+    while (tokens[i] != NULL) {
+        j = 0;
+        while(tokens[i] != NULL && strcmp(tokens[i], "|") != 0) {
+            command[j++] = tokens[i++];
         }
-        commands[i++] = NULL;
+        command[j] = NULL;
 
         // pipe1 or pipe2 depends on which pipe was active previously
-        if(iterate & 1) {
-            if(pipe(pipe1)==-1)
-                perror("Something went wrong");
+        if (iterate & 1) {
+            if (pipe(pipe1) == -1)
+                printf("%s\n", "Pipe failed");
         }
         else {
-            if(pipe(pipe2)==-1)
-                perror("Something went wrong");
+            if (pipe(pipe2) == -1)
+                printf("%s\n", "Pipe failed");
         }
 
-        //pipe1 is for odd commands and pipe2 is for even commands
+        //pipe1 is for odd command and pipe2 is for even command
         pid = fork();
 
         if(pid == 0) {
             if(iterate == 0) {
                 dup2(pipe2[1], 1);
-
             }
             else {
                 if(iterate & 1) { //odd
@@ -220,55 +207,46 @@ void execute_pipes(char **tokens, int tokens_len) {
                         dup2(pipe2[1], 1);
                 }
             }
-            if (execvp(commands[0], commands) == -1) {
-                printf("-sbush: %s: command not found\n", commands[0]);
+            if (execvp(command[0], command) == -1) {
+                printf("-sbush: %s: command not found\n", command[0]);
             }
         }
         else {
             if (iterate == 0){
                 close(pipe2[1]);
-            } else{
-                if (iterate & 1){
+            } else {
+                if (iterate & 1) {
                     close(pipe2[0]);
-                        if(iterate != num_cmnds - 1)
-                            close(pipe1[1]);
-                }else{
+                    if (iterate != num_cmnds - 1)
+                        close(pipe1[1]);
+                } else {
                     close(pipe1[0]);
-                        if(iterate != num_cmnds - 1)
-                            close(pipe2[1]);
+                    if (iterate != num_cmnds - 1)
+                        close(pipe2[1]);
                 }
             }
             waitpid(pid,NULL,0);
         }
 
+        if (tokens[i] == NULL)
+            break;
+        i++;
         iterate++;
     }
-
 }
 
-
-int execute(char **tokens, int is_bg, int tokens_len) {
+int execute(char **tokens, int is_bg) {
     pid_t cpid, pid;
-    int fd[2];
-    int pipe_present = 0, builtin_i = 0;
+    int builtin;
 
-    if (is_bg == 1) {
-        if (pipe(fd)) {
-            fprintf(stderr, "Pipe failed\n");
-            exit(EXIT_FAILURE);
-        }
-    }
+    if (tokens[0] == NULL)
+        return 1;
 
-    for (builtin_i = 0; builtin_i < num_builtins(); builtin_i++) {
-        if (strcmp(tokens[0], builtins[builtin_i]) == 0) {
-            return builtin_func(tokens);
-        }
-    }
+    if ((builtin = builtin_command(tokens)) != -1)
+        return builtin;
 
-    pipe_present = check_pipes(tokens);
-
-    if (pipe_present == 1) {
-        execute_pipes(tokens, tokens_len);
+    if (check_pipes(tokens) == 1) {
+        execute_pipes(tokens);
     } else {
         pid = fork();
 
@@ -280,37 +258,37 @@ int execute(char **tokens, int is_bg, int tokens_len) {
         } else if (pid < 0) {
             puts("Fork error");
         } else {
-            while(is_bg == 0 && (cpid = wait(NULL)) > 0);
-            // Understand and implement
-            // close(fd[0]);
-            // close(fd[1]);
+            if (is_bg == 0)
+                while((cpid = waitpid(pid, NULL, 0)) > 0);
         }
     }
+
     return 1;
 }
 
 void lifetime(int argc, char* argv[]) {
-    char **commands, **tokens, *command;
-    int flag = 0, i = 0, is_bg = 0, tokens_len;
+    char *command, **commands, **tokens;
+    int flag = 0, i = 0, is_bg = 0;
 
     if (argc >= 2) {
         commands = read_script(argv[1]);
         while (commands[i] != NULL) {
-            tokens = parse(commands[i++], &is_bg, &tokens_len);
-            flag = execute(tokens, is_bg, tokens_len);
+            tokens = parse(commands[i++], &is_bg);
+            flag = execute(tokens, is_bg);
+            free(tokens);
         }
+        free(commands);
     } else {
         do {
             printf("%s", "sbush> ");
             command = get_command();
-            tokens = parse(command, &is_bg, &tokens_len);
-            flag = execute(tokens, is_bg, tokens_len);
+            tokens = parse(command, &is_bg);
+            flag = execute(tokens, is_bg);
             is_bg = 0;
+            free(command);
+            free(tokens);
         } while (flag);
-        free(command);
     }
-
-    // Free pointers
 }
 
 int main(int argc, char* argv[]) {
