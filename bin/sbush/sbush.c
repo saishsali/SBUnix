@@ -15,16 +15,23 @@ char *trim_quotes(char *str) {
     return str;
 }
 
+int is_alphabet(char c) {
+    if ((c >='a' && c <='z' ) || ( c >= 'A' && c <= 'Z'))
+        return 1;
+
+    return -1;
+}
+
 char *decode_environment_variable(char *var) {
     char *decoded_var = (char*) malloc(1024 * sizeof(char));
     int i = 0, j = 0;
 
     while(*var) {
-        if(*var == '$') {
+        if(*var == '$' && (is_alphabet(*var + 1) == 1)) {
             char *name = (char*) malloc(1024 * sizeof(char));
             var++;
             i = 0;
-            while((*var >= 'a' && *var <= 'z') || (*var >= 'A' && *var <= 'Z')) {
+            while(is_alphabet(*var) == 1) {
                 name[i++] = *var;
                 var++;
             }
@@ -131,11 +138,11 @@ int check_pipes(char **tokens) {
     int i = 0;
 
     while (tokens[i] != NULL) {
-        if(strcmp(tokens[i++], "|") == 0)
+        if (strcmp(tokens[i++], "|") == 0)
             return 1;
     }
 
-    return 0;
+    return -1;
 }
 
 int builtin_command(char **tokens) {
@@ -152,10 +159,84 @@ int builtin_command(char **tokens) {
     return -1;
 }
 
+void execute_pipes(char **tokens) {
+    int num_cmnds = 0, i = 0, j = 0, iterate = 0, pipe1[2], pipe2[2];
+    pid_t pid;
+    char **command = (char**) malloc(1024 * sizeof(char*));
+
+    while (tokens[i] != NULL) {
+        if(strcmp(tokens[i++], "|") == 0)
+            num_cmnds++;
+    }
+
+    num_cmnds++;
+    i = 0;
+    while (tokens[i] != NULL) {
+        j = 0;
+        while(tokens[i] != NULL && strcmp(tokens[i], "|") != 0) {
+            command[j++] = tokens[i++];
+        }
+        command[j] = NULL;
+
+        // pipe1 or pipe2 depends on which pipe was active previously
+        if (iterate & 1) {
+            if (pipe(pipe1) == -1)
+                printf("%s\n", "Pipe failed");
+        }
+        else {
+            if (pipe(pipe2) == -1)
+                printf("%s\n", "Pipe failed");
+        }
+
+        //pipe1 is for odd command and pipe2 is for even command
+        pid = fork();
+
+        if(pid == 0) {
+            if(iterate == 0) {
+                dup2(pipe2[1], 1);
+            }
+            else {
+                if(iterate & 1) { //odd
+                    dup2(pipe2[0], 0);
+                    if (iterate != num_cmnds - 1)
+                        dup2(pipe1[1], 1);
+                } else {
+                    dup2(pipe1[0], 0);
+                    if(iterate != num_cmnds - 1)
+                        dup2(pipe2[1], 1);
+                }
+            }
+            if (execvp(command[0], command) == -1) {
+                printf("-sbush: %s: command not found\n", command[0]);
+            }
+        }
+        else {
+            if (iterate == 0){
+                close(pipe2[1]);
+            } else {
+                if (iterate & 1) {
+                    close(pipe2[0]);
+                    if (iterate != num_cmnds - 1)
+                        close(pipe1[1]);
+                } else {
+                    close(pipe1[0]);
+                    if (iterate != num_cmnds - 1)
+                        close(pipe2[1]);
+                }
+            }
+            waitpid(pid,NULL,0);
+        }
+
+        if (tokens[i] == NULL)
+            break;
+        i++;
+        iterate++;
+    }
+}
+
 int execute(char **tokens, int is_bg) {
     pid_t cpid, pid;
-    int fd[2];
-    int pipe_present = 0, builtin;
+    int builtin;
 
     if (tokens[0] == NULL)
         return 1;
@@ -163,10 +244,8 @@ int execute(char **tokens, int is_bg) {
     if ((builtin = builtin_command(tokens)) != -1)
         return builtin;
 
-    pipe_present = check_pipes(tokens);
-
-    if (pipe_present == 1) {
-        //execute_pipes();
+    if (check_pipes(tokens) == 1) {
+        execute_pipes(tokens);
     } else {
         pid = fork();
 
