@@ -1,15 +1,18 @@
 #include <sys/defs.h>
 
 ssize_t write(int fd, const void *buf, size_t count) {
+    ssize_t num_bytes;
+
     __asm__ (
         "movq $1, %%rax;"
-        "movq %0, %%rdi;"
-        "movq %1, %%rsi;"
-        "movq %2, %%rdx;"
+        "movq %1, %%rdi;"
+        "movq %2, %%rsi;"
+        "movq %3, %%rdx;"
         "syscall;"
-        :
-        : "g" ((uint64_t)fd), "g" (buf), "g" (count)
+        "movq %%rax, %0;"
+        : "=r" (num_bytes)
+        : "r" ((uint64_t)fd), "r" (buf), "r" (count)
     );
 
-    return count;
+    return num_bytes;
 }
