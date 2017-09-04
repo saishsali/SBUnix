@@ -8,7 +8,7 @@
 #define BUFSIZE 1024
 
 char *trim_quotes(char *str) {
-    if(str[0] == '\"' || str[0] == '\'') {
+    if (str[0] == '\"' || str[0] == '\'') {
         str++;
         str[strlen(str) - 1] = 0;
     }
@@ -61,9 +61,9 @@ int set_environment_variable(char *line) {
 int get_environment_variable(char *name) {
     if(name[0] == '$') {
         name++;
-        printf("%s", getenv(name));
+        printf("%s\n", getenv(name));
     } else {
-        printf("%s", name);
+        printf("%s\n", name);
     }
 
     return 1;
@@ -108,6 +108,7 @@ char *get_command() {
         exit(EXIT_FAILURE);
     }
     command[n - 1] = '\0';
+
     return command;
 }
 
