@@ -107,7 +107,7 @@ char *get_command() {
     if ((n = getline(&command, &len, stdin)) == -1) {
         exit(EXIT_FAILURE);
     }
-
+    command[strlen(command) - 1] = 0;
     return command;
 }
 
@@ -266,6 +266,7 @@ int execute(char **tokens, int is_bg) {
 void lifetime(int argc, char* argv[]) {
     char *command, **commands, **tokens;
     int flag = 0, i = 0, is_bg = 0;
+    setenv("PS1", "sbush> ", 1);
 
     if (argc >= 2) {
         commands = read_script(argv[1]);
@@ -277,7 +278,7 @@ void lifetime(int argc, char* argv[]) {
         free(commands);
     } else {
         do {
-            printf("%s", "sbush> ");
+            printf("\n%s", getenv("PS1"));
             command = get_command();
             tokens = parse(command, &is_bg);
             flag = execute(tokens, is_bg);
