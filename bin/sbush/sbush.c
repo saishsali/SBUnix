@@ -161,16 +161,16 @@ int builtin_command(char **tokens) {
 }
 
 void execute_pipes(char **tokens) {
-    int num_cmnds = 0, i = 0, j = 0, iterate = 0, pipe1[2], pipe2[2];
-    pid_t pid;
+    int num_of_cmnds = 0, i = 0, j = 0, iterate = 0, pipe1[2], pipe2[2];
+    pid_t pid, cpid;
     char **command = (char**) malloc(BUFSIZE * sizeof(char*));
 
     while (tokens[i] != NULL) {
         if(strcmp(tokens[i++], "|") == 0)
-            num_cmnds++;
+            num_of_cmnds++;
     }
 
-    num_cmnds++;
+    num_of_cmnds++;
     i = 0;
     while (tokens[i] != NULL) {
         j = 0;
@@ -197,11 +197,11 @@ void execute_pipes(char **tokens) {
             } else {
                 if(iterate & 1) { //odd
                     dup2(pipe2[0], 0);
-                    if (iterate != num_cmnds - 1)
+                    if (iterate != num_of_cmnds - 1)
                         dup2(pipe1[1], 1);
                 } else {
                     dup2(pipe1[0], 0);
-                    if(iterate != num_cmnds - 1)
+                    if(iterate != num_of_cmnds - 1)
                         dup2(pipe2[1], 1);
                 }
             }
@@ -214,15 +214,15 @@ void execute_pipes(char **tokens) {
             } else {
                 if (iterate & 1) {
                     close(pipe2[0]);
-                    if (iterate != num_cmnds - 1)
+                    if (iterate != num_of_cmnds - 1)
                         close(pipe1[1]);
                 } else {
                     close(pipe1[0]);
-                    if (iterate != num_cmnds - 1)
+                    if (iterate != num_of_cmnds - 1)
                         close(pipe2[1]);
                 }
             }
-            waitpid(pid,NULL,0);
+            while((cpid = waitpid(pid, NULL, 0)) > 0);
         }
 
         if (tokens[i] == NULL)
@@ -278,7 +278,7 @@ void lifetime(int argc, char* argv[]) {
         free(commands);
     } else {
         do {
-            printf("\n%s", getenv("PS1"));
+            printf("%s", getenv("PS1"));
             command = get_command();
             tokens = parse(command, &is_bg);
             flag = execute(tokens, is_bg);
