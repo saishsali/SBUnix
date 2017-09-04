@@ -196,13 +196,13 @@ void execute_pipes(char **tokens) {
             if(iterate == 0) {
                 dup2(pipe2[1], 1);
             } else {
-                if(iterate & 1) { //odd
+                if (iterate & 1) { //odd
                     dup2(pipe2[0], 0);
                     if (iterate != num_of_cmnds - 1)
                         dup2(pipe1[1], 1);
                 } else {
                     dup2(pipe1[0], 0);
-                    if(iterate != num_of_cmnds - 1)
+                    if (iterate != num_of_cmnds - 1)
                         dup2(pipe2[1], 1);
                 }
             }
