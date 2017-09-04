@@ -95,6 +95,7 @@ char **read_script(char *filename) {
         command = NULL;
     }
     commands[i] = NULL;
+    fclose(fp);
 
     return commands;
 }
