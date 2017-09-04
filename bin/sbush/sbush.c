@@ -61,9 +61,9 @@ int set_environment_variable(char *line) {
 int get_environment_variable(char *name) {
     if(name[0] == '$') {
         name++;
-        printf("%s\n", getenv(name));
+        printf("%s", getenv(name));
     } else {
-        printf("%s\n", name);
+        printf("%s", name);
     }
 
     return 1;
@@ -183,8 +183,7 @@ void execute_pipes(char **tokens) {
         if (iterate & 1) {
             if (pipe(pipe1) == -1)
                 printf("%s\n", "Pipe failed");
-        }
-        else {
+        } else {
             if (pipe(pipe2) == -1)
                 printf("%s\n", "Pipe failed");
         }
@@ -195,8 +194,7 @@ void execute_pipes(char **tokens) {
         if(pid == 0) {
             if(iterate == 0) {
                 dup2(pipe2[1], 1);
-            }
-            else {
+            } else {
                 if(iterate & 1) { //odd
                     dup2(pipe2[0], 0);
                     if (iterate != num_cmnds - 1)
@@ -210,8 +208,7 @@ void execute_pipes(char **tokens) {
             if (execvp(command[0], command) == -1) {
                 printf("-sbush: %s: command not found\n", command[0]);
             }
-        }
-        else {
+        } else {
             if (iterate == 0){
                 close(pipe2[1]);
             } else {
