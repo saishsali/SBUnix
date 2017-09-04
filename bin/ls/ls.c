@@ -4,8 +4,7 @@
 #include <dirent.h>
 #define BUFSIZE 1024
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
 	char cwd[BUFSIZE];
 	DIR *curr_dir;
 	struct dirent *current_direct;
@@ -21,7 +20,7 @@ int main(int argc, char *argv[])
 		}
 		printf("\n");
 		closedir (curr_dir);
-	}        
+	}
 	else
 		perror("Something went wrong");
 	return 0;
