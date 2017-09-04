@@ -6,13 +6,13 @@
 
 int main(int argc, char *argv[])
 {
-	char cwd[1024];
+	char cwd[BUFSIZE];
 	DIR *curr_dir;
 	struct dirent *current_direct;
 	if (getcwd(cwd, sizeof(cwd)) != NULL) {
 		curr_dir = opendir (cwd);
 		if (curr_dir == NULL) {
-			printf ("Cannot open directory '%s'\n", cwd);
+			printf ("Cannot open directory - %s\n", cwd);
 			exit(EXIT_FAILURE);
 		}
 
