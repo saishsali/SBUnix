@@ -107,7 +107,7 @@ char *get_command() {
     if ((n = getline(&command, &len, stdin)) == -1) {
         exit(EXIT_FAILURE);
     }
-    command[strlen(command) - 1] = 0;
+    command[n - 1] = '\0';
     return command;
 }
 
