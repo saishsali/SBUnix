@@ -11,7 +11,7 @@ ssize_t read(int fd, void *buf, size_t count) {
         "syscall;"
         "movq %%rax, %0;"
         : "=r" (num_bytes)
-        : "r" ((uint64_t)fd), "r" (buf), "r" (count)
+        : "r" ((int64_t)fd), "r" (buf), "r" (count)
     );
 
     return num_bytes;
