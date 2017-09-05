@@ -58,9 +58,9 @@ int set_environment_variable(char *line) {
 int get_environment_variable(char *name) {
     if(name[0] == '$') {
         name++;
-        printf("%s\n", getenv(name));
+        puts(getenv(name));
     } else {
-        printf("%s\n", name);
+        puts(name);
     }
 
     return 1;
@@ -68,7 +68,7 @@ int get_environment_variable(char *name) {
 
 int change_directory(char **tokens) {
     if (chdir(tokens[1]) != 0) {
-        printf("%s\n", "Error changing directory");
+        puts("Error changing directory");
     }
 
     return 1;
@@ -175,10 +175,10 @@ void execute_pipes(char **tokens) {
         // pipe1 or pipe2 depends on which pipe was active previously
         if (iterate & 1) {
             if (pipe(pipe1) == -1)
-                printf("%s\n", "Pipe failed");
+                puts("Pipe failed");
         } else {
             if (pipe(pipe2) == -1)
-                printf("%s\n", "Pipe failed");
+                puts("Pipe failed");
         }
 
         //pipe1 is for odd command and pipe2 is for even command
@@ -199,7 +199,7 @@ void execute_pipes(char **tokens) {
                 }
             }
             if (execvp(command[0], command) == -1) {
-                printf("-sbush: %s: command not found\n", command[0]);
+                puts("-sbush: command not found\n");
             }
         } else {
             if (iterate == 0){
@@ -242,7 +242,7 @@ int execute(char **tokens, int is_bg) {
 
         if (pid == 0) {
             if (execvp(tokens[0], tokens) == -1) {
-                printf("-sbush: %s: command not found\n", tokens[0]);
+                puts("-sbush: command not found\n");
             }
             exit(EXIT_FAILURE);
         } else if (pid < 0) {
@@ -257,8 +257,7 @@ int execute(char **tokens, int is_bg) {
 }
 
 void lifetime(int argc, char* argv[]) {
-    char *commands[BUFSIZE], *tokens[BUFSIZE];
-    char *command;
+    char *commands[BUFSIZE], *tokens[BUFSIZE], *command, *ps1;
     int flag = 0, i = 0, is_bg = 0;
     setenv("PS1", "sbush> ", 1);
 
@@ -270,7 +269,11 @@ void lifetime(int argc, char* argv[]) {
         }
     } else {
         do {
-            printf("%s", getenv("PS1"));
+            ps1 = getenv("PS1");
+            while (*ps1) {
+                putchar(*ps1);
+                ps1++;
+            }
             command = get_command();
             parse(command, &is_bg, tokens);
             flag = execute(tokens, is_bg);
