@@ -1,5 +1,4 @@
 #include <sys/defs.h>
-#include <stdio.h>
 
 int execvp(const char *file, char *const argv[]) {
     int64_t status;
