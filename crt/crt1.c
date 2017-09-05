@@ -6,6 +6,7 @@ void _start(void) {
         "movq %rsp, %rbp;"
         "movq 0(%rbp), %rdi;"
         "lea 8(%rbp), %rsi;"
+        "lea 16(%rbp, %rdi, 8), %rdx;"
         "call main;"
         "movq $60, %rax;"
         "syscall;"
