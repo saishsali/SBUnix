@@ -1,11 +1,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#define BUFSIZE 1024
 
 char *getenv(const char *name, char *envp[])
 {
     int key_length = strlen(name);
-    char initial_envp[1024], *result = " ";
+    char initial_envp[BUFSIZE], *result = "\0";
     int i, j;
 
     if(name == NULL || envp == NULL)
@@ -24,7 +25,7 @@ char *getenv(const char *name, char *envp[])
                     result = envp[i]+j+1;
                 }
             }
-
+            break;
         }
     }
     return result ; 
