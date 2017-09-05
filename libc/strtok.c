@@ -28,6 +28,7 @@ char* strtok(char* str, const char* delim) {
     }
 
     if (*start == '\0') {
+        start = 0;
         return 0;
     }
 
