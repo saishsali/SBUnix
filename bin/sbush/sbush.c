@@ -23,13 +23,12 @@ int is_alphabet(char c) {
     return -1;
 }
 
-char *decode_environment_variable(char *var) {
-    char *decoded_var = (char*) malloc(BUFSIZE * sizeof(char));
+void decode_environment_variable(char *var, char decoded_var[]) {
     int i = 0, j = 0;
 
     while(*var) {
         if(*var == '$' && (is_alphabet(*var + 1) == 1)) {
-            char *name = (char*) malloc(BUFSIZE * sizeof(char));
+            char name[BUFSIZE];
             var++;
             i = 0;
             while(is_alphabet(*var) == 1) {
@@ -45,15 +44,13 @@ char *decode_environment_variable(char *var) {
         }
     }
     decoded_var[j] = '\0';
-
-    return decoded_var;
 }
 
 int set_environment_variable(char *line) {
     char *name = strtok(line, "=");
-    char *value = strtok(NULL, "=");
-    value = decode_environment_variable(trim_quotes(value));
-    setenv(name, value, 1);
+    char decoded_var[BUFSIZE];
+    decode_environment_variable(trim_quotes(strtok(NULL, "=")), decoded_var);
+    setenv(name, decoded_var, 1);
 
     return 1;
 }
@@ -77,13 +74,12 @@ int change_directory(char **tokens) {
     return 1;
 }
 
-char **read_script(char *filename) {
+void read_script(char *filename, char *commands[]) {
     FILE *fp;
     int i = 0;
     char *command;
     ssize_t n;
     size_t len = 0;
-    char **commands = malloc(sizeof(char*) * BUFSIZE);
 
     fp = fopen(filename, "r");
     if (fp == NULL)
@@ -96,8 +92,6 @@ char **read_script(char *filename) {
     }
     commands[i] = NULL;
     fclose(fp);
-
-    return commands;
 }
 
 char *get_command() {
@@ -113,10 +107,9 @@ char *get_command() {
     return command;
 }
 
-char **parse(char *command, int *is_bg) {
+void parse(char *command, int *is_bg, char *tokens[]) {
     int i = 0;
     char *token;
-    char **tokens = malloc(sizeof(char*) * BUFSIZE);
 
     while ((token = strtok(command, " \t\r\n")) != NULL) {
         tokens[i++] = token;
@@ -133,8 +126,6 @@ char **parse(char *command, int *is_bg) {
         *is_bg = 1;
         tokens[i-1] = NULL;
     }
-
-    return tokens;
 }
 
 int check_pipes(char **tokens) {
@@ -165,7 +156,7 @@ int builtin_command(char **tokens) {
 void execute_pipes(char **tokens) {
     int num_of_cmnds = 0, i = 0, j = 0, iterate = 0, pipe1[2], pipe2[2];
     pid_t pid, cpid;
-    char **command = (char**) malloc(BUFSIZE * sizeof(char*));
+    char *command[BUFSIZE];
 
     while (tokens[i] != NULL) {
         if(strcmp(tokens[i++], "|") == 0)
@@ -266,27 +257,24 @@ int execute(char **tokens, int is_bg) {
 }
 
 void lifetime(int argc, char* argv[]) {
-    char *command, **commands, **tokens;
+    char *commands[BUFSIZE], *tokens[BUFSIZE];
+    char *command;
     int flag = 0, i = 0, is_bg = 0;
     setenv("PS1", "sbush> ", 1);
 
     if (argc >= 2) {
-        commands = read_script(argv[1]);
+        read_script(argv[1], commands);
         while (commands[i] != NULL) {
-            tokens = parse(commands[i++], &is_bg);
+            parse(commands[i++], &is_bg, tokens);
             flag = execute(tokens, is_bg);
-            free(tokens);
         }
-        free(commands);
     } else {
         do {
             printf("%s", getenv("PS1"));
             command = get_command();
-            tokens = parse(command, &is_bg);
+            parse(command, &is_bg, tokens);
             flag = execute(tokens, is_bg);
             is_bg = 0;
-            free(command);
-            free(tokens);
         } while (flag);
     }
 }
