@@ -289,7 +289,7 @@ int execute(char **tokens, int is_bg) {
     return 1;
 }
 
-int read_script(char *filename) {
+int open_script(char *filename) {
     int fd;
 
     fd = open(filename, 0x0000);
@@ -297,6 +297,10 @@ int read_script(char *filename) {
         exit(EXIT_FAILURE);
 
     return fd;
+}
+
+int close_script(int fildes) {
+    return close(fildes);
 }
 
 void execute_script(int fd) {
@@ -324,11 +328,13 @@ void execute_script(int fd) {
 
 void lifetime(int argc, char* argv[]) {
     char *tokens[BUFSIZE], *command, *ps1;
-    int flag = 0, is_bg = 0;
+    int flag = 0, is_bg = 0, fd;
     setenv("PS1", "sbush> ", 1);
 
     if (argc >= 2) {
-        execute_script(read_script(argv[1]));
+        fd = open_script(argv[1]);
+        execute_script(fd);
+        close_script(fd);
     } else {
         do {
             ps1 = getenv("PS1");
