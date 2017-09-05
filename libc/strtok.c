@@ -1,37 +1,38 @@
 #include <string.h>
+
 char *start = 0;
 
-char* tokenizer(char* str, const char* delim) {
+char* strtok(char* str, const char* delim) {
     int i = 0;
     int len = strlen(delim);
 
     if(!str && !start)
-        return NULL;
+        return 0;
 
     if(str && !start)
         start = str;
 
-    char* p_start = start;
+    char* token = start;
     while (1) {
         for (i = 0; i < len; i++) {
-            if (*p_start == delim[i]) {
-                p_start++;
+            if (*token == delim[i]) {
+                token++;
                 break;
             }
         }
 
         if (i == len) {
-            start = p_start;
+            start = token;
             break;
         }
     }
 
     if (*start == '\0') {
-        return NULL;
+        return 0;
     }
 
     while (*start != '\0') {
-        for (i = 0; i < len; i ++) {
+        for (i = 0; i < len; i++) {
             if (*start == delim[i]) {
                 *start = '\0';
                 break;
@@ -43,5 +44,5 @@ char* tokenizer(char* str, const char* delim) {
             break;
     }
 
-    return p_start;
+    return token;
 }
