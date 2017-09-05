@@ -8,6 +8,57 @@
 #include <fcntl.h>
 #define BUFSIZE 1024
 
+char *start = '\0';
+
+char* tokenizer(char* str, const char* delim) {
+    int i = 0;
+    int len = strlen(delim);
+
+    if(!str && !start)
+        return '\0';
+
+    if(str && start == '\0') {
+        start = str;
+    }
+
+    char* token = start;
+    while (1) {
+        for (i = 0; i < len; i++) {
+            if (*token == delim[i]) {
+                token++;
+                break;
+            }
+        }
+
+        if (i == len) {
+            start = token;
+            break;
+        }
+    }
+
+    if (*start == '\0') {
+        start = '\0';
+        return '\0';
+    }
+
+    while (*start != '\0') {
+        for (i = 0; i < len; i++) {
+            if (*start == delim[i]) {
+                *start = '\0';
+                break;
+            }
+        }
+        start++;
+        if (i < len)
+            break;
+    }
+
+    if (*start == '\0')
+        start = '\0';
+
+    return token;
+}
+
 char *trim_quotes(char *str) {
     if (str[0] == '\"' || str[0] == '\'') {
         str++;
@@ -47,10 +98,10 @@ void decode_environment_variable(char *var, char decoded_var[]) {
     decoded_var[j] = '\0';
 }
 
-int set_environment_variable(char *line) {
-    char *name = strtok(line, "=");
+int set_environment_variable(char *token) {
     char decoded_var[BUFSIZE];
-    decode_environment_variable(trim_quotes(strtok(NULL, "=")), decoded_var);
+    char *name = tokenizer(token, "=");
+    decode_environment_variable(trim_quotes(tokenizer(NULL, "=")), decoded_var);
     setenv(name, decoded_var, 1);
 
     return 1;
@@ -93,11 +144,11 @@ void parse(char *command, int *is_bg, char *tokens[]) {
     int i = 0;
     char *token;
 
-    while ((token = strtok(command, " \t\r\n")) != NULL) {
+    while ((token = tokenizer(command, " \t\r\n")) != NULL) {
         tokens[i++] = token;
         // Special case when export statement has extra spaces in it
         if (strcmp(token, "export") == 0) {
-            tokens[i++] = strtok(NULL, "");
+            tokens[i++] = tokenizer(NULL, "");
             break;
         }
         command = NULL;
