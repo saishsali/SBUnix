@@ -1,7 +1,7 @@
 #include <sys/defs.h>
 
 ssize_t read(int fd, void *buf, size_t count) {
-    ssize_t num_bytes = 12;
+    ssize_t num_bytes;
 
     __asm__ (
         "movq $0, %%rax;"
