@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
+#include <fcntl.h>
 #define BUFSIZE 1024
 
 char *trim_quotes(char *str) {
@@ -74,25 +75,6 @@ int change_directory(char **tokens) {
     return 1;
 }
 
-void read_script(char *filename, char *commands[]) {
-    FILE *fp;
-    int i = 0;
-    char *command;
-    ssize_t n;
-    size_t len = 0;
-
-    fp = fopen(filename, "r");
-    if (fp == NULL)
-        exit(EXIT_FAILURE);
-
-    while ((n = getline(&command, &len, fp)) != -1) {
-        if (command[0] != '#' && command[0] != '\n')
-            commands[i++] = command;
-        command = NULL;
-    }
-    commands[i] = NULL;
-    fclose(fp);
-}
 
 char *get_command() {
     size_t len = 0;
@@ -256,17 +238,46 @@ int execute(char **tokens, int is_bg) {
     return 1;
 }
 
+int read_script(char *filename) {
+    int fd;
+
+    fd = open(filename, 0x0000);
+    if (fd < 0)
+        exit(EXIT_FAILURE);
+
+    return fd;
+}
+
+void execute_script(int fd) {
+    int i = 0, comment = 0, is_bg = 0;
+    ssize_t n;
+    char c, command[BUFSIZE], *tokens[BUFSIZE];
+
+    while ((n = read(fd, &c, 1) != 0)) {
+        if (c == '#') {
+            comment = 1;
+        } else if (c == '\n') {
+            if (comment == 1)
+                comment = 0;
+            else if (i != 0) {
+                command[i] = '\0';
+                i = 0;
+                parse(command, &is_bg, tokens);
+                execute(tokens, is_bg);
+            }
+        } else if (comment == 0) {
+            command[i++] = c;
+        }
+    }
+}
+
 void lifetime(int argc, char* argv[]) {
-    char *commands[BUFSIZE], *tokens[BUFSIZE], *command, *ps1;
-    int flag = 0, i = 0, is_bg = 0;
+    char *tokens[BUFSIZE], *command, *ps1;
+    int flag = 0, is_bg = 0;
     setenv("PS1", "sbush> ", 1);
 
     if (argc >= 2) {
-        read_script(argv[1], commands);
-        while (commands[i] != NULL) {
-            parse(commands[i++], &is_bg, tokens);
-            flag = execute(tokens, is_bg);
-        }
+        execute_script(read_script(argv[1]));
     } else {
         do {
             ps1 = getenv("PS1");
@@ -282,7 +293,7 @@ void lifetime(int argc, char* argv[]) {
     }
 }
 
-int main(int argc, char* argv[]) {
+int main(int argc, char* argv[], char *envp[]) {
     lifetime(argc, argv);
 
     return 0;
