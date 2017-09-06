@@ -1,18 +1,20 @@
 #ifndef _DIRENT_H
 #define _DIRENT_H
 
-#define NAME_MAX 255
+#include <sys/defs.h>
 
-struct dirent {
-	char d_name[NAME_MAX+1];     /* inode number */
-	unsigned short d_reclen;    /* length of this record */
-	unsigned char  d_type;      /* type of file; not supported
-                                 by all file system types */
+
+struct linux_dirent {
+   unsigned long  d_ino;     /* Inode number */
+   unsigned long  d_off;     /* Offset to next linux_dirent */
+   unsigned short d_reclen;  /* Length of this linux_dirent */
+   char           d_name[];  /* Filename (null-terminated) */
+                             /* length is actually (d_reclen - 2 -
+                                offsetof(struct linux_dirent, d_name)) */
 };
 
-
+typedef struct linux_dirent dirent;
 typedef struct DIR DIR;
-
 
 void readdir(const char *name);
 int getdents(unsigned int fd, char *dirp, unsigned int count);
