@@ -1,6 +1,5 @@
-
 #include <string.h>
-#define BUFSIZE 1024
+#define BUFSIZE 2048
 
 char *getenv(const char *name, char *const envp[])
 {
@@ -27,5 +26,6 @@ char *getenv(const char *name, char *const envp[])
             break;
         }
     }
+
     return result;
 }

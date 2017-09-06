@@ -6,5 +6,7 @@ char *strcat(char *dest, const char *src) {
     while (src[j] != '\0')
         dest[i++] = src[j++];
 
+    dest[i] = '\0';
+
     return dest;
 }
