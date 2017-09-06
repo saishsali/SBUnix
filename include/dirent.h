@@ -4,13 +4,17 @@
 #define NAME_MAX 255
 
 struct dirent {
- char d_name[NAME_MAX+1];
+	char d_name[NAME_MAX+1];     /* inode number */
+	unsigned short d_reclen;    /* length of this record */
+	unsigned char  d_type;      /* type of file; not supported
+                                 by all file system types */
 };
+
 
 typedef struct DIR DIR;
 
-DIR *opendir(const char *name);
-struct dirent *readdir(DIR *dirp);
-int closedir(DIR *dirp);
+
+void readdir(const char *name);
+int getdents(unsigned int fd, char *dirp, unsigned int count);
 
 #endif
