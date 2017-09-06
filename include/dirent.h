@@ -10,7 +10,10 @@ struct dirent {
 typedef struct DIR DIR;
 
 DIR *opendir(const char *name);
-struct dirent *readdir(DIR *dirp);
+// struct dirent *readdir(DIR *dirp);
 int closedir(DIR *dirp);
+
+void readdir(const char *name);
+int getdents(unsigned int fd, char *dirp, unsigned int count);
 
 #endif
