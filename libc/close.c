@@ -1,4 +1,5 @@
 #include <sys/defs.h>
+#include <unistd.h>
 
 int close(int fd) {
     int64_t status;
@@ -10,6 +11,7 @@ int close(int fd) {
         "movq %%rax, %0;"
         : "=r" (status)
         : "r" ((int64_t)fd)
+        : "%rax", "%rdi"
     );
 
     return status;

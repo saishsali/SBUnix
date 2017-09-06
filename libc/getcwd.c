@@ -10,6 +10,7 @@ char *getcwd(char *buf, size_t size) {
     	"movq %%rax, %0;"
         : "=r" (output)
         : "r" (buf), "r" (size)
+        : "%rax", "%rdi", "%rsi"
     );
 
     return output;

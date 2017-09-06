@@ -11,6 +11,7 @@ int open(const char *pathname, int flags) {
         "movq %%rax, %0;"
         : "=r" (fd)
         : "r" (pathname), "r" ((int64_t)flags)
+        : "%rax", "%rdi", "%rsi"
     );
 
     return fd;

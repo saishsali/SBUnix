@@ -9,7 +9,7 @@ void _start(void) {
         "lea 16(%rbp, %rdi, 8), %rdx;"
         "call main;"
 
-        "movq %rax, %rdi"
+        "movq %rax, %rdi;"
         "movq $60, %rax;"
         "syscall;"
     );

@@ -9,6 +9,6 @@ void exit(int status);
 void *malloc(size_t size);
 void free(void *ptr);
 
-char *getenv(const char *name, char *const envp[]);
+char* getenv(const char *name, char *envp[]);
 int setenv(const char *name, const char *value, int overwrite, char *envp[]);
 #endif

@@ -1,8 +1,9 @@
 #include <sys/defs.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
-int execvpe(const char *file, char *const argv[], char *const envp[]) {
+int execvpe(const char *file, char *const argv[], char *envp[]) {
     int64_t status;
     int slash_check = 0, i = 0, truncated_path_len, j = 0, token_len;
     char *path_env, *token, *slash = "/";
@@ -25,6 +26,7 @@ int execvpe(const char *file, char *const argv[], char *const envp[]) {
             "movq %%rax, %0;"
             : "=r" (status)
             : "r" (file), "r" (argv), "r" (envp)
+            : "%rax", "%rdi", "%rsi", "%rdx"
         );
     } else {
         status = 0;
@@ -51,6 +53,7 @@ int execvpe(const char *file, char *const argv[], char *const envp[]) {
                 "movq %%rax, %0;"
                 : "=r" (status)
                 : "r" (token), "r" (argv), "r" (envp)
+                : "%rax", "%rdi", "%rsi", "%rdx"
             );
 
             j = 0;
@@ -63,5 +66,6 @@ int execvpe(const char *file, char *const argv[], char *const envp[]) {
             token = strtok(NULL, ":");
         }
     }
+
     return status;
 }

@@ -1,7 +1,8 @@
+#include <stdlib.h>
 #include <string.h>
 #define BUFSIZE 2048
 
-char *getenv(const char *name, char *const envp[])
+char *getenv(const char *name, char *envp[])
 {
     int key_length = strlen(name);
     char initial_envp[BUFSIZE], *result = "\0";
@@ -10,8 +11,7 @@ char *getenv(const char *name, char *const envp[])
     if(name == NULL || envp == NULL)
         return NULL;
 
-    for(i=0; envp[i] != NULL; i++)
-    {
+    for(i=0; envp[i] != NULL; i++) {
         strcpy(initial_envp,envp[i]);
         initial_envp[key_length] = '\0';
         if(strcmp(name, initial_envp)==0)

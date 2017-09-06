@@ -12,6 +12,7 @@ ssize_t write(int fd, const void *buf, size_t count) {
         "movq %%rax, %0;"
         : "=r" (num_bytes)
         : "r" ((int64_t)fd), "r" (buf), "r" (count)
+        : "%rax", "%rdi", "%rsi", "%rdx"
     );
 
     return num_bytes;

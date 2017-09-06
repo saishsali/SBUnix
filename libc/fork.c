@@ -8,6 +8,8 @@ pid_t fork() {
         "syscall;"
         "movq %%rax, %0"
         : "=r" (pid)
+        :
+        : "%rax"
     );
 
     return pid;

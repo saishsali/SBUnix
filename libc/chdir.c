@@ -9,6 +9,7 @@ int chdir(const char *path) {
     	"movq %%rax, %0;"
         : "=r" (output)
         : "r" (path)
+        : "%rax", "%rdi"
     );
 
     return output;

@@ -12,6 +12,7 @@ int getdents(unsigned int fd, char *dirp, unsigned int count) {
         "movq %%rax, %0;"
         : "=r" (output)
         : "r" ((int64_t)fd), "r" (dirp), "r" ((int64_t)count )
+        : "%rax", "%rdi", "%rsi", "%rdx"
     );
 
     return output;

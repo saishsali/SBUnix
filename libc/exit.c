@@ -7,6 +7,6 @@ void exit(int status) {
         "syscall;"
         :
         : "r" ((int64_t)status)
-        :
+        : "%rax", "%rdi"
     );
 }
