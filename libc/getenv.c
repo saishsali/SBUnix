@@ -28,5 +28,5 @@ char *getenv(const char *name, char *envp[])
             break;
         }
     }
-    return result ; 
+    return result; 
 }
