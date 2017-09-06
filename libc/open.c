@@ -1,4 +1,5 @@
 #include <sys/defs.h>
+#include <unistd.h>
 
 int open(const char *pathname, int flags) {
     int64_t fd;
@@ -13,6 +14,8 @@ int open(const char *pathname, int flags) {
         : "r" (pathname), "r" ((int64_t)flags)
         : "%rax", "%rdi", "%rsi"
     );
+
+    sleep(1);
 
     return fd;
 }

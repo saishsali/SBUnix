@@ -1,27 +1,32 @@
-// #include <dirent.h>
-// #include <stdio.h>
-// #include <unistd.h>
+#include <dirent.h>
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
+#define BUFSIZE 1024
 
-// void readdir(const char *name)
-// {
-//     int bpos;
-//     struct dirent *current_direct;
-//     int fd = open(name, 0x0000);
-//     char buf[1024];
-//     // int nread = syscall(SYS_getdents, fd, buf, 1024);
-//     int nread = getdents(fd , buf, 1024);
-//     current_direct = (struct dirent *) (buf);
+void readdir(const char *name)
+{
+    int buffer_position, read_length, fd, k;
+    char dir_buff[BUFSIZE];
+    dirent *current_directory;
+    fd = open(name, 0x0000);
 
+    read_length = getdents(fd , dir_buff, 1024);
 
-//     for (bpos = 0; bpos < nread;) {
-//         putchar(bpos+'0');
-//         current_direct = (struct dirent *) (buf+bpos);
-//         puts(current_direct->d_name);
-//         // printf("%4d %10lld  %s\n", current_direct->d_reclen,
-//         //                    (long long) current_direct->d_off, current_direct->d_name);
-//         // printf("d_reclen %d ---> \n", current_direct->d_reclen);
-//         bpos += current_direct->d_reclen;
-//     }
-//     close(fd);
-//     return ;
-// }
+    for (buffer_position = 0; buffer_position < read_length;) {
+        current_directory = (dirent *) (dir_buff + buffer_position);
+
+        if (current_directory->d_name[0] != '.' && strcmp(current_directory->d_name, "..") != 0) {
+
+            for (k = 0; k < strlen(current_directory->d_name); k++) {
+                putchar(current_directory->d_name[k]);
+            }
+            putchar(' ');
+            putchar(' ');
+        }
+        buffer_position += current_directory->d_reclen;
+    }
+
+    close(fd);
+    putchar('\n');
+}
