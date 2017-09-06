@@ -6,24 +6,27 @@
 
 void readdir(const char *name)
 {
-    int bpos, nread, fd, k;
-    char buf[BUFSIZE];
-    dirent *current_direct;
-    fd = open(nameg, 0x0000);
+    int buffer_position, read_length, fd, k;
+    char dir_buff[BUFSIZE];
+    dirent *current_directory;
+    fd = open(name, 0x0000);
 
-    nread = getdents(fd , buf, 1024);
+    read_length = getdents(fd , dir_buff, 1024);
 
-    for (bpos = 0; bpos < nread;) {
-        current_direct = (dirent *) (buf+bpos);
-        if (current_direct->d_name[0] != '.' && strcmp(current_direct->d_name, "..") != 0) {
-            for (k = 0; k < strlen(current_direct->d_name); k++) {
-                putchar(current_direct->d_name[k]);
+    for (buffer_position = 0; buffer_position < read_length;) {
+        current_directory = (dirent *) (dir_buff + buffer_position);
+
+        if (current_directory->d_name[0] != '.' && strcmp(current_directory->d_name, "..") != 0) {
+
+            for (k = 0; k < strlen(current_directory->d_name); k++) {
+                putchar(current_directory->d_name[k]);
             }
             putchar(' ');
             putchar(' ');
         }
-        bpos += current_direct->d_reclen;
+        buffer_position += current_directory->d_reclen;
     }
+
     close(fd);
     putchar('\n');
 }
