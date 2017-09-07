@@ -42,7 +42,7 @@ $(USER).iso: $(USER).img kernel
 	mcopy -o -i $(USER).img $@ ::sbunix.iso
 	touch $@
 
-$(USER).img: 
+$(USER).img:
 	mkfs.vfat -n SBUNIX -I -C $@ 16384
 	mcopy -i $@ /usr/lib/syslinux/memdisk $(ROOTBOOT)/syslinux.cfg ::
 	syslinux -i $@
@@ -94,6 +94,6 @@ clean:
 	rm -rfv obj kernel tarfs $(USER).iso $(USER).img $(ROOTBOOT)/kernel/kernel
 
 SUBMITTO=/submit
-submit: clean
+submit: clean $(USER)-data.img
 	tar -czvf $(USER).tgz --exclude=.gitkeep --exclude=.*.sw? --exclude=*~ LICENSE README Makefile sys bin crt libc include $(ROOTFS) $(USER)-data.img
 	mv -v $(USER).tgz $(SUBMITTO)/$(USER)-$(ASSIGNMENT)=`date +%F=%T`.tgz

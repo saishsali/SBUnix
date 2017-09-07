@@ -1,6 +1,8 @@
 #ifndef _STDIO_H
 #define _STDIO_H
 
+#include <sys/defs.h>
+
 static const int EOF = -1;
 
 int putchar(int c);
