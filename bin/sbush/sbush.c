@@ -10,6 +10,9 @@
 // Global environment variable
 char **env;
 
+// Global ps1 variable
+char *ps1;
+
 // Removes leading and trailing quotes from a string
 char *trim_quotes(char *str) {
     if (str[0] == '\"' || str[0] == '\'') {
@@ -59,6 +62,9 @@ int set_environment_variable(char *token) {
     char *name = strtok(token, "=");
     decode_environment_variable(trim_quotes(strtok(NULL, "=")), decoded_var);
     setenv(name, decoded_var, 1);
+
+    if (strcmp(name, "PS1") == 0)
+        ps1 = decoded_var;
 
     return 1;
 }
@@ -295,10 +301,12 @@ void execute_script(int fd) {
 
 // Lifetime of a command
 void lifetime(int argc, char* argv[]) {
-    char command[BUFSIZE], *tokens[BUFSIZE], *ps1;
+    char command[BUFSIZE], *tokens[BUFSIZE];
     int flag = 0, fd, is_bg = 0;
     ssize_t n;
+
     setenv("PS1", "sbush> ", 1);
+    ps1 = getenv("PS1");
 
     if (argc >= 2) { // If a script is to be executed
         fd = open_script(argv[1]);
@@ -306,7 +314,6 @@ void lifetime(int argc, char* argv[]) {
         close_script(fd);
     } else {
         do {
-            ps1 = getenv("PS1");
             n = write(1, ps1, strlen(ps1));
             if (n == -1)
                 puts("Command failed");
