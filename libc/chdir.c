@@ -1,7 +1,7 @@
 #include <sys/defs.h>
 
 int chdir(const char *path) {
-	ssize_t output;
+    ssize_t output;
     __asm__ (
         "movq $80, %%rax;"
         "movq %1, %%rdi;"
