@@ -279,8 +279,8 @@ void lifetime(int argc, char* argv[]) {
         execute_script(fd);
         close_script(fd);
     } else {
-        ps1 = getenv("PS1", env);
         do {
+            ps1 = getenv("PS1", env);
             i = 0;
             while (ps1[i]) {
                 putchar(ps1[i]);
@@ -296,9 +296,7 @@ void lifetime(int argc, char* argv[]) {
 }
 
 int main(int argc, char* argv[], char *envp[]) {
-
     env = envp;
-
     lifetime(argc, argv);
 
     return 0;

@@ -1,16 +1,19 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#define BUFSIZE 2048
+#define BUFSIZE 2560
 
 void update_envp(const char *name, const char *value, char *envp[]) {
-    int i, j;
+    int i, j, key_length = strlen(name);
+    char initial_envp[BUFSIZE];
     long int k;
-    for (i = 0; envp[i] != NULL; i++) {
-        int key_length = strlen(name);
-        char initial_envp[BUFSIZE];
 
-        strcpy(initial_envp, envp[i]);
+    for (i = 0; envp[i] != NULL; i++) {
+        j = 0;
+        while (j < key_length) {
+            initial_envp[j] = envp[i][j];
+            j++;
+        }
         initial_envp[key_length] = '\0';
 
         if (strcmp(name, initial_envp) == 0) {
@@ -49,11 +52,12 @@ int setenv(const char *name, const char *value, int overwrite, char *envp[])
 {
     if (strlen(getenv(name, envp)) > 0) {
         if (overwrite == 1)
-        {   
+        {
             update_envp(name, value, envp);
         }
-    } else
+    } else {
         set_envp(name, value, envp);
+    }
 
     return 0;
 }
