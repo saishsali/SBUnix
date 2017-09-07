@@ -13,7 +13,6 @@ struct dirent {
 typedef struct dirent dirent;
 typedef struct DIR DIR;
 
-void readdir(const char *name);
 int getdents(unsigned int fd, char *dirp, unsigned int count);
 
 #endif
