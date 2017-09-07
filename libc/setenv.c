@@ -23,9 +23,10 @@ void update_envp(const char *name, const char *value, char *envp[]) {
                     for(k = 0; k < strlen(value); k++) {
                         envp[i][j+k] = value[k];
                     }
+                    envp[i][j+k] = '\0';
+                    break;
                 }
             }
-            break;
         }
     }
 }
@@ -48,7 +49,9 @@ int setenv(const char *name, const char *value, int overwrite, char *envp[])
 {
     if (strlen(getenv(name, envp)) > 0) {
         if (overwrite == 1)
+        {   
             update_envp(name, value, envp);
+        }
     } else
         set_envp(name, value, envp);
 

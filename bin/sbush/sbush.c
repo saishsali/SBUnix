@@ -28,7 +28,7 @@ void decode_environment_variable(char *var, char decoded_var[]) {
     int i = 0, j = 0;
 
     while(*var) {
-        if(*var == '$' && (is_alphabet(*var + 1) == 1)) {
+        if(*var == '$' && (is_alphabet(*(var + 1)) == 1)) {
             char name[BUFSIZE];
             var++;
             i = 0;
@@ -270,7 +270,7 @@ void execute_script(int fd) {
 }
 
 void lifetime(int argc, char* argv[]) {
-    char command[BUFSIZE], *tokens[BUFSIZE], *ps1 = "sbush> ";
+    char command[BUFSIZE], *tokens[BUFSIZE], *ps1;
     int flag = 0, fd, is_bg = 0, i = 0;
     setenv("PS1", "sbush> ", 1, env);
 
@@ -296,10 +296,8 @@ void lifetime(int argc, char* argv[]) {
 }
 
 int main(int argc, char* argv[], char *envp[]) {
+
     env = envp;
-    char temp[BUFSIZE] = "finsdmksally";
-    envp[19] = temp;
-    envp[20] = NULL;
 
     lifetime(argc, argv);
 
