@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
-#define EXIT_FAILURE 0
 #define BUFSIZE 1024
 
 int main(int argc, char *argv[], char *envp[]) {
@@ -14,7 +13,7 @@ int main(int argc, char *argv[], char *envp[]) {
         for (i = 1; i < argc; i++) {
             fd = open(argv[i], 0x0000);
             if (fd < 0)
-                exit(EXIT_FAILURE);
+                exit(0);
 
             while ((n = read(fd, &c, 1) != 0))
                 putchar(c);
@@ -23,7 +22,11 @@ int main(int argc, char *argv[], char *envp[]) {
         }
     } else {
         while ((n = read(0, input, BUFSIZE)) != -1) {
-            puts(input);
+            i = 0;
+            while (input[i] != '\0') {
+                putchar(input[i]);
+                input[i++] = '\0';
+            }
         }
     }
 
