@@ -7,8 +7,10 @@
 #include <fcntl.h>
 #define BUFSIZE 1024
 
+// Global environment variable
 char **env;
 
+// Removes leading and trailing quotes from a string
 char *trim_quotes(char *str) {
     if (str[0] == '\"' || str[0] == '\'') {
         str++;
@@ -18,6 +20,7 @@ char *trim_quotes(char *str) {
     return str;
 }
 
+// Checks if a character is an alphabet
 int is_alphabet(char c) {
     if ((c >='a' && c <='z' ) || ( c >= 'A' && c <= 'Z'))
         return 1;
@@ -25,6 +28,7 @@ int is_alphabet(char c) {
     return -1;
 }
 
+// Decodes environment variable
 void decode_environment_variable(char *var, char decoded_var[]) {
     int i = 0, j = 0;
 
@@ -48,6 +52,8 @@ void decode_environment_variable(char *var, char decoded_var[]) {
     decoded_var[j] = '\0';
 }
 
+
+// Set environment variable
 int set_environment_variable(char *token) {
     char decoded_var[BUFSIZE];
     char *name = strtok(token, "=");
@@ -57,6 +63,7 @@ int set_environment_variable(char *token) {
     return 1;
 }
 
+// Get and print environment variable
 int get_environment_variable(char *name) {
     char *value;
     if(name[0] == '$') {
@@ -74,6 +81,7 @@ int get_environment_variable(char *name) {
     return 1;
 }
 
+// Change directory
 int change_directory(char **tokens) {
     if (chdir(tokens[1]) != 0) {
         puts("Error changing directory");
@@ -82,7 +90,7 @@ int change_directory(char **tokens) {
     return 1;
 }
 
-
+// Get command input for sbush from stdin
 void get_command(char command[], size_t len) {
     ssize_t n;
     if ((n = read(0, command, len)) == -1) {
@@ -91,6 +99,7 @@ void get_command(char command[], size_t len) {
     command[n - 1] = '\0';
 }
 
+// Parse command by using newlines, tabs, whitespaces tokens
 void parse(char *command, int *is_bg, char *tokens[]) {
     int i = 0;
     char *token;
@@ -112,6 +121,7 @@ void parse(char *command, int *is_bg, char *tokens[]) {
     }
 }
 
+// Check if pipe exists in a command
 int check_pipes(char **tokens) {
     int i = 0;
 
@@ -123,6 +133,7 @@ int check_pipes(char **tokens) {
     return -1;
 }
 
+// Check for builtin commands
 int builtin_command(char **tokens) {
     if (strcmp(tokens[0], "export") == 0) {
         return set_environment_variable(tokens[1]);
@@ -137,6 +148,7 @@ int builtin_command(char **tokens) {
     return -1;
 }
 
+// Launch pipes
 void execute_pipes(char **tokens) {
     int num_of_cmnds = 0, i = 0, j = 0, iterate = 0, pipe1[2], pipe2[2];
     pid_t pid;
@@ -165,7 +177,7 @@ void execute_pipes(char **tokens) {
                 puts("Pipe failed");
         }
 
-        //pipe1 is for odd command and pipe2 is for even command
+        //pipe1 is for even command and pipe2 is for odd command
         pid = fork();
 
         if(pid == 0) {
@@ -209,6 +221,8 @@ void execute_pipes(char **tokens) {
     }
 }
 
+
+// Execute command
 int execute(char **tokens, int is_bg) {
     pid_t pid;
     int builtin;
@@ -239,6 +253,7 @@ int execute(char **tokens, int is_bg) {
     return 1;
 }
 
+// Read file
 int open_script(char *filename) {
     int fd;
 
@@ -249,10 +264,12 @@ int open_script(char *filename) {
     return fd;
 }
 
+// Close file
 int close_script(int fildes) {
     return close(fildes);
 }
 
+// Execute sbush script (files that start with #!rootfs/bin/sbush)
 void execute_script(int fd) {
     int i = 0, comment = 0, is_bg = 0;
     ssize_t n;
@@ -276,13 +293,14 @@ void execute_script(int fd) {
     }
 }
 
+// Lifetime of a command
 void lifetime(int argc, char* argv[]) {
     char command[BUFSIZE], *tokens[BUFSIZE], *ps1;
     int flag = 0, fd, is_bg = 0;
     ssize_t n;
     setenv("PS1", "sbush> ", 1);
 
-    if (argc >= 2) {
+    if (argc >= 2) { // If a script is to be executed
         fd = open_script(argv[1]);
         execute_script(fd);
         close_script(fd);
