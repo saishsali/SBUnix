@@ -34,6 +34,7 @@ int is_alphabet(char c) {
 // Decodes environment variable
 void decode_environment_variable(char *var, char decoded_var[]) {
     int i = 0, j = 0;
+    decoded_var[0] = '\0';
 
     while(*var) {
         if(*var == '$' && (is_alphabet(*(var + 1)) == 1)) {
