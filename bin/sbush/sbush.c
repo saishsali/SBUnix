@@ -272,14 +272,14 @@ void execute_script(int fd) {
 void lifetime(int argc, char* argv[]) {
     char command[BUFSIZE], *tokens[BUFSIZE], *ps1 = "sbush> ";
     int flag = 0, fd, is_bg = 0, i = 0;
-    // setenv("PS1", "sbush> ", 1, env);
+    setenv("PS1", "sbush> ", 1, env);
 
     if (argc >= 2) {
         fd = open_script(argv[1]);
         execute_script(fd);
         close_script(fd);
     } else {
-        // ps1 = getenv("PS1", env);
+        ps1 = getenv("PS1", env);
         do {
             i = 0;
             while (ps1[i]) {
