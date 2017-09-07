@@ -64,7 +64,7 @@ int set_environment_variable(char *token) {
     setenv(name, decoded_var, 1);
 
     if (strcmp(name, "PS1") == 0)
-        ps1 = decoded_var;
+        strcpy(ps1, decoded_var);
 
     return 1;
 }
