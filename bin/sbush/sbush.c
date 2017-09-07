@@ -3,8 +3,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/wait.h>
+#include <fcntl.h>
 #define BUFSIZE 1024
-#define EXIT_FAILURE 0
 
 char **env;
 
@@ -36,7 +37,7 @@ void decode_environment_variable(char *var, char decoded_var[]) {
                 name[i++] = *var;
                 var++;
             }
-            char *value = getenv(name, env);
+            char *value = getenv(name);
             strcat(decoded_var, value);
             j = j + strlen(value);
         } else {
@@ -51,15 +52,21 @@ int set_environment_variable(char *token) {
     char decoded_var[BUFSIZE];
     char *name = strtok(token, "=");
     decode_environment_variable(trim_quotes(strtok(NULL, "=")), decoded_var);
-    setenv(name, decoded_var, 1, env);
+    setenv(name, decoded_var, 1);
 
     return 1;
 }
 
 int get_environment_variable(char *name) {
+    char *value;
     if(name[0] == '$') {
         name++;
-        puts(getenv(name, env));
+        value = getenv(name);
+        if(value)
+            puts(value);
+        else
+            putchar('\n');
+
     } else {
         puts(name);
     }
@@ -78,8 +85,8 @@ int change_directory(char **tokens) {
 
 void get_command(char command[], size_t len) {
     ssize_t n;
-    if ((n = getline(command, &len)) == -1) {
-        exit(EXIT_FAILURE);
+    if ((n = read(0, command, len)) == -1) {
+        exit(0);
     }
     command[n - 1] = '\0';
 }
@@ -220,7 +227,7 @@ int execute(char **tokens, int is_bg) {
             if (execvpe(tokens[0], tokens, env) < 0) {
                 puts("-sbush: command not found");
             }
-            exit(EXIT_FAILURE);
+            exit(0);
         } else if (pid < 0) {
             puts("Fork error");
         } else {
@@ -237,7 +244,7 @@ int open_script(char *filename) {
 
     fd = open(filename, 0x0000);
     if (fd < 0)
-        exit(EXIT_FAILURE);
+        exit(0);
 
     return fd;
 }
@@ -271,8 +278,9 @@ void execute_script(int fd) {
 
 void lifetime(int argc, char* argv[]) {
     char command[BUFSIZE], *tokens[BUFSIZE], *ps1;
-    int flag = 0, fd, is_bg = 0, i = 0;
-    setenv("PS1", "sbush> ", 1, env);
+    int flag = 0, fd, is_bg = 0;
+    ssize_t n;
+    setenv("PS1", "sbush> ", 1);
 
     if (argc >= 2) {
         fd = open_script(argv[1]);
@@ -280,12 +288,11 @@ void lifetime(int argc, char* argv[]) {
         close_script(fd);
     } else {
         do {
-            ps1 = getenv("PS1", env);
-            i = 0;
-            while (ps1[i]) {
-                putchar(ps1[i]);
-                i++;
-            }
+            ps1 = getenv("PS1");
+            n = write(1, ps1, strlen(ps1));
+            if (n == -1)
+                puts("Command failed");
+
             get_command(command, sizeof(command));
             parse(command, &is_bg, tokens);
             flag = execute(tokens, is_bg);

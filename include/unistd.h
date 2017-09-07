@@ -3,7 +3,6 @@
 
 #include <sys/defs.h>
 
-int open(const char *pathname, int flags);
 int close(int fd);
 ssize_t read(int fd, void *buf, size_t count);
 ssize_t write(int fd, const void *buf, size_t count);
@@ -16,7 +15,6 @@ pid_t fork();
 int execvpe(const char *file, char *const argv[], char *const envp[]);
 int execvp(const char *file, char *const argv[]);
 pid_t wait(int *status);
-int waitpid(int pid, int *status, int options);
 
 unsigned int sleep(unsigned int seconds);
 

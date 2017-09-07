@@ -30,7 +30,7 @@ int execvpe(const char *file, char *const argv[], char *envp[]) {
         );
     } else {
         status = 0;
-        path_env = getenv("PATH", envp);
+        path_env = getenv("PATH");
         token = strtok(path_env, ":");
         truncated_path_len = strlen(slash) + strlen(file);
 

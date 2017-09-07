@@ -3,30 +3,32 @@
 #include <stdio.h>
 #define BUFSIZE 2560
 
-void update_envp(const char *name, const char *value, char *envp[]) {
+extern char **env;
+
+void update_envp(const char *name, const char *value) {
     int i, j, key_length = strlen(name);
     char initial_envp[BUFSIZE];
     long int k;
 
-    for (i = 0; envp[i] != NULL; i++) {
+    for (i = 0; env[i] != NULL; i++) {
         j = 0;
         while (j < key_length) {
-            initial_envp[j] = envp[i][j];
+            initial_envp[j] = env[i][j];
             j++;
         }
         initial_envp[key_length] = '\0';
 
         if (strcmp(name, initial_envp) == 0) {
-            for (j = 0; envp[i][j] != '\0'; j++) {
-                if (envp[i][j] == '=') {
+            for (j = 0; env[i][j] != '\0'; j++) {
+                if (env[i][j] == '=') {
                     j++;
-                    for (k = j; envp[i][k] != '\0'; k++) {
-                        envp[i][k] = '\0';
+                    for (k = j; env[i][k] != '\0'; k++) {
+                        env[i][k] = '\0';
                     }
                     for(k = 0; k < strlen(value); k++) {
-                        envp[i][j+k] = value[k];
+                        env[i][j+k] = value[k];
                     }
-                    envp[i][j+k] = '\0';
+                    env[i][j+k] = '\0';
                     break;
                 }
             }
@@ -34,7 +36,7 @@ void update_envp(const char *name, const char *value, char *envp[]) {
     }
 }
 
-void set_envp(const char *name, const char *value, char *envp[]) {
+void set_envp(const char *name, const char *value) {
     int i = 0;
     char equal[2] = "=", new_env[BUFSIZE];
 
@@ -42,21 +44,21 @@ void set_envp(const char *name, const char *value, char *envp[]) {
     strcat(new_env, equal);
     strcat(new_env, value);
 
-    for (i = 0; envp[i] != NULL; i++) {}
-    envp[i] = new_env;
-    envp[i+1] = NULL;
+    for (i = 0; env[i] != NULL; i++) {}
+    env[i] = new_env;
+    env[i+1] = NULL;
 }
 
 
-int setenv(const char *name, const char *value, int overwrite, char *envp[])
+int setenv(const char *name, const char *value, int overwrite)
 {
-    if (strlen(getenv(name, envp)) > 0) {
+    if (strlen(getenv(name)) > 0) {
         if (overwrite == 1)
         {
-            update_envp(name, value, envp);
+            update_envp(name, value);
         }
     } else {
-        set_envp(name, value, envp);
+        set_envp(name, value);
     }
 
     return 0;

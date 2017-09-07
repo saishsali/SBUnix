@@ -3,29 +3,31 @@
 #include <stdio.h>
 #define BUFSIZE 2048
 
-char *getenv(const char *name, char *envp[])
+extern char **env;
+
+char *getenv(const char *name)
 {
     int key_length = strlen(name);
     char initial_envp[BUFSIZE], *result = "\0";
     int i, j;
 
-    if(name == NULL || envp == NULL)
+    if(name == NULL || env == NULL)
         return NULL;
 
-    for(i=0; envp[i] != NULL; i++) {
+    for(i=0; env[i] != NULL; i++) {
         j = 0;
         while (j < key_length) {
-            initial_envp[j] = envp[i][j];
+            initial_envp[j] = env[i][j];
             j++;
         }
         initial_envp[key_length] = '\0';
         if(strcmp(name, initial_envp)==0)
         {
-            for(j=0;envp[i][j]!='\0';j++)
+            for(j=0;env[i][j]!='\0';j++)
             {
-                if(envp[i][j] == '=')
+                if(env[i][j] == '=')
                 {
-                    result = envp[i]+j+1;
+                    result = env[i]+j+1;
                 }
             }
             break;

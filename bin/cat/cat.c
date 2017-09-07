@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <fcntl.h>
 #define EXIT_FAILURE 0
 #define BUFSIZE 1024
 
@@ -8,7 +9,6 @@ int main(int argc, char *argv[], char *envp[]) {
     int i, fd;
     char input[BUFSIZE], c;
     ssize_t n;
-    size_t len = 0;
 
     if (argc > 1) {
         for (i = 1; i < argc; i++) {
@@ -22,7 +22,7 @@ int main(int argc, char *argv[], char *envp[]) {
             close(fd);
         }
     } else {
-        while ((n = getline(input, &len)) != -1) {
+        while ((n = read(0, input, BUFSIZE)) != -1) {
             puts(input);
         }
     }
