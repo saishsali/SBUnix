@@ -35,7 +35,7 @@ int main(int argc, char *argv[], char *envp[]) {
     int fd;
 
     if (getcwd(cwd, sizeof(cwd)) != NULL) {
-        fd = open(cwd, 0x0000);
+        fd = open(cwd, 0x0000, 444);
         readdir(fd);
         close(fd);
     }

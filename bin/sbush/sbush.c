@@ -264,7 +264,7 @@ int execute(char **tokens, int is_bg) {
 int open_script(char *filename) {
     int fd;
 
-    fd = open(filename, 0x0000);
+    fd = open(filename, 0x0000, 444);
     if (fd < 0)
         exit(0);
 

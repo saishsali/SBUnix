@@ -1,6 +1,7 @@
 #ifndef _FCNTL_H
 #define _FCNTL_H
+#include <sys/defs.h>
 
-int open(const char *pathname, int flags);
+int open(const char *pathname, int flags, mode_t mode);
 
 #endif
