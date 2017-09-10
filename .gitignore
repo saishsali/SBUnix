@@ -3,3 +3,6 @@
 *.out
 *.o
 *.a
+obj/
+*.img
+*.iso
