@@ -19,16 +19,14 @@ void print_character(char value, int color) {
 
 char *convert_decimal(int decimal, int base) {
 	static char buf[100];
-	char *result = &buf[99];
-
-	char alphabets[] = "0123456789ABCDEF";
+	char *result = &buf[99], representation[] = "0123456789ABCDEF";
 	int remainder;
 
 	while (decimal > 0) {
 		remainder = decimal % base;
 		decimal /= base;
 		result--;
-		*result = alphabets[remainder];
+		*result = representation[remainder];
 	}
 
 	return result;
@@ -53,6 +51,7 @@ void kprintf(const char *fmt, ...)
 					c = va_arg(arguments, int);
 					print_character(c, DEFAULT_COLOR);
 					break;
+
 				case 'd':
 					i = va_arg(arguments, int);
 					if (i < 0) {
@@ -61,6 +60,7 @@ void kprintf(const char *fmt, ...)
 					arg_value = convert_decimal(i, 10);
 					kprintf(arg_value);
 					break;
+
 				case 'x':
 					i = va_arg(arguments, unsigned int);
 					if (i < 0) {
@@ -69,10 +69,12 @@ void kprintf(const char *fmt, ...)
 					arg_value = convert_decimal(i, 16);
 					kprintf(arg_value);
 					break;
+
 				case 's':
 					arg_value = va_arg(arguments, char*);
 					kprintf(arg_value);
 					break;
+
 				case 'p':
 					pointer_arg_value = (unsigned long)va_arg(arguments, void*);
 					kprintf("0x");
@@ -81,6 +83,7 @@ void kprintf(const char *fmt, ...)
 					}
 					kprintf(convert_decimal(pointer_arg_value, 16));
 					break;
+
 				default:
 					kprintf("Format not supported");
 			}
