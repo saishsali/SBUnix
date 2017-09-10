@@ -1,6 +1,8 @@
 #include <sys/kprintf.h>
 #include <stdarg.h>
-static char *temp2 = (char*)0xb8000;
+#define DEFAULT_COLOR 7
+
+char *temp2 = (char*)0xb8000;
 
 void print_char(char value, int color) {
 	if (value == '\n') {
@@ -17,7 +19,7 @@ void print_char(char value, int color) {
 
 void print_string(char *arg_value) {
 	while(*arg_value != '\0') {
-		print_char(*arg_value, 7);
+		print_char(*arg_value, DEFAULT_COLOR);
 		arg_value++;
 	}
 }
@@ -56,12 +58,12 @@ void kprintf(const char *fmt, ...)
 			switch(*iter) {
 				case 'c':
 					c = va_arg(arguments, int);
-					print_char(c, 7);
+					print_char(c, DEFAULT_COLOR);
 					break;
 				case 'd':
 					i = va_arg(arguments, int);
 					if (i < 0){
-						print_char('-', 7);
+						print_char('-', DEFAULT_COLOR);
 					}
 					arg_value = convert_value(i,10);
 					print_string(arg_value);
@@ -69,7 +71,7 @@ void kprintf(const char *fmt, ...)
 				case 'x':
 					i = va_arg(arguments, unsigned int);
 					if (i < 0){
-						print_char('-', 7);
+						print_char('-', DEFAULT_COLOR);
 					}
 					arg_value = convert_value(i,16);
 					print_string(arg_value);
@@ -82,7 +84,7 @@ void kprintf(const char *fmt, ...)
 					pointer_arg_value = (unsigned long)va_arg(arguments, void*);
 					print_string("0x");
 					if(pointer_arg_value == '\0') {
-						print_char('0', 7);
+						print_char('0', DEFAULT_COLOR);
 					}
 					print_string(convert_value(pointer_arg_value, 16));
 					break;
@@ -92,8 +94,7 @@ void kprintf(const char *fmt, ...)
 
 			}
 		} else {
-
-			print_char(*iter, 3);
+			print_char(*iter, DEFAULT_COLOR);
 		}
 	}
 

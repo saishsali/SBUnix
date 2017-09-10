@@ -5,7 +5,6 @@
 #include <sys/ahci.h>
 
 #define INITIAL_STACK_SIZE 4096
-
 uint8_t initial_stack[INITIAL_STACK_SIZE]__attribute__((aligned(16)));
 uint32_t* loader_stack;
 extern char kernmem, physbase;
@@ -29,8 +28,8 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
 void boot(void)
 {
   // note: function changes rsp, local stack variables can't be practically used
-  register char* temp2;
-  for(temp2 = (char*)0xb8001; temp2 < (char*)0xb8000+160*25; temp2 += 2) *temp2 = 7 /* white */;
+  register char *temp1;
+  for(temp1 = (char*)0xb8001; temp1 < (char*)0xb8000+160*25; temp1 += 2) *temp1 = 7 /* white */;
   __asm__(
     "cli;"
     "movq %%rsp, %0;"
@@ -44,22 +43,10 @@ void boot(void)
     (uint64_t*)&physbase,
     (uint64_t*)(uint64_t)loader_stack[4]
   );
-  
+
 
   kprintf("Mohit is %d years old\n", 23);
   kprintf("pointer address %p", (uint64_t)&physbase);
 
-  // for(
-  //   temp1 = "Mohit", temp2 = (char*)0xb8000;
-  //   *temp1;
-  //   temp1 += 1, temp2 += 2
-  // ) *temp2 = *temp1;
-
-  //   for(
-  //   temp1 = "Charu Achi ladki hai";
-  //   *temp1;
-  //   temp1 += 1, temp2 += 2
-  // ) *temp2 = *temp1;
   while(1);
-  
 }
