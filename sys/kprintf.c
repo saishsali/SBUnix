@@ -47,6 +47,7 @@ void kprintf(const char *fmt, ...)
 	char c;
 	char *arg_value;
 	const char *iter;
+	unsigned long pointer_arg_value;
 
 	for(iter = fmt; *iter; iter++) {
 		if (*iter == '%') {
@@ -66,7 +67,7 @@ void kprintf(const char *fmt, ...)
 					print_string(arg_value);
 					break;
 				case 'x':
-					i = va_arg(arguments, int);
+					i = va_arg(arguments, unsigned int);
 					if (i < 0){
 						print_char('-', 7);
 					}
@@ -76,6 +77,17 @@ void kprintf(const char *fmt, ...)
 				case 's':
 					arg_value = va_arg(arguments, char*);
 					print_string(arg_value);
+					break;
+				case 'p':
+					pointer_arg_value = (unsigned long)va_arg(arguments, void*);
+					print_string("0x");
+					if(pointer_arg_value == '\0') {
+						print_char('0', 7);
+					}
+					print_string(convert_value(pointer_arg_value, 16));
+					break;
+				default:
+					print_string("Not supported");
 					break;
 
 			}
