@@ -4,7 +4,7 @@
 
 char *temp2 = (char*)0xb8000;
 
-void print_char(char value, int color) {
+void print_character(char value, int color) {
 	if (value == '\n') {
 		int y = (int)((char*)0xb8fa0 - temp2);
 		y = y%160;
@@ -17,38 +17,31 @@ void print_char(char value, int color) {
 	temp2++;
 }
 
-void print_string(char *arg_value) {
-	while(*arg_value != '\0') {
-		print_char(*arg_value, DEFAULT_COLOR);
-		arg_value++;
-	}
-}
-
-char *convert_value(int decimal, int base) {
+char *convert_decimal(int decimal, int base) {
 	static char buf[100];
 	char *result = &buf[99];
-	*result = '\0';
 
 	char alphabets[] = "0123456789ABCDEF";
 	int remainder;
 
-	while(decimal > 0) {
+	while (decimal > 0) {
 		remainder = decimal % base;
 		decimal /= base;
 		result--;
 		*result = alphabets[remainder];
 	}
+
 	return result;
 }
 
 void kprintf(const char *fmt, ...)
 {
-	va_list arguments;
-	va_start(arguments, fmt);
 	int i;
-	char c;
-	char *arg_value;
+	char c, *arg_value;
 	const char *iter;
+	va_list arguments;
+
+	va_start(arguments, fmt);
 	unsigned long pointer_arg_value;
 
 	for(iter = fmt; *iter; iter++) {
@@ -58,43 +51,41 @@ void kprintf(const char *fmt, ...)
 			switch(*iter) {
 				case 'c':
 					c = va_arg(arguments, int);
-					print_char(c, DEFAULT_COLOR);
+					print_character(c, DEFAULT_COLOR);
 					break;
 				case 'd':
 					i = va_arg(arguments, int);
-					if (i < 0){
-						print_char('-', DEFAULT_COLOR);
+					if (i < 0) {
+						print_character('-', DEFAULT_COLOR);
 					}
-					arg_value = convert_value(i,10);
-					print_string(arg_value);
+					arg_value = convert_decimal(i, 10);
+					kprintf(arg_value);
 					break;
 				case 'x':
 					i = va_arg(arguments, unsigned int);
-					if (i < 0){
-						print_char('-', DEFAULT_COLOR);
+					if (i < 0) {
+						print_character('-', DEFAULT_COLOR);
 					}
-					arg_value = convert_value(i,16);
-					print_string(arg_value);
+					arg_value = convert_decimal(i, 16);
+					kprintf(arg_value);
 					break;
 				case 's':
 					arg_value = va_arg(arguments, char*);
-					print_string(arg_value);
+					kprintf(arg_value);
 					break;
 				case 'p':
 					pointer_arg_value = (unsigned long)va_arg(arguments, void*);
-					print_string("0x");
-					if(pointer_arg_value == '\0') {
-						print_char('0', DEFAULT_COLOR);
+					kprintf("0x");
+					if (pointer_arg_value == '\0') {
+						print_character('0', DEFAULT_COLOR);
 					}
-					print_string(convert_value(pointer_arg_value, 16));
+					kprintf(convert_decimal(pointer_arg_value, 16));
 					break;
 				default:
-					print_string("Not supported");
-					break;
-
+					kprintf("Format not supported");
 			}
 		} else {
-			print_char(*iter, DEFAULT_COLOR);
+			print_character(*iter, DEFAULT_COLOR);
 		}
 	}
 
