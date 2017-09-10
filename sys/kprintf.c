@@ -4,20 +4,23 @@
 #define DEFAULT_COLOR 7
 #define VIDEO_MEM_START 0xb8000
 #define VIDEO_MEM_END 0xb8fa0
+#define ROW_SIZE 25
+#define COLUMN_SIZE 160
 
 char *video_memory = (char *)VIDEO_MEM_START;
 
 void print_character(char value, int color) {
-    char temp[160] = {' '};
-    if (video_memory > (char *)VIDEO_MEM_END) {
+    char temp[COLUMN_SIZE] = {' '};
+    if (video_memory >= (char *)VIDEO_MEM_END) {
         video_memory = (char *)VIDEO_MEM_START;
-        video_memory = memcpy((char*)video_memory, (char*)(video_memory + 160), 3840);
-        video_memory = (char*)(VIDEO_MEM_END - 160);
-        video_memory = memcpy((char*)video_memory, temp, 160);
+        video_memory = memcpy((char*)video_memory, (char*)(video_memory + COLUMN_SIZE), ROW_SIZE * COLUMN_SIZE - COLUMN_SIZE);
+        video_memory = (char*)(VIDEO_MEM_END - COLUMN_SIZE);
+        video_memory = memcpy((char*)video_memory, temp, COLUMN_SIZE);
     }
+
     if (value == '\n') {
         int y = (int)((char*)VIDEO_MEM_END - video_memory);
-        y = y % 160;
+        y = y % COLUMN_SIZE;
         video_memory = video_memory + y;
     } else {
         *video_memory = value;
