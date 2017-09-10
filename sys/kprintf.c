@@ -1,20 +1,30 @@
 #include <sys/kprintf.h>
+#include <sys/memcpy.h>
 #include <stdarg.h>
 #define DEFAULT_COLOR 7
+#define VIDEO_MEM_START 0xb8000
+#define VIDEO_MEM_END 0xb8fa0
 
-char *temp2 = (char*)0xb8000;
+char *video_memory = (char *)VIDEO_MEM_START;
 
 void print_character(char value, int color) {
-    if (value == '\n') {
-        int y = (int)((char*)0xb8fa0 - temp2);
-        y = y%160;
-        temp2 = temp2 + y;
-        return;
+    char temp[160] = {' '};
+    if (video_memory > (char *)VIDEO_MEM_END) {
+        video_memory = (char *)VIDEO_MEM_START;
+        video_memory = memcpy((char*)video_memory, (char*)(video_memory + 160), 3840);
+        video_memory = (char*)(VIDEO_MEM_END - 160);
+        video_memory = memcpy((char*)video_memory, temp, 160);
     }
-    *temp2 = value;
-    temp2++;
-    *temp2 = color;
-    temp2++;
+    if (value == '\n') {
+        int y = (int)((char*)VIDEO_MEM_END - video_memory);
+        y = y % 160;
+        video_memory = video_memory + y;
+    } else {
+        *video_memory = value;
+        video_memory++;
+        *video_memory = color;
+        video_memory++;
+    }
 }
 
 char *convert_decimal(int decimal, int base) {
