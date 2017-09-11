@@ -30,7 +30,7 @@ void print_character(char value, int color) {
     }
 }
 
-char *convert_decimal(int decimal, int base) {
+char *convert_decimal(unsigned int decimal, int base) {
     static char buf[100];
     char *result = &buf[99], representation[] = "0123456789ABCDEF";
     int remainder;
@@ -89,7 +89,7 @@ void kprintf(const char *fmt, ...)
                     break;
 
                 case 'p':
-                    pointer_arg_value = (unsigned long)va_arg(arguments, void*);
+                    pointer_arg_value = va_arg(arguments, unsigned int);
                     kprintf("0x");
                     if (pointer_arg_value == '\0') {
                         print_character('0', DEFAULT_COLOR);
