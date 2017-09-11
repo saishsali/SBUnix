@@ -1,6 +1,6 @@
 #include <sys/kprintf.h>
 #include <sys/memcpy.h>
-#include <stdarg.h>
+#include <sys/stdarg.h>
 #define DEFAULT_COLOR 7
 #define VIDEO_MEM_START 0xb8000
 #define VIDEO_MEM_END 0xb8fa0
