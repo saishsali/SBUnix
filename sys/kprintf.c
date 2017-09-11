@@ -21,11 +21,9 @@ void print_character(char value, int color) {
     if (value == '\n' || value == '\r') {
         int y = (int)((char*)VIDEO_MEM_END - video_memory);
         y = y % COLUMN_SIZE;
-        if (value == '\n')
-            video_memory = video_memory + y;
-        else
-            video_memory = video_memory - (COLUMN_SIZE - y);
-        return;
+        video_memory += y;
+        if (value == '\r')
+            video_memory -= COLUMN_SIZE;
 
     } else {
         *video_memory = value;
