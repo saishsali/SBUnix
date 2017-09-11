@@ -45,7 +45,8 @@ void boot(void)
     );
 
     kprintf("Mohit is %d years old\n", 23);
-    kprintf("physbase address %p", (uint64_t)&physbase);
+    kprintf(" hey sup\r");
+    kprintf("come earlier than this");
 
     while(1);
 }

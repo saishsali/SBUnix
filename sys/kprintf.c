@@ -18,15 +18,21 @@ void print_character(char value, int color) {
         video_memory = memcpy((char*)video_memory, temp, COLUMN_SIZE);
     }
 
-    if (value == '\n') {
+    if (value == '\n' || value == '\r') {
         int y = (int)((char*)VIDEO_MEM_END - video_memory);
         y = y % COLUMN_SIZE;
-        video_memory = video_memory + y;
+        if (value == '\n')
+            video_memory = video_memory + y;
+        else
+            video_memory = video_memory - (COLUMN_SIZE - y);
+        return;
+
     } else {
         *video_memory = value;
         video_memory++;
         *video_memory = color;
         video_memory++;
+
     }
 }
 
