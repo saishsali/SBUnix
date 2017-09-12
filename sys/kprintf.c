@@ -11,6 +11,7 @@ char *video_memory = (char *)VIDEO_MEM_START;
 
 void print_character(char value, int color) {
     char temp[COLUMN_SIZE] = {' '};
+
     if (video_memory >= (char *)VIDEO_MEM_END) {
         video_memory = (char *)VIDEO_MEM_START;
         video_memory = memcpy((char*)video_memory, (char*)(video_memory + COLUMN_SIZE), ROW_SIZE * COLUMN_SIZE - COLUMN_SIZE);
@@ -18,19 +19,15 @@ void print_character(char value, int color) {
         video_memory = memcpy((char*)video_memory, temp, COLUMN_SIZE);
     }
 
-    if (value == '\n' || value == '\r') {
-        int y = (int)((char*)VIDEO_MEM_END - video_memory);
-        y = y % COLUMN_SIZE;
-        video_memory += y;
-        if (value == '\r')
-            video_memory -= COLUMN_SIZE;
-
+    if (value == '\n') {
+        video_memory += ((int)((char*)VIDEO_MEM_END - video_memory) % COLUMN_SIZE);
+    } else if (value == '\r') {
+        video_memory -= ((int)(video_memory - (char*)VIDEO_MEM_START) % COLUMN_SIZE);
     } else {
         *video_memory = value;
         video_memory++;
         *video_memory = color;
         video_memory++;
-
     }
 }
 
