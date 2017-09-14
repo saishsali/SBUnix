@@ -1,5 +1,7 @@
 #include <sys/defs.h>
 #include <sys/gdt.h>
+#include <sys/idt.h>
+#include <sys/pic.h>
 #include <sys/kprintf.h>
 #include <sys/tarfs.h>
 #include <sys/ahci.h>
@@ -43,7 +45,10 @@ void boot(void)
     (uint64_t*)&physbase,
     (uint64_t*)(uint64_t)loader_stack[4]
     );
-
+    init_pic();
+    // init_idt();
+    int i = 1234;
+    i++;
     kprintf("Mohit is %d years old\n", 23);
     kprintf(" hey sup\r");
     kprintf("come earlier than this");
