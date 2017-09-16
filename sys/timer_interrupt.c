@@ -1,8 +1,10 @@
 #include <sys/kprintf.h>
-int i = 1;
+int i = 0;
+int timer = 0;
 
 void timer_interrupt() {
-    i++;
-    kprintf("%d\n", i);
-    kprintf("Hello");
+    timer++;
+    if (timer % 18 == 0) {
+        kprintf("%d", ++i);
+    }
 }

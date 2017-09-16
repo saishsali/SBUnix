@@ -10,18 +10,21 @@
 char *video_memory = (char *)VIDEO_MEM_START;
 
 void print_character(char value, int color) {
-    char temp[COLUMN_SIZE] = {' '};
+    char blank[COLUMN_SIZE] = {' '};
 
+    // Scroll functionality
     if (video_memory >= (char *)VIDEO_MEM_END) {
         video_memory = (char *)VIDEO_MEM_START;
         video_memory = memcpy((char*)video_memory, (char*)(video_memory + COLUMN_SIZE), ROW_SIZE * COLUMN_SIZE - COLUMN_SIZE);
         video_memory = (char*)(VIDEO_MEM_END - COLUMN_SIZE);
-        video_memory = memcpy((char*)video_memory, temp, COLUMN_SIZE);
+        video_memory = memcpy((char*)video_memory, blank, COLUMN_SIZE);
     }
 
     if (value == '\n') {
+        // Move to the start of next row
         video_memory += ((int)((char*)VIDEO_MEM_END - video_memory) % COLUMN_SIZE);
     } else if (value == '\r') {
+        // Move to the start of the current row
         video_memory -= ((int)(video_memory - (char*)VIDEO_MEM_START) % COLUMN_SIZE);
     } else {
         *video_memory = value;
@@ -105,5 +108,4 @@ void kprintf(const char *fmt, ...)
             print_character(*iter, DEFAULT_COLOR);
         }
     }
-
 }

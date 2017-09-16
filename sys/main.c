@@ -49,11 +49,6 @@ void boot(void)
     (uint64_t*)&physbase,
     (uint64_t*)(uint64_t)loader_stack[4]
     );
-    int i = 1234;
-    i++;
-    kprintf("Mohit is %d years old\n", 23);
-    kprintf(" hey sup\r");
-    kprintf("come earlier than this");
 
     while(1);
 }
