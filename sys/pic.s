@@ -2,6 +2,7 @@
 
 .global _x86_64_asm_pic_remapping
 _x86_64_asm_pic_remapping:
+    cli
 
     movb $0x11, %al
     outb %al, $0x20
@@ -20,5 +21,7 @@ _x86_64_asm_pic_remapping:
     movb $0x01, %al
     outb %al, $0x21
     outb %al, $0xA1
+
+    sti
 
     retq
