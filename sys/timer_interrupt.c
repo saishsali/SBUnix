@@ -5,6 +5,6 @@ int timer = 0;
 void timer_interrupt() {
     timer++;
     if (timer % 18 == 0) {
-        kprintf("%d", ++i);
+        kprintf_pos(24, 75, "%d", ++i);
     }
 }

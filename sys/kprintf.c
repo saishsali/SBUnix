@@ -49,14 +49,11 @@ char *convert_decimal(unsigned int decimal, int base) {
     return result;
 }
 
-void kprintf(const char *fmt, ...)
-{
+// Parse and output to console
+void output(const char *fmt, va_list arguments) {
     int i;
     char c, *arg_value;
     const char *iter;
-    va_list arguments;
-
-    va_start(arguments, fmt);
     unsigned long pointer_arg_value;
 
     for(iter = fmt; *iter; iter++) {
@@ -108,4 +105,25 @@ void kprintf(const char *fmt, ...)
             print_character(*iter, DEFAULT_COLOR);
         }
     }
+}
+
+void kprintf(const char *fmt, ...)
+{
+    va_list arguments;
+
+    va_start(arguments, fmt);
+    output(fmt, arguments);
+    va_end(arguments);
+}
+
+// Print at a specific position on the console
+void kprintf_pos(int row, int column, const char *fmt, ...) {
+    char *vm_ptr = video_memory;
+    va_list arguments;
+
+    va_start(arguments, fmt);
+    video_memory = (char *)VIDEO_MEM_START + row * COLUMN_SIZE + column * 2;
+    output(fmt, arguments);
+    va_end(arguments);
+    video_memory = vm_ptr;
 }

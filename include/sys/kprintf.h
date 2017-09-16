@@ -2,5 +2,6 @@
 #define __KPRINTF_H
 
 void kprintf(const char *fmt, ...);
+void kprintf_pos(int row, int column, const char *fmt, ...);
 
 #endif
