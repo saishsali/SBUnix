@@ -4,6 +4,7 @@
 .global isr1
 
 isr0:
+    cli
     # Saves the processor state
     pushq %rax
     pushq %rbx
@@ -30,12 +31,14 @@ isr0:
     movb $0x20, %al
     outb %al, $0x20
 
+    sti
     iretq
 
 
 
 isr1:
-    
+        
+    cli
     pushq %rax
     pushq %rbx
     pushq %rcx
@@ -62,4 +65,5 @@ isr1:
     movb $0x20, %al
     outb %al, $0x20
 
+    sti
     iretq
