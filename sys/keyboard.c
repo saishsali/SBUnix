@@ -1,12 +1,14 @@
-#ifndef __KEYBOARD_SCANCODE_H
-#define __KEYBOARD_SCANCODE_H
+#include <sys/kprintf.h>
+#include <sys/io.h>
+#define POS_X 24
+#define POS_Y 74
+#define CONTROL_SC 29
+#define LEFT_SHIFT_SC 0x2A
+#define RIGHT_SHIFT_SC 0x36
+#define SIZE 0x80
 
-/* KBDUS means US Keyboard Layout. This is a scancode table
-*  used to layout a standard US keyboard. I have left some
-*  comments in to give you an idea of what key is what, even
-*  though I set it's array index to 0. You can change that to
-*  whatever you want using a macro, if you wish! */
-unsigned char kbdus[128] =
+// Scancode to ASCII mapping
+unsigned char scancode_ascii[SIZE] =
 {
     0,  27, '1', '2', '3', '4', '5', '6', '7', '8',	/* 9 */
     '9', '0', '-', '=', '\b',	/* Backspace */
@@ -46,7 +48,8 @@ unsigned char kbdus[128] =
     0,	/* All other keys are undefined */
 };
 
-unsigned char shift_mappings[128] =
+// Scancode to ASCII mapping for shift keys
+unsigned char scancode_ascii_shift[SIZE] =
 {
     0,  27, '!', '@', '#', '$', '%', '^', '&', '*', /* 9 */
     '(', ')', '_', '+', '\b',   /* Backspace */
@@ -86,4 +89,51 @@ unsigned char shift_mappings[128] =
     0,  /* All other keys are undefined */
 };
 
-#endif
+int control = 0, shift = 0;
+
+int shift_key(int scancode) {
+	if (scancode == LEFT_SHIFT_SC || scancode == RIGHT_SHIFT_SC) {
+		shift = 1;
+		return 1;
+	}
+
+	return 0;
+}
+
+int control_key(int scancode) {
+	if (scancode == CONTROL_SC) {
+		control = 1;
+		kprintf_pos(POS_X, POS_Y, "^");
+		return 1;
+	}
+
+	return 0;
+}
+
+void keyboard_interrupt() {
+	int scancode = inb(0x60), y = POS_Y;
+	char c = 0;
+
+	if (scancode < SIZE) {
+		if (shift_key(scancode)) {
+			return;
+		} else if (control_key(scancode)) {
+			return;
+		}
+
+		if (shift == 1) {
+			c = scancode_ascii_shift[scancode];
+			shift = 0;
+		} else {
+			if (control == 1) {
+				y++;
+				control = -1;
+			} else if (control == -1) {
+				kprintf_pos(POS_X, POS_Y + 1, " ");
+			}
+			c = scancode_ascii[scancode];
+		}
+
+		kprintf_pos(POS_X, y, "%c", c);
+	}
+}

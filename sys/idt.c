@@ -6,7 +6,6 @@ extern void isr0();
 extern void isr32();
 extern void isr33();
 
-
 // Interrupt Descriptor Table
 struct IDT {
     uint16_t offset_1; // offset 0 -> 15

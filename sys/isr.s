@@ -3,7 +3,11 @@
 .macro INTERRUPT_HANDLER num
     .global isr\num
     isr\num:
+
+        # Clear interrupt
         cli
+
+        # Push all registers
         pushq %rax
         pushq %rbx
         pushq %rcx
@@ -16,6 +20,7 @@
 
         call interrupt_handler\num
 
+        # Restore all registers
         popq %r9
         popq %r8
         popq %rdi
@@ -30,6 +35,7 @@
         movb $0x20, %al
         outb %al, $0x20
 
+        # Set interrupt
         sti
         iretq
 .endm
