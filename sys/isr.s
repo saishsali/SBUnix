@@ -1,69 +1,39 @@
 .text
 
-.global isr0
-.global isr1
+.macro INTERRUPT_HANDLER num
+    .global isr\num
+    isr\num:
+        cli
+        pushq %rax
+        pushq %rbx
+        pushq %rcx
+        pushq %rdx
+        pushq %rbp
+        pushq %rsi
+        pushq %rdi
+        pushq %r8
+        pushq %r9
 
-isr0:
-    cli
-    # Saves the processor state
-    pushq %rax
-    pushq %rbx
-    pushq %rcx
-    pushq %rdx
-    pushq %rbp
-    pushq %rsi
-    pushq %r8
-    pushq %r9
+        call interrupt_handler\num
 
-    call timer_interrupt
+        popq %r9
+        popq %r8
+        popq %rdi
+        popq %rsi
+        popq %rbp
+        popq %rdx
+        popq %rcx
+        popq %rbx
+        popq %rax
 
-    # Restores the stack frame
-    popq %r9
-    popq %r8
-    popq %rsi
-    popq %rbp
-    popq %rdx
-    popq %rcx
-    popq %rbx
-    popq %rax
+        # End-of-interrupt command
+        movb $0x20, %al
+        outb %al, $0x20
 
-    # End-of-interrupt command
-    movb $0x20, %al
-    outb %al, $0x20
+        sti
+        iretq
+.endm
 
-    sti
-    iretq
-
-
-
-isr1:
-        
-    cli
-    pushq %rax
-    pushq %rbx
-    pushq %rcx
-    pushq %rdx
-    pushq %rbp
-    pushq %rsi
-    pushq %r8
-    pushq %r9
-
-    call keyboard_interrupt
-
-    # Restores the stack frame
-    popq %r9
-    popq %r8
-    popq %rsi
-    popq %rbp
-    popq %rdx
-    popq %rcx
-    popq %rbx
-    popq %rax
-    
-
-    # End-of-interrupt command
-    movb $0x20, %al
-    outb %al, $0x20
-
-    sti
-    iretq
+INTERRUPT_HANDLER 0
+INTERRUPT_HANDLER 32
+INTERRUPT_HANDLER 33

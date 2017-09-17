@@ -3,9 +3,11 @@
 #define SIZE 256
 
 extern void isr0();
-extern void isr1();
+extern void isr32();
+extern void isr33();
 
-// Interrup Descriptor Table
+
+// Interrupt Descriptor Table
 struct IDT {
     uint16_t offset_1; // offset 0 -> 15
     uint16_t selector;
@@ -28,6 +30,8 @@ IDT idt[SIZE];
 typedef struct IDT_ptr IDT_ptr;
 IDT_ptr idt_ptr;
 
+void _x86_64_asm_lidt(IDT_ptr *idt_ptr);
+
 // Set properties of IDT entry
 void set_idt(int num, uint64_t base, uint8_t type_attr) {
     idt[num].type_attr = type_attr;
@@ -36,34 +40,32 @@ void set_idt(int num, uint64_t base, uint8_t type_attr) {
     idt[num].offset_3 = (base >> 32) & 0xFFFFFFFF;
 }
 
-void _x86_64_asm_lidt(IDT_ptr *idt_ptr);
-
 void init_idt() {
     int i, type_attr;
-    idt_ptr.limit = sizeof(IDT) * 256 - 1;
-    idt_ptr.base = (uint64_t)&idt;
+    idt_ptr.limit = sizeof(IDT) * 256 - 1; // Size of the table - 1
+    idt_ptr.base = (uint64_t)&idt; // Virtual address of the table
 
     // Load IDT
     _x86_64_asm_lidt(&idt_ptr);
 
     for (i = 0; i < SIZE; i++) {
         // Single kernel stack
-        idt[i].ist = 0;
+        idt[i].ist = 0x00;
 
         // target ring (RPL) = 0, GDT = 0 and index  = 1
-        idt[i].selector = 8;
+        idt[i].selector = 0x08;
     }
 
     // 32-bit Interrupt gate: 0x8E (P=1, DPL=00b, S=0, type=1110b => type_attr=1000_1110b=0x8E)
     type_attr = 0x8E;
 
     // CPU exceptions
-    for (i = 0; i < 31; i++)
-        set_idt(i, (uint64_t)isr1, type_attr);
+    for (i = 0; i < 32; i++)
+        set_idt(i, (uint64_t)isr0, type_attr);
 
     // Timer Interrupt
-    set_idt(0x20, (uint64_t)isr0, type_attr);
+    set_idt(0x20, (uint64_t)isr32, type_attr);
 
     // Keyboard Interrupt
-    set_idt(0x21, (uint64_t)isr1, type_attr);
+    set_idt(0x21, (uint64_t)isr33, type_attr);
 }

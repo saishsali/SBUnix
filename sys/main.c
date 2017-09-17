@@ -1,11 +1,11 @@
 #include <sys/defs.h>
 #include <sys/gdt.h>
 #include <sys/idt.h>
+#include <sys/pit.h>
 #include <sys/pic.h>
 #include <sys/kprintf.h>
 #include <sys/tarfs.h>
 #include <sys/ahci.h>
-#include <sys/pit.h>
 
 #define INITIAL_STACK_SIZE 4096
 uint8_t initial_stack[INITIAL_STACK_SIZE]__attribute__((aligned(16)));
@@ -15,11 +15,11 @@ extern char kernmem, physbase;
 void start(uint32_t *modulep, void *physbase, void *physfree)
 {
     struct smap_t {
-    uint64_t base, length;
-    uint32_t type;
+        uint64_t base, length;
+        uint32_t type;
     }__attribute__((packed)) *smap;
-    while(modulep[0] != 0x9001) modulep += modulep[1]+2;
-    for(smap = (struct smap_t*)(modulep+2); smap < (struct smap_t*)((char*)modulep+modulep[1]+2*4); ++smap) {
+    while (modulep[0] != 0x9001) modulep += modulep[1] + 2;
+    for(smap = (struct smap_t*)(modulep + 2); smap < (struct smap_t*)((char*)modulep+modulep[1] + 2 * 4); ++smap) {
     if (smap->type == 1 /* memory */ && smap->length != 0) {
         kprintf("Available Physical Memory [%p-%p]\n", smap->base, smap->base + smap->length);
     }
@@ -34,11 +34,11 @@ void boot(void)
     register char *temp1;
     for(temp1 = (char*)0xb8001; temp1 < (char*)0xb8000+160*25; temp1 += 2) *temp1 = 7 /* white */;
     __asm__(
-    "cli;"
-    "movq %%rsp, %0;"
-    "movq %1, %%rsp;"
-    :"=g"(loader_stack)
-    :"r"(&initial_stack[INITIAL_STACK_SIZE])
+        "cli;"
+        "movq %%rsp, %0;"
+        "movq %1, %%rsp;"
+        :"=g"(loader_stack)
+        :"r"(&initial_stack[INITIAL_STACK_SIZE])
     );
     init_gdt();
     init_idt();
@@ -46,9 +46,9 @@ void boot(void)
     init_pit();
 
     start(
-    (uint32_t*)((char*)(uint64_t)loader_stack[3] + (uint64_t)&kernmem - (uint64_t)&physbase),
-    (uint64_t*)&physbase,
-    (uint64_t*)(uint64_t)loader_stack[4]
+        (uint32_t*)((char*)(uint64_t)loader_stack[3] + (uint64_t)&kernmem - (uint64_t)&physbase),
+        (uint64_t*)&physbase,
+        (uint64_t*)(uint64_t)loader_stack[4]
     );
 
     clear_screen();
