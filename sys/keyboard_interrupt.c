@@ -6,7 +6,6 @@
 #define control_scan_code 29
 static int print_pos = initial_pos_y;
 
-
 void keyboard_interrupt() {
 	int x = inb(0x60);
 	char c;
