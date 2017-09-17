@@ -44,11 +44,13 @@ void boot(void)
     init_idt();
     init_pic();
     init_pit();
+
     start(
     (uint32_t*)((char*)(uint64_t)loader_stack[3] + (uint64_t)&kernmem - (uint64_t)&physbase),
     (uint64_t*)&physbase,
     (uint64_t*)(uint64_t)loader_stack[4]
     );
 
+    clear_screen();
     while(1);
 }

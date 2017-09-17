@@ -3,5 +3,6 @@
 
 void kprintf(const char *fmt, ...);
 void kprintf_pos(int row, int column, const char *fmt, ...);
+void clear_screen();
 
 #endif
