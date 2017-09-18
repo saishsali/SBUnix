@@ -52,5 +52,5 @@ void boot(void)
     );
 
     clear_screen();
-    while(1);
+    while(1) __asm__ volatile ("hlt");
 }
