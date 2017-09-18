@@ -1,9 +1,6 @@
+unsigned char _x86_64_asm_inb(unsigned short int port);
+
 unsigned char inb (unsigned short int port) {
-	unsigned char val;
-	__asm__ __volatile__(
-		"inb %1, %0;"
-		: "=r" (val)
-		: "Nd" (port)
-	);
-	return  val;
+    unsigned char ch = _x86_64_asm_inb(port);
+    return ch;
 }
