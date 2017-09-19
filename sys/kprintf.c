@@ -16,7 +16,7 @@ void scroll() {
 
     // If current address exceeds video memory last address
     if (video_memory >= (char *)VIDEO_MEM_END) {
-        video_memory = memcpy((char*)VIDEO_MEM_START, (char*)(VIDEO_MEM_START + COLUMN_SIZE), ROW_SIZE * COLUMN_SIZE - COLUMN_SIZE);
+        video_memory = memcpy((char*)VIDEO_MEM_START, (char*)(VIDEO_MEM_START + COLUMN_SIZE), (ROW_SIZE - 1) * COLUMN_SIZE);
         video_memory = memset((char*)(VIDEO_MEM_END - COLUMN_SIZE), 0, COLUMN_SIZE);
 
         // Set Default color to white
