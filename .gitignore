@@ -6,3 +6,5 @@
 obj/
 *.img
 *.iso
+rootfs/bin
+/kernel
