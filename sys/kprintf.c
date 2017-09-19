@@ -2,12 +2,14 @@
 #include <sys/string.h>
 #include <sys/stdarg.h>
 #define VIDEO_MEM_START 0xb8000
-#define VIDEO_MEM_END 0xb8fa0
 #define ROW_SIZE 25
 #define COLUMN_SIZE 160
+#define VIDEO_MEM_END (VIDEO_MEM_START + (ROW_SIZE - 1) * COLUMN_SIZE) // ROW_SIZE = 25th row is reserved for timer
 #define SIZE 100
+#define DEFAULT_COLOR 7
 
 char *video_memory = (char *)VIDEO_MEM_START;
+int scroll_flag = 1;
 
 void scroll() {
     if (video_memory >= (char *)VIDEO_MEM_END) {
@@ -38,7 +40,8 @@ int control_character(char c) {
 }
 
 void print_character(char c) {
-    scroll();
+    if (scroll_flag == 1)
+        scroll();
     if (!control_character(c)) {
         *video_memory = c;
         video_memory += 2;
@@ -120,14 +123,21 @@ void kprintf(const char *fmt, ...)
 void kprintf_pos(int row, int column, const char *fmt, ...) {
     char *vm = video_memory;
     va_list arguments;
-
+    scroll_flag = 0;
     va_start(arguments, fmt);
     video_memory = (char *)VIDEO_MEM_START + row * COLUMN_SIZE + column * 2;
     output(fmt, arguments);
     va_end(arguments);
     video_memory = vm;
+    scroll_flag = 1;
 }
 
+// Clear entire screen and set default color to white
 void clear_screen() {
-    memset(video_memory, 0, ROW_SIZE * COLUMN_SIZE);
+    char *vm = (char *)VIDEO_MEM_START;
+    memset(vm, 0, ROW_SIZE * COLUMN_SIZE);
+
+    // Set Default color to white
+    for (vm = (char*)(VIDEO_MEM_START + 1); vm < (char*)(VIDEO_MEM_START + ROW_SIZE * COLUMN_SIZE); vm += 2)
+        *vm = DEFAULT_COLOR;
 }

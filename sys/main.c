@@ -1,7 +1,6 @@
 #include <sys/defs.h>
 #include <sys/gdt.h>
 #include <sys/idt.h>
-#include <sys/pit.h>
 #include <sys/pic.h>
 #include <sys/kprintf.h>
 #include <sys/tarfs.h>
@@ -14,6 +13,7 @@ extern char kernmem, physbase;
 
 void start(uint32_t *modulep, void *physbase, void *physfree)
 {
+    clear_screen();
     struct smap_t {
         uint64_t base, length;
         uint32_t type;
@@ -43,7 +43,6 @@ void boot(void)
     init_gdt();
     init_idt();
     init_pic();
-    init_pit();
 
     start(
         (uint32_t*)((char*)(uint64_t)loader_stack[3] + (uint64_t)&kernmem - (uint64_t)&physbase),
@@ -51,6 +50,5 @@ void boot(void)
         (uint64_t*)(uint64_t)loader_stack[4]
     );
 
-    clear_screen();
     while(1) __asm__ volatile ("hlt");
 }

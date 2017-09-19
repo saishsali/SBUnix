@@ -2,7 +2,7 @@
 
 .global _x86_64_asm_pic_remapping
 _x86_64_asm_pic_remapping:
-    
+
     # al is used for i/o port access
     movb $0x11, %al
     outb %al, $0x20  # Restart PIC1. 0x20 is command port for PIC1
@@ -22,4 +22,5 @@ _x86_64_asm_pic_remapping:
     outb %al, $0x21
     outb %al, $0xA1
 
+    sti
     retq

@@ -1,7 +1,7 @@
 #include <sys/kprintf.h>
 #include <sys/io.h>
-#define POS_X 24
-#define POS_Y 74
+#define ROW 24
+#define COLUMN 77
 #define CONTROL_SC 29
 #define LEFT_SHIFT_SC 0x2A
 #define RIGHT_SHIFT_SC 0x36
@@ -103,7 +103,7 @@ int shift_key(int scancode) {
 int control_key(int scancode) {
     if (scancode == CONTROL_SC) {
         control = 1;
-        kprintf_pos(POS_X, POS_Y, "^");
+        kprintf_pos(ROW, COLUMN, "^");
         return 1;
     }
 
@@ -111,7 +111,7 @@ int control_key(int scancode) {
 }
 
 void keyboard_interrupt() {
-    int scancode = inb(0x60), y = POS_Y;
+    int scancode = inb(0x60), y = COLUMN;
     char c = 0;
 
     if (scancode < SIZE) {
@@ -129,11 +129,11 @@ void keyboard_interrupt() {
                 y++;
                 control = -1;
             } else if (control == -1) {
-                kprintf_pos(POS_X, POS_Y + 1, " ");
+                kprintf_pos(ROW, COLUMN + 1, " ");
             }
             c = scancode_ascii[scancode];
         }
 
-        kprintf_pos(POS_X, y, "%c", c);
+        kprintf_pos(ROW, y, "%c", c);
     }
 }
