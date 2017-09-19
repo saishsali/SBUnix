@@ -12,11 +12,10 @@ char *video_memory = (char *)VIDEO_MEM_START;
 int scroll_flag = 1;
 
 void scroll() {
+    // If current address exceeds video memory last address
     if (video_memory >= (char *)VIDEO_MEM_END) {
-        video_memory = (char *)VIDEO_MEM_START;
-        video_memory = memcpy((char*)video_memory, (char*)(video_memory + COLUMN_SIZE), ROW_SIZE * COLUMN_SIZE - COLUMN_SIZE);
-        video_memory = (char*)(VIDEO_MEM_END - COLUMN_SIZE);
-        video_memory = memset(video_memory, 0, COLUMN_SIZE);
+        video_memory = memcpy((char*)VIDEO_MEM_START, (char*)(VIDEO_MEM_START + COLUMN_SIZE), ROW_SIZE * COLUMN_SIZE - COLUMN_SIZE);
+        video_memory = memset((char*)(VIDEO_MEM_END - COLUMN_SIZE), 0, COLUMN_SIZE);
     }
 }
 

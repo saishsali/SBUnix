@@ -1,13 +1,13 @@
 #include <sys/kprintf.h>
 #include <sys/io.h>
 #define ROW 24
-#define COLUMN 77
+#define COLUMN 55
 #define CONTROL_SC 29
 #define LEFT_SHIFT_SC 0x2A
 #define RIGHT_SHIFT_SC 0x36
 #define SIZE 0x80
 
-// Scancode to ASCII mapping
+// Scancode to ASCII mapping (src: https://gist.github.com/davazp/d2fde634503b2a5bc664)
 unsigned char scancode_ascii[SIZE] =
 {
     0,  27, '1', '2', '3', '4', '5', '6', '7', '8', /* 9 */
@@ -59,7 +59,7 @@ unsigned char scancode_ascii_shift[SIZE] =
     0,          /* 29   - Control */
     'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ':',   /* 39 */
     '"', '~',   0,     /* Left shift */
-    '|', 'Z', 'X', 'C', 'V', 'B', 'n',         /* 49 */
+    '|', 'Z', 'X', 'C', 'V', 'B', 'N',         /* 49 */
     'M', '<', '>', '?',   0,                /* Right shift */
     '*',
     0,  /* Alt */
@@ -103,7 +103,6 @@ int shift_key(int scancode) {
 int control_key(int scancode) {
     if (scancode == CONTROL_SC) {
         control = 1;
-        kprintf_pos(ROW, COLUMN, "^");
         return 1;
     }
 
@@ -111,29 +110,26 @@ int control_key(int scancode) {
 }
 
 void keyboard_interrupt() {
-    int scancode = inb(0x60), y = COLUMN;
-    char c = 0;
+    int scancode = inb(0x60);
+    char ch1 = 0, ch2 = 0;
 
+    // If a key is pressed
     if (scancode < SIZE) {
-        if (shift_key(scancode)) {
+        if (shift_key(scancode)) { // If a shift key is pressed
             return;
-        } else if (control_key(scancode)) {
+        } else if (control_key(scancode)) { // If a control key is pressed
             return;
-        }
-
-        if (shift == 1) {
-            c = scancode_ascii_shift[scancode];
+        } else if (shift == 1) { // If a shift key was pressed
+            ch1 = scancode_ascii_shift[scancode];
             shift = 0;
+        } else if (control == 1) { // If a control key was pressed
+            ch1 = '^';
+            ch2 = scancode_ascii_shift[scancode];
+            control = 0;
         } else {
-            if (control == 1) {
-                y++;
-                control = -1;
-            } else if (control == -1) {
-                kprintf_pos(ROW, COLUMN + 1, " ");
-            }
-            c = scancode_ascii[scancode];
+            ch1 = scancode_ascii[scancode];
         }
 
-        kprintf_pos(ROW, y, "%c", c);
+        kprintf_pos(ROW, COLUMN, "Last pressed glyph: %c%c", ch1, ch2);
     }
 }
