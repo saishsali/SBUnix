@@ -6,7 +6,6 @@
 
 #define AHCI_CLASS 0x01
 #define AHCI_SUBCLASS 0x06
-
 #define SATA_SIG_ATA    0x00000101  // SATA drive
 #define SATA_SIG_ATAPI  0xEB140101  // SATAPI drive
 #define SATA_SIG_SEMB   0xC33C0101  // Enclosure management bridge
@@ -69,6 +68,7 @@ void probe_port(hba_mem_t *abar)
     }
 }
 
+
 uint16_t pci_read_word(uint8_t bus, uint8_t slot, uint8_t func, uint8_t offset) {
     uint32_t address;
     uint32_t lbus  = (uint32_t)bus;
@@ -111,21 +111,21 @@ uint64_t pci_read_bar (uint8_t bus, uint8_t slot, uint8_t func, uint8_t offset) 
 }
 
 
-uint16_t get_device_info(uint8_t bus, uint8_t device) {
-    uint16_t vendor_id, device_id;
-    uint64_t bar5, class, sub_class;
+void get_device_info(uint8_t bus, uint8_t device) {
+    uint16_t vendor_id, device_id, class_subclass;
+    uint32_t bar5;
+
     if ((vendor_id = pci_read_word(bus, device, 0 ,0)) != 0xFFFF) {
         device_id = pci_read_word(bus, device, 0 , 2);
-        class = (pci_read_bar(bus, device, 0 , 8) & 0xFFFF0000) >> 24;
-        sub_class = (pci_read_bar(bus, device, 0 ,9) & 0xFF0000) >> 16;
-        if (class == AHCI_CLASS && sub_class == AHCI_SUBCLASS) {
+        class_subclass = pci_read_word(bus, device, 0 , 10);
+
+        if (((class_subclass & 0xFF00) >> 8) == AHCI_CLASS && (class_subclass & 0x00FF) == AHCI_SUBCLASS) {
             kprintf("AHCI controller found\n");
             kprintf("Vendor ID: %x, Device ID: %x\n", vendor_id, device_id);
             bar5 = pci_read_bar(bus, device, 0 , 0x24);
             probe_port((hba_mem_t *)(0xFFFFFFFF00000000 + (uint64_t)bar5));
         }
     }
-    return -1;
 }
 
 void check_all_buses() {
