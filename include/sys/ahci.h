@@ -16,6 +16,7 @@
 #define AHCI_DEV_SATAPI 0xEB140101  // SATAPI drive
 #define AHCI_DEV_SEMB   0xC33C0101  // Enclosure management bridge
 #define AHCI_DEV_PM     0x96690101  // Port multiplier
+#define AHCI_DEV_NULL 0
 
 #define ATA_STATUS_ERR  0x01 // Indicates an error occurred. Send a new command to clear it (or nuke it with a Software Reset).
 #define ATA_STATUS_DRQ  0x08 // Set when the drive has PIO data to transfer, or is ready to accept PIO data.
