@@ -1,58 +1,52 @@
 #include <sys/kprintf.h>
-#include <sys/pci.h>
-#include <sys/defs.h>
+#include <sys/io.h>
 
-
-uint32_t inl(uint16_t address) {
-	uint32_t val;
-	__asm__(
-		"inl %w1, %0;"
-		: "=a" (val)
-		: "Nd" (address)
-	);
-	return  val;
-}
-void outl (uint16_t port, uint32_t data) {
-	__asm__( "outl %0, %w1" : : "a"(data), "Nd"(port) );
-} 
-
-uint16_t pci_read_word (uint8_t bus, uint8_t slot, uint8_t func, uint8_t offset) {
+uint16_t pci_read_word(uint8_t bus, uint8_t slot, uint8_t func, uint8_t offset) {
     uint32_t address;
     uint32_t lbus  = (uint32_t)bus;
     uint32_t lslot = (uint32_t)slot;
     uint32_t lfunc = (uint32_t)func;
     uint16_t tmp = 0;
 
-    /* create configuration address as per Figure 1 */
+    /*
+        - Bit 31: Enable bit
+        - Bits 30 - 24: Reserved
+        - Bits 23 - 16: Bus Number
+        - Bits 15 - 11: Device Numbe
+        - Bits 10 - 8: Function Number
+        - Bits 7 - 2: Register Number
+        - Bits 1 - 0: 00
+    */
     address = (uint32_t)((lbus << 16) | (lslot << 11) | (lfunc << 8) | (offset & 0xfc) | ((uint32_t)0x80000000));
 
-    /* write out the address */
+    /* write out the address to CONFIG_ADDRESS I/O location (0xCF8) */
     outl(0xCF8, address);
-     /* read in the data */
+
+    /* read in the data from CONFIG_DATA I/O location (0xCFC) */
     /* (offset & 2) * 8) = 0 will choose the first word of the 32 bits register */
+    // return (uint16_t)((inl(0xCFC) >> ((offset & 2) * 8)) & 0xffff);
     tmp = (uint16_t)((inl(0xCFC) >> ((offset & 2) * 8)) & 0xffff);
+
     return (tmp);
 }
 
-uint16_t get_device_info(uint8_t bus, uint8_t device) {
-    uint16_t vendor_id, device_id, class;
-    if ((vendor_id = pci_read_word(bus, device, 0 ,0)) != 0xFFFF) {
-        device_id = pci_read_word(bus, device, 0 ,2);
-        class = pci_read_word(bus, device, 0 ,9);
-        kprintf("device  %x. vendor_id %x.  class %x\n", device_id, vendor_id, class);
-        return vendor_id;
+void device_info(uint8_t bus, uint8_t slot) {
+    uint16_t vendor, device;
+
+    if ((vendor = pci_read_word(bus, slot, 0, 0)) != 0xFFFF) {
+        device = pci_read_word(bus, slot, 0, 2);
+        if (device == 0x2922) {
+            kprintf("AHCI Controller located\nVendor ID: %x, Device ID: %x \n", vendor, device);
+        }
     }
-    return -1;
 }
 
 void check_all_buses() {
- 	uint8_t bus, device;
-    uint16_t vendor_id;
- 	for (bus = 0; bus < 255; bus++) {
-    	for (device = 0; device < 32; device++) {
-    		vendor_id = get_device_info(bus, device);
-            if (vendor_id == -1)
-                continue;
-    	}
-    }
+ 	uint8_t bus = 0, slot;
+
+    do {
+    	for (slot = 0; slot < 32; slot++)
+            device_info(bus, slot);
+        bus++;
+    } while (bus != 0);
  }
