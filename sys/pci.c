@@ -2,6 +2,9 @@
 #include <sys/pci.h>
 #include <sys/defs.h>
 
+#define AHCI_CLASS 0x01
+#define AHCI_SUBCLASS 0x02
+
 
 uint32_t inl(uint16_t address) {
 	uint32_t val;
@@ -59,9 +62,9 @@ uint16_t get_device_info(uint8_t bus, uint8_t device) {
     uint32_t bar5;
     if ((vendor_id = pci_read_word(bus, device, 0 ,0)) != 0xFFFF) {
         device_id = pci_read_word(bus, device, 0 , 2);
-        class = (pci_read_word(bus, device, 0 , 10) & 0xFF00) >> 8;
-        sub_class = pci_read_word(bus, device, 0 ,10) & 0x00FF;
-        if (class == 0x01 && sub_class == 0x06) {
+        class = (pci_read_word(bus, device, 0 , 8) & 0xFF00) >> 8;
+        sub_class = pci_read_word(bus, device, 0 ,9) & 0x00FF;
+        if (class == AHCI_CLASS && sub_class == AHCI_SUBCLASS) {
             kprintf("\n Ahci controller found");
             kprintf("\n vendor id %x, devcie id %x", vendor_id, device_id);
             bar5 = pci_read_bar(bus, device, 0 , 0x24);
