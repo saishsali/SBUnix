@@ -2,6 +2,7 @@
 #include <sys/pci.h>
 #include <sys/defs.h>
 #include <sys/ahci.h>
+#include <sys/io.h>
 
 #define AHCI_CLASS 0x01
 #define AHCI_SUBCLASS 0x06
@@ -68,32 +69,28 @@ void probe_port(hba_mem_t *abar)
     }
 }
 
-uint32_t inl(uint16_t address) {
-	uint32_t val;
-	__asm__(
-		"inl %w1, %0;"
-		: "=a" (val)
-		: "Nd" (address)
-	);
-	return  val;
-}
-void outl (uint16_t port, uint32_t data) {
-	__asm__( "outl %0, %w1" : : "a"(data), "Nd"(port) );
-} 
-
-uint16_t pci_read_word (uint8_t bus, uint8_t slot, uint8_t func, uint8_t offset) {
+uint16_t pci_read_word(uint8_t bus, uint8_t slot, uint8_t func, uint8_t offset) {
     uint32_t address;
     uint32_t lbus  = (uint32_t)bus;
     uint32_t lslot = (uint32_t)slot;
     uint32_t lfunc = (uint32_t)func;
     uint16_t tmp = 0;
 
-    /* create configuration address as per Figure 1 */
+    /*
+        - Bit 31: Enable bit
+        - Bits 30 - 24: Reserved
+        - Bits 23 - 16: Bus Number
+        - Bits 15 - 11: Device Numbe
+        - Bits 10 - 8: Function Number
+        - Bits 7 - 2: Register Number
+        - Bits 1 - 0: 00
+    */
     address = (uint32_t)((lbus << 16) | (lslot << 11) | (lfunc << 8) | (offset & 0xfc) | ((uint32_t)0x80000000));
 
-    /* write out the address */
+    /* write out the address to CONFIG_ADDRESS I/O location (0xCF8) */
     outl(0xCF8, address);
-     /* read in the data */
+
+    /* read in the data from CONFIG_DATA I/O location (0xCFC) */
     /* (offset & 2) * 8) = 0 will choose the first word of the 32 bits register */
     tmp = (uint16_t)((inl(0xCFC) >> ((offset & 2) * 8)) & 0xFFFF);
     return (tmp);
@@ -114,7 +111,6 @@ uint64_t pci_read_bar (uint8_t bus, uint8_t slot, uint8_t func, uint8_t offset) 
 }
 
 
-
 uint16_t get_device_info(uint8_t bus, uint8_t device) {
     uint16_t vendor_id, device_id;
     uint64_t bar5, class, sub_class;
@@ -123,25 +119,21 @@ uint16_t get_device_info(uint8_t bus, uint8_t device) {
         class = (pci_read_bar(bus, device, 0 , 8) & 0xFFFF0000) >> 24;
         sub_class = (pci_read_bar(bus, device, 0 ,9) & 0xFF0000) >> 16;
         if (class == AHCI_CLASS && sub_class == AHCI_SUBCLASS) {
-            kprintf("\n Ahci controller found");
-            kprintf("\n vendor id %x, devcie id %x", vendor_id, device_id);
+            kprintf("AHCI controller found\n");
+            kprintf("Vendor ID: %x, Device ID: %x\n", vendor_id, device_id);
             bar5 = pci_read_bar(bus, device, 0 , 0x24);
             probe_port((hba_mem_t *)(0xFFFFFFFF00000000 + (uint64_t)bar5));
-            kprintf("\n First disk connected address %x\n", 0xFFFFFFFF00000000 + (uint64_t)bar5);
         }
-        return vendor_id;
     }
     return -1;
 }
 
 void check_all_buses() {
- 	int bus, device;
-    uint16_t vendor_id;
- 	for (bus = 0; bus < 256; bus++) {
-    	for (device = 0; device < 32; device++) {
-    		vendor_id = get_device_info(bus, device);
-            if (vendor_id == -1)
-                continue;
-    	}
-    }
+ 	uint8_t bus = 0, slot;
+
+    do {
+    	for (slot = 0; slot < 32; slot++)
+            get_device_info(bus, slot);
+        bus++;
+    } while (bus != 0);
  }
