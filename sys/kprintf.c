@@ -58,6 +58,9 @@ char *decimal_conversion(unsigned long decimal, int base) {
     char *result = &buf[SIZE - 1], representation[] = "0123456789ABCDEF";
     int remainder;
 
+    if (decimal == 0)
+        return "0";
+
     while (decimal > 0) {
         remainder = decimal % base;
         decimal /= base;
