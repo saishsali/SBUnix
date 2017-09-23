@@ -27,8 +27,9 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
     }
     kprintf("physfree %p\n", (uint64_t)physfree);
     kprintf("tarfs in [%p:%p]\n", &_binary_tarfs_start, &_binary_tarfs_end);
-    check_all_buses();
+    init_pci();
 }
+
 void boot(void)
 {
     // note: function changes rsp, local stack variables can't be practically used
