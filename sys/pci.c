@@ -4,14 +4,14 @@
 #include <sys/ahci.h>
 #include <sys/io.h>
 
-#define AHCI_CLASS 0x01
-#define AHCI_SUBCLASS 0x06
-#define SATA_SIG_ATA    0x00000101  // SATA drive
-#define SATA_SIG_ATAPI  0xEB140101  // SATAPI drive
-#define SATA_SIG_SEMB   0xC33C0101  // Enclosure management bridge
-#define SATA_SIG_PM 0x96690101  // Port multiplier
-#define HBA_PORT_DET_PRESENT 3
-#define HBA_PORT_IPM_ACTIVE 1
+#define AHCI_CLASS              0x01
+#define AHCI_SUBCLASS           0x06
+#define SATA_SIG_ATA            0x00000101  // SATA drive
+#define SATA_SIG_ATAPI          0xEB140101  // SATAPI drive
+#define SATA_SIG_SEMB           0xC33C0101  // Enclosure management bridge
+#define SATA_SIG_PM             0x96690101  // Port multiplier
+#define HBA_PORT_DET_PRESENT    3
+#define HBA_PORT_IPM_ACTIVE     1
 
 // Check device type
 static int check_type(hba_port_t *port)
@@ -38,13 +38,13 @@ static int check_type(hba_port_t *port)
     }
 }
 
+// Search disk in ports impelemented
 void probe_port(hba_mem_t *abar)
 {
-    // Search disk in impelemented ports
     uint32_t pi = abar->pi;
-    kprintf("\n herer --- %x", abar->cap);
     int i = 0;
-    while (i<32) {
+
+    while (i < 32) {
         if (pi & 1) {
             int dt = check_type(&abar->ports[i]);
             if (dt == AHCI_DEV_SATA) {
@@ -64,7 +64,7 @@ void probe_port(hba_mem_t *abar)
             }
         }
         pi >>= 1;
-        i ++;
+        i++;
     }
 }
 
@@ -96,22 +96,22 @@ uint16_t pci_read_word(uint8_t bus, uint8_t slot, uint8_t func, uint8_t offset) 
     return (tmp);
 }
 
-uint64_t pci_read_bar (uint8_t bus, uint8_t slot, uint8_t func, uint8_t offset) {
+uint64_t pci_read_bar(uint8_t bus, uint8_t slot, uint8_t func, uint8_t offset) {
     uint32_t address;
     uint32_t lbus  = (uint32_t)bus;
     uint32_t lslot = (uint32_t)slot;
     uint32_t lfunc = (uint32_t)func;
-    uint64_t tmp = 0;
+    uint32_t tmp = 0;
 
     address = (uint32_t)((lbus << 16) | (lslot << 11) | (lfunc << 8) | (offset & 0xfc) | ((uint32_t)0x80000000));
 
     outl(0xCF8, address);
-    tmp = (uint64_t)(inl(0xCFC));
+    tmp = (uint32_t)(inl(0xCFC));
     return (tmp);
 }
 
 
-void get_device_info(uint8_t bus, uint8_t device) {
+void device_info(uint8_t bus, uint8_t device) {
     uint16_t vendor_id, device_id, class_subclass;
     uint32_t bar5;
 
@@ -123,17 +123,18 @@ void get_device_info(uint8_t bus, uint8_t device) {
             kprintf("AHCI controller found\n");
             kprintf("Vendor ID: %x, Device ID: %x\n", vendor_id, device_id);
             bar5 = pci_read_bar(bus, device, 0 , 0x24);
-            probe_port((hba_mem_t *)(0xFFFFFFFF00000000 + (uint64_t)bar5));
+            probe_port((hba_mem_t *)(0xFFFFFFFF00000000+(uint64_t)bar5));
         }
     }
 }
 
-void check_all_buses() {
+void init_pci() {
  	uint8_t bus = 0, slot;
 
+    // 256 buses, each with up to 32 devices
     do {
     	for (slot = 0; slot < 32; slot++)
-            get_device_info(bus, slot);
+            device_info(bus, slot);
         bus++;
     } while (bus != 0);
  }
