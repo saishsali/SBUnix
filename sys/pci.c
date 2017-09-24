@@ -12,21 +12,10 @@
 #define SATA_SIG_PM             0x96690101  // Port multiplier
 #define HBA_PORT_DET_PRESENT    3
 #define HBA_PORT_IPM_ACTIVE     1
-
-void load(uint64_t input_address, uint64_t output_address) {
-    __asm__ (
-        "movq %1, %%rax;"
-        "str %%rax;"
-        "ldr %%rax, %%rbx;"
-        "movq %%rbx, %0;"
-        : "=r" (output_address)
-        : "r" (input_address)
-        : "%rax"
-    );
-}
+#define BAR_MEM                 0x20000000
 
 // Check device type
-static int check_type(hba_port_t *port)
+int check_type(hba_port_t *port)
 {
     uint32_t ssts = port->ssts;
     uint8_t ipm = (ssts >> 8) & 0x0F;
@@ -55,9 +44,7 @@ void probe_port(hba_mem_t *abar)
 {
     uint32_t pi = abar->pi;
     int i = 0;
-    
     while (i < 32) {
-        kprintf("\n pi %x --- ", pi);
         if (pi & 1) {
             int dt = check_type(&abar->ports[i]);
             if (dt == AHCI_DEV_SATA) {
@@ -122,6 +109,19 @@ uint64_t pci_read_bar(uint8_t bus, uint8_t slot, uint8_t func, uint8_t offset) {
     return (tmp);
 }
 
+uint32_t pci_write_bar(uint8_t bus, uint8_t slot, uint8_t func, uint8_t offset) {
+    uint32_t address;
+    uint32_t lbus  = (uint32_t)bus;
+    uint32_t lslot = (uint32_t)slot;
+    uint32_t lfunc = (uint32_t)func;
+    uint32_t tmp = 0;
+
+    address = (uint32_t)((lbus << 16) | (lslot << 11) | (lfunc << 8) | (offset & 0xfc) | ((uint32_t)0x80000000));
+    outl(0xCF8, address);
+    outl(0xCFC, BAR_MEM);
+    tmp = (uint32_t)(inl(0xCFC));
+    return (tmp);
+}
 
 void device_info(uint8_t bus, uint8_t device) {
     uint16_t vendor_id, device_id, class_subclass;
@@ -135,8 +135,10 @@ void device_info(uint8_t bus, uint8_t device) {
             kprintf("AHCI controller found\n");
             kprintf("Vendor ID: %x, Device ID: %x\n", vendor_id, device_id);
             bar5 = pci_read_bar(bus, device, 0 , 0x24);
-            load(bar5, 0x20222);
-            probe_port((hba_mem_t *)((uint64_t)0x20222));
+            kprintf("Bar5: %x\n", bar5);
+            bar5 = pci_write_bar(bus, device, 0 , 0x24);
+            kprintf("Bar5: %x\n", bar5);
+            probe_port((hba_mem_t *)((uint64_t)(0xffffffff80000000 + BAR_MEM)));
         }
     }
 }
