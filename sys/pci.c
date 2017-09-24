@@ -13,6 +13,18 @@
 #define HBA_PORT_DET_PRESENT    3
 #define HBA_PORT_IPM_ACTIVE     1
 
+void load(uint64_t input_address, uint64_t output_address) {
+    __asm__ (
+        "movq %1, %%rax;"
+        "str %%rax;"
+        "ldr %%rax, %%rbx;"
+        "movq %%rbx, %0;"
+        : "=r" (output_address)
+        : "r" (input_address)
+        : "%rax"
+    );
+}
+
 // Check device type
 static int check_type(hba_port_t *port)
 {
@@ -43,8 +55,9 @@ void probe_port(hba_mem_t *abar)
 {
     uint32_t pi = abar->pi;
     int i = 0;
-
+    
     while (i < 32) {
+        kprintf("\n pi %x --- ", pi);
         if (pi & 1) {
             int dt = check_type(&abar->ports[i]);
             if (dt == AHCI_DEV_SATA) {
@@ -104,7 +117,6 @@ uint64_t pci_read_bar(uint8_t bus, uint8_t slot, uint8_t func, uint8_t offset) {
     uint32_t tmp = 0;
 
     address = (uint32_t)((lbus << 16) | (lslot << 11) | (lfunc << 8) | (offset & 0xfc) | ((uint32_t)0x80000000));
-
     outl(0xCF8, address);
     tmp = (uint32_t)(inl(0xCFC));
     return (tmp);
@@ -123,7 +135,8 @@ void device_info(uint8_t bus, uint8_t device) {
             kprintf("AHCI controller found\n");
             kprintf("Vendor ID: %x, Device ID: %x\n", vendor_id, device_id);
             bar5 = pci_read_bar(bus, device, 0 , 0x24);
-            probe_port((hba_mem_t *)(0xFFFFFFFF00000000+(uint64_t)bar5));
+            load(bar5, 0x20222);
+            probe_port((hba_mem_t *)((uint64_t)0x20222));
         }
     }
 }
