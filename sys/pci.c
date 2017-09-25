@@ -58,7 +58,6 @@ int find_cmdslot(hba_port_t *port)
 
 int read(hba_port_t *port, uint32_t startl, uint32_t starth, uint32_t count, uint8_t *buf)
 {
-    kprintf("Buf address %x\n", buf);
     port->is_rwc = (uint32_t)-1;   // Clear pending interrupt bits
     int spin = 0; // Spin lock timeout counter
     int i;
@@ -72,7 +71,7 @@ int read(hba_port_t *port, uint32_t startl, uint32_t starth, uint32_t count, uin
     cmdheader->w = 0;       // Read from device
     cmdheader->p = 1;
     cmdheader->c = 1;
-    cmdheader->prdtl = (uint16_t)((count - 1) >> 4) + 1;    // PRDT entries count
+    cmdheader->prdtl = (uint16_t)((count - 1) >> 3) + 1;    // PRDT entries count
 
     hba_cmd_tbl_t *cmdtbl = (hba_cmd_tbl_t*)(cmdheader->ctba);
     memset(cmdtbl, 0, sizeof(hba_cmd_tbl_t) + (cmdheader->prdtl - 1) * sizeof(hba_prdt_entry_t));
@@ -81,10 +80,10 @@ int read(hba_port_t *port, uint32_t startl, uint32_t starth, uint32_t count, uin
     for (i = 0; i < cmdheader->prdtl - 1; i++)
     {
         cmdtbl->prdt_entry[i].dba = (uint64_t)buf;
-        cmdtbl->prdt_entry[i].dbc = 8 * 1024; // 8K bytes
+        cmdtbl->prdt_entry[i].dbc = 4 * 1024; // 8K bytes
         cmdtbl->prdt_entry[i].i = 1;
         buf += 4 * 1024;  // 4K words
-        count -= 16;    // 16 sectors
+        count -= 8;    // 16 sectors
     }
 
     // Last entry
@@ -162,7 +161,7 @@ int write(hba_port_t *port, uint32_t startl, uint32_t starth, uint32_t count, ui
     cmdheader += slot;
     cmdheader->cfl = sizeof(fis_reg_h2d_t) / sizeof(uint32_t); // Command FIS size
     cmdheader->w = 1;       // Write to device
-    cmdheader->prdtl = (uint16_t)((count - 1) >> 4) + 1;    // PRDT entries count
+    cmdheader->prdtl = (uint16_t)((count - 1) >> 3) + 1;    // PRDT entries count
 
     hba_cmd_tbl_t *cmdtbl = (hba_cmd_tbl_t*)(cmdheader->ctba);
     memset(cmdtbl, 0, sizeof(hba_cmd_tbl_t) + (cmdheader->prdtl-1) * sizeof(hba_prdt_entry_t));
@@ -171,10 +170,10 @@ int write(hba_port_t *port, uint32_t startl, uint32_t starth, uint32_t count, ui
     for (i = 0; i < cmdheader->prdtl - 1; i++)
     {
         cmdtbl->prdt_entry[i].dba = (uint64_t)buf;
-        cmdtbl->prdt_entry[i].dbc = 8 * 1024; // 8K bytes
+        cmdtbl->prdt_entry[i].dbc = 4 * 1024; // 8K bytes
         cmdtbl->prdt_entry[i].i = 1;
         buf += 4 * 1024;  // 4K words
-        count -= 16;    // 16 sectors
+        count -= 8;    // 16 sectors
     }
 
     // Last entry
@@ -335,7 +334,7 @@ void probe_port()
     uint8_t *buf1 = (uint8_t *)0x30000;
     uint8_t *buf2 = (uint8_t *)0x9FF000;
 
-    int i = 0, j;
+    int i = 0, j, flag = 1;
     uint8_t k;
 
     kprintf("Before read buf address: %x\n", buf1);
@@ -361,15 +360,19 @@ void probe_port()
                         }
                         buf1 -= j;
 
-                        write(&abar->ports[i], k, 0, 8, buf1);
+                        write(&abar->ports[i], k * 8, 0, 8, buf1);
                     }
 
                     for (k = 0; k < NUM_BLOCKS; k++) {
-                        read(&abar->ports[i], k, 0, 8, buf2);
+                        read(&abar->ports[i], k * 8, 0, 8, buf2);
                         for (j = 0; j < BLOCK_SIZE; j++) {
-                            kprintf("%d ", buf2[j]);
+                            if (buf2[j] != k)
+                                flag = 0;
                         }
-                        kprintf("\n");
+                    }
+
+                    if (flag == 1) {
+                        kprintf("Verification successful\n");
                     }
                 }
             }
@@ -440,23 +443,26 @@ uint32_t remap_bar(uint32_t address) {
 void device_info(uint8_t bus, uint8_t device) {
     uint16_t vendor_id, device_id, class_subclass;
     uint32_t bar5;
+    int i = 0;
 
-    if ((vendor_id = pci_read_word(bus, device, 0 ,0)) != 0xFFFF) {
-        device_id = pci_read_word(bus, device, 0 , 2);
-        class_subclass = pci_read_word(bus, device, 0 , 10);
+    for (i = 0; i < 8; i++) {
+        if ((vendor_id = pci_read_word(bus, device, i ,0)) != 0xFFFF) {
+            device_id = pci_read_word(bus, device, i , 2);
+            class_subclass = pci_read_word(bus, device, i , 10);
 
-        if (((class_subclass & 0xFF00) >> 8) == AHCI_CLASS && (class_subclass & 0x00FF) == AHCI_SUBCLASS) {
-            kprintf("AHCI controller found\n");
-            kprintf("Vendor ID: %x, Device ID: %x\n", vendor_id, device_id);
-            bar5 = pci_read_bar(bus, device, 0 , 0x24);
+            if (((class_subclass & 0xFF00) >> 8) == AHCI_CLASS && (class_subclass & 0x00FF) == AHCI_SUBCLASS) {
+                kprintf("AHCI controller found\n");
+                kprintf("Vendor ID: %x, Device ID: %x\n", vendor_id, device_id);
+                bar5 = pci_read_bar(bus, device, i , 0x24);
 
-            // Move the bar5 (beyond physical memory space) to a place you can read (within physical memory space)
-            bar5 = remap_bar(BAR_MEM);
+                // Move the bar5 (beyond physical memory space) to a place you can read (within physical memory space)
+                bar5 = remap_bar(BAR_MEM);
 
-            // Convert Physical address to virtual address
-            abar = (hba_mem_t *)((uint64_t)bar5);
+                // Convert Physical address to virtual address
+                abar = (hba_mem_t *)((uint64_t)bar5);
 
-            probe_port();
+                probe_port();
+            }
         }
     }
 }
