@@ -1,6 +1,9 @@
 #ifndef _AHCI_H
 #define _AHCI_H
 
+#include <sys/defs.h>
+#include <sys/string.h>
+
 #define HBA_GHC_AE     (1U << 31)
 #define HBA_GHC_IE     (1U << 1)
 #define HBA_GHC_HR     (1U)
@@ -334,5 +337,7 @@ typedef volatile struct {
   // 0x100 - 0x10FF, Port control registers
   hba_port_t ports[MAX_PORT_CNT]; // 1 ~ 32
 }__attribute__((__packed__)) hba_mem_t;
+
+void probe_port(hba_mem_t *abar);
 
 #endif
