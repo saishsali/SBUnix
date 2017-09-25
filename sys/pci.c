@@ -38,7 +38,7 @@ int find_cmdslot(hba_port_t *port)
 }
 
 
-int read(hba_port_t *port, uint32_t startl, uint32_t starth, uint32_t count, uint16_t *buf)
+int read(hba_port_t *port, uint32_t startl, uint32_t starth, uint32_t count, uint8_t *buf)
 {
     kprintf("Buf address %x\n", buf);
     port->is_rwc = (uint32_t)-1;   // Clear pending interrupt bits
@@ -131,8 +131,7 @@ int read(hba_port_t *port, uint32_t startl, uint32_t starth, uint32_t count, uin
 }
 
 
-
-int write(hba_port_t *port, uint32_t startl, uint32_t starth, uint32_t count, uint16_t *buf)
+int write(hba_port_t *port, uint32_t startl, uint32_t starth, uint32_t count, uint8_t *buf)
 {
     port->is_rwc = (uint32_t)-1;       // Clear pending interrupt bits
     int spin = 0; // Spin lock timeout counter
@@ -145,10 +144,10 @@ int write(hba_port_t *port, uint32_t startl, uint32_t starth, uint32_t count, ui
     cmdheader += slot;
     cmdheader->cfl = sizeof(fis_reg_h2d_t) / sizeof(uint32_t); // Command FIS size
     cmdheader->w = 1;       // Write to device
-    cmdheader->prdtl = (uint16_t)((count - 1) >> 1) + 1;    // PRDT entries count
+    cmdheader->prdtl = (uint16_t)((count - 1) >> 4) + 1;    // PRDT entries count
 
     hba_cmd_tbl_t *cmdtbl = (hba_cmd_tbl_t*)(cmdheader->ctba);
-    // memset(cmdtbl, 0, sizeof(hba_cmd_tbl_t) + (cmdheader->prdtl-1) * sizeof(hba_prdt_entry_t));
+    memset(cmdtbl, 0, sizeof(hba_cmd_tbl_t) + (cmdheader->prdtl-1) * sizeof(hba_prdt_entry_t));
 
     // 8K bytes (16 sectors) per PRDT
     for (i = 0; i < cmdheader->prdtl - 1; i++)
@@ -157,12 +156,12 @@ int write(hba_port_t *port, uint32_t startl, uint32_t starth, uint32_t count, ui
         cmdtbl->prdt_entry[i].dbc = 8 * 1024; // 8K bytes
         cmdtbl->prdt_entry[i].i = 1;
         buf += 4 * 1024;  // 4K words
-        count -= 2;    // 16 sectors
+        count -= 16;    // 16 sectors
     }
 
     // Last entry
     cmdtbl->prdt_entry[i].dba = (uint64_t)buf;
-    cmdtbl->prdt_entry[i].dbc = count << 12;   // 512 bytes per sector
+    cmdtbl->prdt_entry[i].dbc = count << 9;   // 512 bytes per sector
     cmdtbl->prdt_entry[i].i = 1;
 
     // Setup command
@@ -219,8 +218,6 @@ int write(hba_port_t *port, uint32_t startl, uint32_t starth, uint32_t count, ui
 
     return 1;
 }
-
-
 
 
 // Start command engine
@@ -317,19 +314,13 @@ int check_type(hba_port_t *port)
 void probe_port(hba_mem_t *abar)
 {
     uint32_t pi = abar->pi;
-    uint16_t *buf = (uint16_t *)0x20000;
-    uint16_t *buf1 = (uint16_t *)0x30000;
-    uint16_t *tmp = buf1;
+    uint8_t *buf1 = (uint8_t *)0x30000;
+    uint8_t *buf2 = (uint8_t *)0x9FF000;
+    uint8_t *tmp;
 
-    int i = 0, j;
+    int i = 0, j, k;
 
-    for (i = 1; i < 100; i++) {
-        *tmp = i;
-        tmp++;
-    }
-
-    kprintf("Before read buf address: %x\n", buf);
-    kprintf("Before read: %d\n", *buf1);
+    kprintf("Before read buf address: %x\n", buf1);
 
     abar->ghc |= 0x01;
     abar->ghc |= 0x80000000;
@@ -345,15 +336,23 @@ void probe_port(hba_mem_t *abar)
                     kprintf("SATA drive found at port %d\n", i);
                     port_rebase(&abar->ports[i], i);
 
-                    write(&abar->ports[i], 0, 0, 1, buf1);
+                    for (k = 0; k < 101; k++) {
+                        tmp = buf1;
+                        for (j = 0; j < 4096; j++) {
+                            *tmp = k;
+                            tmp++;
+                        }
 
-                    read(&abar->ports[i], 0, 0, 1, buf);
+                        write(&abar->ports[i], k, 0, 8, buf1);
+                    }
 
-                    kprintf("After read: %d\n", *buf);
-                    kprintf("Read from disk: ");
-
-                    for (j = 0; j < 100; j++)
-                        kprintf("%d ", buf[j]);
+                    for (k = 0; k < 101; k++) {
+                        read(&abar->ports[i], k, 0, 8, buf2);
+                        kprintf("Read from disk: \n");
+                        for (j = 0; j < 4096; j++)
+                            kprintf("%d ", buf2[j]);
+                        kprintf("\n");
+                    }
                 }
             }
             else if (dt == AHCI_DEV_SATAPI) {
