@@ -233,8 +233,7 @@ void probe_port(hba_mem_t *abar)
                             *tmp = k;
                             tmp++;
                         }
-
-                        ahci_read_write(&abar->ports[i], k, 0, 8, buf1, 0);
+                        ahci_read_write(&abar->ports[i], k, 0, 8, buf1, 1);
                     }
 
                     for (k = 0; k < 101; k++) {
