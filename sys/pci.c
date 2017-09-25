@@ -1,5 +1,4 @@
 #include <sys/kprintf.h>
-#include <sys/pci.h>
 #include <sys/defs.h>
 #include <sys/ahci.h>
 #include <sys/io.h>
@@ -21,8 +20,6 @@
 #define ATA_CMD_WRITE_DMA_EX     0x35
 #define ATA_DEV_BUSY 0x80
 #define ATA_DEV_DRQ 0x08
-
-#define PHYS_PAGE(a) (AHCI_BASE + (a * 0x1000))
 
 // Find a free command list slot
 int find_cmdslot(hba_port_t *port)
@@ -290,7 +287,6 @@ void port_rebase(hba_port_t *port, int portno)
 }
  
 
-
 // Check device type
 int check_type(hba_port_t *port)
 {
@@ -353,15 +349,13 @@ void probe_port(hba_mem_t *abar)
     }
 }
 
-
 uint16_t pci_read_word(uint8_t bus, uint8_t slot, uint8_t func, uint8_t offset) {
     uint32_t address;
     uint32_t lbus  = (uint32_t)bus;
     uint32_t lslot = (uint32_t)slot;
     uint32_t lfunc = (uint32_t)func;
-    uint16_t tmp = 0;
 
-    /*
+    /*  Create configuration address:
         - Bit 31: Enable bit
         - Bits 30 - 24: Reserved
         - Bits 23 - 16: Bus Number
@@ -369,16 +363,18 @@ uint16_t pci_read_word(uint8_t bus, uint8_t slot, uint8_t func, uint8_t offset) 
         - Bits 10 - 8: Function Number
         - Bits 7 - 2: Register Number
         - Bits 1 - 0: 00
+
+        0x80000000: To make enable bit 1
+        offset & 0xfc: Two lowest bits are always 0 to make sure reads and writes are 32 bits aligned
     */
-    address = (uint32_t)((lbus << 16) | (lslot << 11) | (lfunc << 8) | (offset & 0xfc) | ((uint32_t)0x80000000));
+    address = (uint32_t)(((uint32_t)0x80000000) | (lbus << 16) | (lslot << 11) | (lfunc << 8) | (offset & 0xfc));
 
     /* write out the address to CONFIG_ADDRESS I/O location (0xCF8) */
     outl(0xCF8, address);
 
     /* read in the data from CONFIG_DATA I/O location (0xCFC) */
     /* (offset & 2) * 8) = 0 will choose the first word of the 32 bits register */
-    tmp = (uint16_t)((inl(0xCFC) >> ((offset & 2) * 8)) & 0xFFFF);
-    return (tmp);
+    return (uint16_t)((inl(0xCFC) >> ((offset & 2) * 8)) & 0xFFFF);
 }
 
 uint64_t pci_read_bar(uint8_t bus, uint8_t slot, uint8_t func, uint8_t offset) {
@@ -386,19 +382,17 @@ uint64_t pci_read_bar(uint8_t bus, uint8_t slot, uint8_t func, uint8_t offset) {
     uint32_t lbus  = (uint32_t)bus;
     uint32_t lslot = (uint32_t)slot;
     uint32_t lfunc = (uint32_t)func;
-    uint32_t tmp = 0;
 
     address = (uint32_t)((lbus << 16) | (lslot << 11) | (lfunc << 8) | (offset & 0xfc) | ((uint32_t)0x80000000));
     outl(0xCF8, address);
-    tmp = (uint32_t)(inl(0xCFC));
-    return (tmp);
+
+    return (uint32_t)(inl(0xCFC));
 }
 
-uint32_t map_bar5() {
-    uint32_t tmp;
-    outl(0xCFC, BAR_MEM);
-    tmp = (uint32_t)(inl(0xCFC));
-    return (tmp);
+uint32_t remap_bar(uint32_t address) {
+    outl(0xCFC, address);
+
+    return (uint32_t)(inl(0xCFC));
 }
 
 void device_info(uint8_t bus, uint8_t device) {
@@ -413,10 +407,12 @@ void device_info(uint8_t bus, uint8_t device) {
             kprintf("AHCI controller found\n");
             kprintf("Vendor ID: %x, Device ID: %x\n", vendor_id, device_id);
             bar5 = pci_read_bar(bus, device, 0 , 0x24);
-            kprintf("Bar5: %x\n", bar5);
-            bar5 = map_bar5();
-            kprintf("Remapped Bar5: %x\n", bar5);
-            probe_port((hba_mem_t *)((uint64_t)(0xffffffff80000000 + BAR_MEM)));
+
+            // Move the bar5 (beyond physical memory space) to a place you can read (within physical memory space)
+            bar5 = remap_bar(BAR_MEM);
+
+            // Convert Physical address to virtual address
+            probe_port((hba_mem_t *)((uint64_t)(0xffffffff80000000 + bar5)));
         }
     }
 }
