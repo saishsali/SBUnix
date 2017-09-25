@@ -1,3 +1,10 @@
+/*
+    References:
+    - https://www.intel.com/content/www/us/en/io/serial-ata/serial-ata-ahci-spec-rev1-3-1.html
+    - http://wiki.osdev.org/Pci
+    - http://wiki.osdev.org/AHCI
+*/
+
 #include <sys/kprintf.h>
 #include <sys/defs.h>
 #include <sys/ahci.h>
@@ -14,25 +21,36 @@
 #define HBA_PORT_IPM_ACTIVE     1
 #define BAR_MEM                 0x20000000
 #define AHCI_BASE               0x400000    // 4M
-#define ATA_DEV_BUSY 0x80
-#define ATA_DEV_DRQ 0x08
+#define ATA_DEV_BUSY            0x80
+#define ATA_DEV_DRQ             0x08
 #define ATA_CMD_READ_DMA_EX     0x25
-#define ATA_CMD_WRITE_DMA_EX     0x35
-#define ATA_DEV_BUSY 0x80
-#define ATA_DEV_DRQ 0x08
+#define ATA_CMD_WRITE_DMA_EX    0x35
+#define ATA_DEV_BUSY            0x80
+#define ATA_DEV_DRQ             0x08
+#define NUM_BLOCKS              100
+#define BLOCK_SIZE              4096      // 4KB
+
+// AHCI Base Memory Register
+hba_mem_t *abar;
 
 // Find a free command list slot
 int find_cmdslot(hba_port_t *port)
 {
-    // If not set in SACT and CI, the slot is free
+    // Check device status (DS) and command issue (CI) for each command slot status. If SACT and CI is not set, the slot is free.
     uint32_t slots = (port->sact | port->ci);
-    for (int i = 0; i < 32; i++)
-    {
+
+    // Bit 12:08 - Number of command slots (1 to 32 maximum)
+    uint8_t num_slots = (abar->cap >> 8) & 0x1F;
+
+    for (int i = 0; i < num_slots; i++) {
         if ((slots & 1) == 0)
             return i;
+
+        // Next command slot status
         slots >>= 1;
     }
-    kprintf("Cannot find free command list entry\n");
+
+    kprintf("Cannot find free command slot\n");
 
     return -1;
 }
@@ -311,14 +329,14 @@ int check_type(hba_port_t *port)
 }
 
 // Search disk in ports impelemented
-void probe_port(hba_mem_t *abar)
+void probe_port()
 {
     uint32_t pi = abar->pi;
     uint8_t *buf1 = (uint8_t *)0x30000;
     uint8_t *buf2 = (uint8_t *)0x9FF000;
-    uint8_t *tmp;
 
-    int i = 0, j, k;
+    int i = 0, j;
+    uint8_t k;
 
     kprintf("Before read buf address: %x\n", buf1);
 
@@ -336,21 +354,21 @@ void probe_port(hba_mem_t *abar)
                     kprintf("SATA drive found at port %d\n", i);
                     port_rebase(&abar->ports[i], i);
 
-                    for (k = 0; k < 101; k++) {
-                        tmp = buf1;
-                        for (j = 0; j < 4096; j++) {
-                            *tmp = k;
-                            tmp++;
+                    for (k = 0; k < NUM_BLOCKS; k++) {
+                        for (j = 0; j < BLOCK_SIZE; j++) {
+                            *buf1 = k;
+                            buf1++;
                         }
+                        buf1 -= j;
 
                         write(&abar->ports[i], k, 0, 8, buf1);
                     }
 
-                    for (k = 0; k < 101; k++) {
+                    for (k = 0; k < NUM_BLOCKS; k++) {
                         read(&abar->ports[i], k, 0, 8, buf2);
-                        kprintf("Read from disk: \n");
-                        for (j = 0; j < 4096; j++)
+                        for (j = 0; j < BLOCK_SIZE; j++) {
                             kprintf("%d ", buf2[j]);
+                        }
                         kprintf("\n");
                     }
                 }
@@ -436,7 +454,9 @@ void device_info(uint8_t bus, uint8_t device) {
             bar5 = remap_bar(BAR_MEM);
 
             // Convert Physical address to virtual address
-            probe_port((hba_mem_t *)((uint64_t)(0xffffffff80000000 + bar5)));
+            abar = (hba_mem_t *)((uint64_t)bar5);
+
+            probe_port();
         }
     }
 }
