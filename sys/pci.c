@@ -8,7 +8,6 @@
 #define AHCI_SUBCLASS           0x06
 #define BAR_MEM                 0x20000000
 
-
 uint16_t pci_read_word(uint8_t bus, uint8_t slot, uint8_t func, uint8_t offset) {
     uint32_t address;
     uint32_t lbus  = (uint32_t)bus;

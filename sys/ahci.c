@@ -34,7 +34,6 @@ int find_cmdslot(hba_port_t *port)
 
 int ahci_read_write(hba_port_t *port, uint32_t startl, uint32_t starth, uint32_t count, uint8_t *buf, int read_write)
 {
-    kprintf("Buf address %x\n", buf);
     port->is_rwc = (uint32_t)-1;   // Clear pending interrupt bits
     int spin = 0; // Spin lock timeout counter
     int i;
@@ -89,11 +88,8 @@ int ahci_read_write(hba_port_t *port, uint32_t startl, uint32_t starth, uint32_t
 
     // The below loop waits until the port is no longer busy before issuing a new command
     while ((port->tfd & (ATA_DEV_BUSY | ATA_DEV_DRQ)) && spin < 1000000)
-    {
         spin++;
-    }
-    if (spin == 1000000)
-    {
+    if (spin == 1000000) {
         kprintf("Port is hung\n");
         return 0;
     }
@@ -101,22 +97,19 @@ int ahci_read_write(hba_port_t *port, uint32_t startl, uint32_t starth, uint32_t
     port->ci = 1 << slot; // Issue command
 
     // Wait for completion
-    while (1)
-    {
+    while (1) {
         // In some longer duration reads, it may be helpful to spin on the DPS bit
         // in the PxIS port field as well (1 << 5)
         if ((port->ci & (1 << slot)) == 0)
             break;
-        if (port->is_rwc & HBA_PxIS_TFES)   // Task file error
-        {
+        if (port->is_rwc & HBA_PxIS_TFES) { // Task file error
             kprintf("Read disk error\n");
             return 0;
         }
     }
 
     // Check again
-    if (port->is_rwc & HBA_PxIS_TFES)
-    {
+    if (port->is_rwc & HBA_PxIS_TFES) {
         kprintf("Read disk error\n");
         return 0;
     }
@@ -145,12 +138,9 @@ void stop_cmd(hba_port_t *port)
     // Wait until FR (bit14), CR (bit15) are cleared
     while(1) {
         if (port->cmd & HBA_PxCMD_FR)
-        {
             continue;
-        }
-        if (port->cmd & HBA_PxCMD_CR) {
+        if (port->cmd & HBA_PxCMD_CR)
             continue;
-        }
         break;
     }
 
@@ -177,8 +167,7 @@ void port_rebase(hba_port_t *port, int portno)
     // Command table offset: 40K + 8K*portno
     // Command table size = 256*32 = 8K per port
     hba_cmd_header_t *cmdheader = (hba_cmd_header_t*)(port->clb);
-    for (int i=0; i<32; i++)
-    {
+    for (int i=0; i<32; i++) {
         cmdheader[i].prdtl = 8; // 8 prdt entries per command table
                     // 256 bytes per command table, 64+16+48+16*8
         // Command table offset: 40K + 8K*portno + cmdheader_index*256
@@ -202,8 +191,7 @@ int check_type(hba_port_t *port)
     if (ipm != HBA_PORT_IPM_ACTIVE)
         return AHCI_DEV_NULL;
 
-    switch (port->sig)
-    {
+    switch (port->sig) {
         case SATA_SIG_ATAPI:
             return AHCI_DEV_SATAPI;
         case SATA_SIG_SEMB:
@@ -224,8 +212,6 @@ void probe_port(hba_mem_t *abar)
     uint8_t *tmp;
 
     int i = 0, j, k;
-
-    kprintf("Before read buf address: %x\n", buf1);
 
     abar->ghc |= 0x01;
     abar->ghc |= 0x80000000;
