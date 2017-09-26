@@ -226,15 +226,15 @@ void port_rebase(hba_port_t *port, int portno) {
 
 // Check device type
 int check_type(hba_port_t *port) {
-    uint32_t ssts = port->ssts;
-    uint8_t ipm = (ssts >> 8) & 0x0F;
-    uint8_t det = ssts & 0x0F;
+    // uint32_t ssts = port->ssts;
+    // uint8_t ipm = (ssts >> 8) & 0x0F;
+    // uint8_t det = ssts & 0x0F;
 
     // Check drive status
-    if (det != HBA_PORT_DET_PRESENT)
-        return AHCI_DEV_NULL;
-    if (ipm != HBA_PORT_IPM_ACTIVE)
-        return AHCI_DEV_NULL;
+    // if (det != HBA_PORT_DET_PRESENT)
+    //     return AHCI_DEV_NULL;
+    // if (ipm != HBA_PORT_IPM_ACTIVE)
+    //     return AHCI_DEV_NULL;
 
     switch (port->sig) {
         case SATA_SIG_ATAPI:
@@ -248,59 +248,78 @@ int check_type(hba_port_t *port) {
     }
 }
 
+void verify_read_write(uint8_t port) {
+    uint8_t flag = 0, *write_buffer = (uint8_t *)0x300000, *read_buffer = (uint8_t *)0x600000;
+    uint32_t k, j;
+    port_rebase(&abar->ports[port], port);
+
+    for (k = 0; k < NUM_BLOCKS; k++) {
+        for (j = 0; j < BLOCK_SIZE; j++) {
+            *write_buffer = k;
+            write_buffer++;
+        }
+        write_buffer -= j;
+
+        // ahci_read_write(&abar->ports[port], k * 8, 0, 8, write_buffer, 1);
+        ahci_read_write(&abar->ports[port], k * 8, 0, 8, write_buffer, 1);
+    }
+
+    for (k = 0; k < NUM_BLOCKS; k++) {
+        // ahci_read_write(&abar->ports[port], k * 8, 0, 8, read_buffer, 0);
+        ahci_read_write(&abar->ports[port], k * 8, 0, 8, read_buffer, 0);
+        for (j = 0; j < BLOCK_SIZE; j++) {
+            if (read_buffer[j] == k) {
+                flag = 1;
+            } else {
+                // Read and write does not match
+                flag = 0;
+                break;
+            }
+        }
+
+        if (flag == 0)
+            break;
+    }
+
+    if (flag == 1)
+        kprintf("Read and write verified successfully at port %d\n \n", port);
+}
+
+
 // Search disk in ports impelemented
 void probe_port() {
-    uint32_t pi = abar->pi, dt, i = 0, j, flag = 0;
-    uint8_t *write_buffer = (uint8_t *)0x300000, *read_buffer = (uint8_t *)0x600000, k;
+    uint32_t pi = abar->pi, dt, i = 0;
+    uint8_t device_found;
 
     while (i < 32) {
+        device_found = 0;
         if (pi & 1) {
             dt = check_type(&abar->ports[i]);
             if (dt == AHCI_DEV_SATA) {
-            	kprintf("SATA drive found at port %d\n", i);
-                port_rebase(&abar->ports[i], i);
-
-                for (k = 0; k < NUM_BLOCKS; k++) {
-                    for (j = 0; j < BLOCK_SIZE; j++) {
-                        *write_buffer = k;
-                        write_buffer++;
-                    }
-                    write_buffer -= j;
-
-                    ahci_read_write(&abar->ports[i], k * 8, 0, 8, write_buffer, 1);
+                if (i == 1) {
+                    kprintf("SATA drive found at port %d\n", i);
+                    device_found = 1;
                 }
-
-                for (k = 0; k < NUM_BLOCKS; k++) {
-                    ahci_read_write(&abar->ports[i], k * 8, 0, 8, read_buffer, 0);
-                    for (j = 0; j < BLOCK_SIZE; j++) {
-                        if (read_buffer[j] == k) {
-                            flag = 1;
-                        } else {
-                            // Read and write does not match
-                            flag = 0;
-                            break;
-                        }
-                    }
-
-                    if (flag == 0)
-                        break;
-                }
-
-                if (flag == 1)
-                    kprintf("Read and write verified successfully at port %d\n \n", i);
             } else if (dt == AHCI_DEV_SATAPI) {
                 kprintf("SATAPI drive found at port %d\n", i);
+                device_found = 1;
             } else if (dt == AHCI_DEV_SEMB) {
                 kprintf("SEMB drive found at port %d\n", i);
+                device_found = 1;
             } else if (dt == AHCI_DEV_PM) {
                 kprintf("PM drive found at port %d\n", i);
+                device_found = 1;
             } else {
                 kprintf("No drive found at port %d\n", i);
+                device_found = 0;
+            }
+
+            if (device_found == 1) {
+                verify_read_write(i);
             }
         }
         pi >>= 1;
         i++;
-        flag = 0;
     }
 }
 
