@@ -290,6 +290,7 @@ void probe_port()
         }
         pi >>= 1;
         i++;
+        flag = 1;
     }
 }
 
