@@ -16,7 +16,6 @@
 #define SATA_SIG_PM             0x96690101  // Port multiplier
 #define HBA_PORT_DET_PRESENT    3
 #define HBA_PORT_IPM_ACTIVE     1
-#define BAR_MEM                 0x20000000
 #define AHCI_BASE               0x400000    // 4M
 #define ATA_DEV_BUSY            0x80
 #define ATA_DEV_DRQ             0x08
@@ -35,11 +34,13 @@ int find_cmdslot(hba_port_t *port)
 {
     // Check device status (DS) and command issue (CI) for each command slot status. If SACT and CI is not set, the slot is free.
     uint32_t slots = (port->sact | port->ci);
+    int i;
 
     // Bit 12:08 - Number of command slots (1 to 32 maximum)
     uint8_t num_slots = (abar->cap >> 8) & 0x1F;
 
-    for (int i = 0; i < num_slots; i++) {
+    for (i = 0; i < num_slots; i++) {
+
         if ((slots & 1) == 0)
             return i;
 
@@ -53,29 +54,32 @@ int find_cmdslot(hba_port_t *port)
 }
 
 
-int ahci_read_write(hba_port_t *port, uint32_t startl, uint32_t starth, uint32_t count, uint8_t *buf, int read_write)
-{
-    port->is_rwc = (uint32_t)-1;   // Clear pending interrupt bits
-    int spin = 0; // Spin lock timeout counter
-    int i;
-    int slot = find_cmdslot(port);
+int ahci_read_write(hba_port_t *port, uint32_t startl, uint32_t starth, uint32_t count, uint8_t *buf, int read_write) {
+	// Clear pending interrupt bits
+    port->is_rwc = (uint32_t)-1;
+    // Spin lock timeout counter
+    int spin = 0, i, slot = find_cmdslot(port);
     if (slot == -1)
         return 0;
 
     hba_cmd_header_t *cmdheader = (hba_cmd_header_t*)port->clb;
     cmdheader += slot;
-    cmdheader->cfl = sizeof(fis_reg_h2d_t) / sizeof(uint32_t); // Command FIS size
-    cmdheader->w = read_write;       // Read from device
+
+    // Command FIS size
+    cmdheader->cfl = sizeof(fis_reg_h2d_t) / sizeof(uint32_t);
+    cmdheader->w = read_write;
     cmdheader->p = 1;
     cmdheader->c = 1;
-    cmdheader->prdtl = (uint16_t)((count - 1) >> 3) + 1;    // PRDT entries count
+
+    // PRDT entries count
+    cmdheader->prdtl = (uint16_t)((count - 1) >> 3) + 1;
 
     hba_cmd_tbl_t *cmdtbl = (hba_cmd_tbl_t*)(cmdheader->ctba);
     memset(cmdtbl, 0, sizeof(hba_cmd_tbl_t) + (cmdheader->prdtl - 1) * sizeof(hba_prdt_entry_t));
 
     // 8K bytes (16 sectors) per PRDT
-    for (i = 0; i < cmdheader->prdtl - 1; i++)
-    {
+    for (i = 0; i < cmdheader->prdtl - 1; i++) {
+
         cmdtbl->prdt_entry[i].dba = (uint64_t)buf;
         cmdtbl->prdt_entry[i].dbc = 4 * 1024; // 8K bytes
         cmdtbl->prdt_entry[i].i = 1;
@@ -168,30 +172,32 @@ void stop_cmd(hba_port_t *port) {
 }
 
 void port_rebase(hba_port_t *port, int portno) {
+	int i;
     stop_cmd(port); // Stop command engine
 
     // Command list offset: 1K*portno
     // Command list entry size = 32
     // Command list entry maxim count = 32
     // Command list maxim size = 32*32 = 1K per port
-    port->clb = AHCI_BASE + (portno<<10);
+    port->clb = AHCI_BASE + (portno << 10);
     memset((void*)(port->clb), 0, 1024);
 
     // FIS offset: 32K+256*portno
     // FIS entry size = 256 bytes per port
-    port->fb = AHCI_BASE + (32<<10) + (portno<<8);
+    port->fb = AHCI_BASE + (32 << 10) + (portno << 8);
     memset((void*)(port->fb), 0, 256);
 
     // Command table offset: 40K + 8K*portno
     // Command table size = 256*32 = 8K per port
     hba_cmd_header_t *cmdheader = (hba_cmd_header_t*)(port->clb);
-    for (int i=0; i<32; i++) {
+    for (i = 0; i < 32; i++) {
+
     	// 8 prdt entries per command table
     	// 256 bytes per command table, 64+16+48+16*8
         cmdheader[i].prdtl = 8; 
                     
         // Command table offset: 40K + 8K*portno + cmdheader_index*256
-        cmdheader[i].ctba = AHCI_BASE + (40<<10) + (portno<<13) + (i<<8);
+        cmdheader[i].ctba = AHCI_BASE + (40 << 10) + (portno << 13) + (i << 8);
         memset((void*)cmdheader[i].ctba, 0, 256);
     }
 
@@ -235,8 +241,7 @@ void probe_port()
 
     abar->ghc |= 0x01;
     abar->ghc |= 0x80000000;
-
-    i = 0;
+    abar->ghc |= 0x02;
 
     while (i < 32) {
         if (pi & 1) {
@@ -247,6 +252,7 @@ void probe_port()
                     port_rebase(&abar->ports[i], i);
 
                     for (k = 0; k < NUM_BLOCKS; k++) {
+
                         for (j = 0; j < BLOCK_SIZE; j++) {
                             *buf1 = k;
                             buf1++;
@@ -257,6 +263,7 @@ void probe_port()
                     }
 
                     for (k = 0; k < NUM_BLOCKS; k++) {
+
                         ahci_read_write(&abar->ports[i], k * 8, 0, 8, buf2, 0);
                         for (j = 0; j < BLOCK_SIZE; j++) {
                             if (buf2[j] != k)
@@ -264,9 +271,8 @@ void probe_port()
                         }
                     }
 
-                    if (flag == 1) {
+                    if (flag == 1)
                         kprintf("Verification successful\n");
-                    }
                 }
             }
             else if (dt == AHCI_DEV_SATAPI) {
@@ -287,18 +293,8 @@ void probe_port()
     }
 }
 
-uint32_t remap_bar(uint32_t address) {
-    outl(0xCFC, address);
-
-    return (uint32_t)(inl(0xCFC));
-}
-
 void init_ahci(uint32_t bar5) {
-    // Move the bar5 (beyond physical memory space) to a place you can read (within physical memory space)
-    bar5 = remap_bar(BAR_MEM);
-
     // Convert Physical address to virtual address
     abar = (hba_mem_t *)((uint64_t)bar5);
-
     probe_port();
 }

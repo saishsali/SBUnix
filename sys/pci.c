@@ -12,6 +12,7 @@
 
 #define AHCI_CLASS              0x01
 #define AHCI_SUBCLASS           0x06
+#define BAR_MEM                 0x20000000
 
 
 uint16_t pci_read_word(uint8_t bus, uint8_t slot, uint8_t func, uint8_t offset) {
@@ -42,7 +43,7 @@ uint16_t pci_read_word(uint8_t bus, uint8_t slot, uint8_t func, uint8_t offset) 
     return (uint16_t)((inl(0xCFC) >> ((offset & 2) * 8)) & 0xFFFF);
 }
 
-uint64_t pci_read_dword(uint8_t bus, uint8_t slot, uint8_t func, uint8_t offset) {
+uint64_t pci_read_bar(uint8_t bus, uint8_t slot, uint8_t func, uint8_t offset, uint32_t remap_address) {
     uint32_t address;
     uint32_t lbus  = (uint32_t)bus;
     uint32_t lslot = (uint32_t)slot;
@@ -50,6 +51,7 @@ uint64_t pci_read_dword(uint8_t bus, uint8_t slot, uint8_t func, uint8_t offset)
 
     address = (uint32_t)((lbus << 16) | (lslot << 11) | (lfunc << 8) | (offset & 0xfc) | ((uint32_t)0x80000000));
     outl(0xCF8, address);
+    outl(0xCFC, remap_address);
 
     return (uint32_t)(inl(0xCFC));
 }
@@ -67,7 +69,8 @@ void device_info(uint8_t bus, uint8_t device) {
             if (((class_subclass & 0xFF00) >> 8) == AHCI_CLASS && (class_subclass & 0x00FF) == AHCI_SUBCLASS) {
                 kprintf("AHCI controller found\n");
                 kprintf("Vendor ID: %x, Device ID: %x\n", vendor_id, device_id);
-                bar5 = pci_read_dword(bus, device, i , 0x24);
+                // Move the bar5 (beyond physical memory space) to a place you can read (within physical memory space)
+                bar5 = pci_read_bar(bus, device, i , 0x24, BAR_MEM);
                 init_ahci(bar5);
             }
         }
