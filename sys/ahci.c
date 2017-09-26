@@ -55,7 +55,7 @@ int find_cmdslot(hba_port_t *port)
 
 
 int ahci_read_write(hba_port_t *port, uint32_t startl, uint32_t starth, uint32_t count, uint8_t *buf, int read_write) {
-	// Clear pending interrupt bits
+    // Clear pending interrupt bits
     port->is_rwc = (uint32_t)-1;
     // Spin lock timeout counter
     int spin = 0, i, slot = find_cmdslot(port);
@@ -172,7 +172,7 @@ void stop_cmd(hba_port_t *port) {
 }
 
 void port_rebase(hba_port_t *port, int portno) {
-	int i;
+    int i;
     stop_cmd(port); // Stop command engine
 
     // Command list offset: 1K*portno
@@ -206,8 +206,7 @@ void port_rebase(hba_port_t *port, int portno) {
 
 
 // Check device type
-int check_type(hba_port_t *port)
-{
+int check_type(hba_port_t *port) {
     uint32_t ssts = port->ssts;
     uint8_t ipm = (ssts >> 8) & 0x0F;
     uint8_t det = ssts & 0x0F;
@@ -230,8 +229,7 @@ int check_type(hba_port_t *port)
 }
 
 // Search disk in ports impelemented
-void probe_port()
-{
+void probe_port() {
     uint32_t pi = abar->pi;
     uint8_t *buf1 = (uint8_t *)0x30000;
     uint8_t *buf2 = (uint8_t *)0x9FF000;
