@@ -12,7 +12,7 @@
 
 #define AHCI_CLASS              0x01
 #define AHCI_SUBCLASS           0x06
-#define BAR_MEM                 0x20000000
+#define BAR_MEM                 0xA6000
 
 
 uint16_t pci_read_word(uint8_t bus, uint8_t slot, uint8_t func, uint8_t offset) {
@@ -67,8 +67,8 @@ void device_info(uint8_t bus, uint8_t device) {
             class_subclass = pci_read_word(bus, device, i , 10);
 
             if (((class_subclass & 0xFF00) >> 8) == AHCI_CLASS && (class_subclass & 0x00FF) == AHCI_SUBCLASS) {
-                kprintf("AHCI controller found\n");
-                kprintf("Vendor ID: %x, Device ID: %x\n", vendor_id, device_id);
+                kprintf("*** AHCI controller found ***\n");
+                kprintf("Vendor ID: %x, Device ID: %x, Class code: %x, Subclass: %x\n \n", vendor_id, device_id, AHCI_CLASS, AHCI_SUBCLASS);
                 // Move the bar5 (beyond physical memory space) to a place you can read (within physical memory space)
                 bar5 = pci_read_bar(bus, device, i , 0x24, BAR_MEM);
                 init_ahci(bar5);
@@ -80,6 +80,7 @@ void device_info(uint8_t bus, uint8_t device) {
 void init_pci() {
  	uint8_t bus = 0, slot;
 
+    kprintf("Walking PCI configuration space ...\n");
     // 256 buses, each with up to 32 devices
     do {
     	for (slot = 0; slot < 32; slot++)

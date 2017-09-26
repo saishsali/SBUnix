@@ -14,15 +14,19 @@
 #define SATA_SIG_ATAPI          0xEB140101  // SATAPI drive
 #define SATA_SIG_SEMB           0xC33C0101  // Enclosure management bridge
 #define SATA_SIG_PM             0x96690101  // Port multiplier
+
 #define HBA_PORT_DET_PRESENT    3
 #define HBA_PORT_IPM_ACTIVE     1
+
 #define AHCI_BASE               0x400000    // 4M
+
 #define ATA_DEV_BUSY            0x80
 #define ATA_DEV_DRQ             0x08
 #define ATA_CMD_READ_DMA_EX     0x25
 #define ATA_CMD_WRITE_DMA_EX    0x35
 #define ATA_DEV_BUSY            0x80
 #define ATA_DEV_DRQ             0x08
+
 #define NUM_BLOCKS              100
 #define BLOCK_SIZE              4096      // 4KB
 
@@ -40,23 +44,22 @@ int find_cmdslot(hba_port_t *port)
     uint8_t num_slots = (abar->cap >> 8) & 0x1F;
 
     for (i = 0; i < num_slots; i++) {
-
         if ((slots & 1) == 0)
             return i;
 
         // Next command slot status
         slots >>= 1;
     }
-
     kprintf("Cannot find free command slot\n");
 
     return -1;
 }
 
 
-int ahci_read_write(hba_port_t *port, uint32_t startl, uint32_t starth, uint32_t count, uint8_t *buf, int read_write) {
+int ahci_read_write(hba_port_t *port, uint32_t startl, uint32_t starth, uint32_t count, uint8_t *buf, int write) {
     // Clear pending interrupt bits
     port->is_rwc = (uint32_t)-1;
+
     // Spin lock timeout counter
     int spin = 0, i, slot = find_cmdslot(port);
     if (slot == -1)
@@ -67,11 +70,11 @@ int ahci_read_write(hba_port_t *port, uint32_t startl, uint32_t starth, uint32_t
 
     // Command FIS size
     cmdheader->cfl = sizeof(fis_reg_h2d_t) / sizeof(uint32_t);
-    cmdheader->w = read_write;
+    cmdheader->w = write;
     cmdheader->p = 1;
     cmdheader->c = 1;
 
-    // PRDT entries count
+    // PRDT entries count (8 sectors of 512 bytes each per 4 KB prdt)
     cmdheader->prdtl = (uint16_t)((count - 1) >> 3) + 1;
 
     hba_cmd_tbl_t *cmdtbl = (hba_cmd_tbl_t*)(cmdheader->ctba);
@@ -81,10 +84,10 @@ int ahci_read_write(hba_port_t *port, uint32_t startl, uint32_t starth, uint32_t
     for (i = 0; i < cmdheader->prdtl - 1; i++) {
 
         cmdtbl->prdt_entry[i].dba = (uint64_t)buf;
-        cmdtbl->prdt_entry[i].dbc = 4 * 1024; // 8K bytes
+        cmdtbl->prdt_entry[i].dbc = 4 * 1024; // 4K bytes
         cmdtbl->prdt_entry[i].i = 1;
         buf += 4 * 1024;  // 4K words
-        count -= 8;    // 16 sectors
+        count -= 8;    // 8 sectors
     }
 
     // Last entry
@@ -96,13 +99,17 @@ int ahci_read_write(hba_port_t *port, uint32_t startl, uint32_t starth, uint32_t
     fis_reg_h2d_t *cmdfis = (fis_reg_h2d_t*)(&cmdtbl->cfis);
 
     cmdfis->fis_type = FIS_TYPE_REG_H2D;
-    cmdfis->c = 1;  // Command
-    cmdfis->command = (read_write == 0) ? ATA_CMD_READ_DMA_EX: ATA_CMD_WRITE_DMA_EX;
+
+    // Command
+    cmdfis->c = 1;
+    cmdfis->command = (write == 0) ? ATA_CMD_READ_DMA_EX: ATA_CMD_WRITE_DMA_EX;
 
     cmdfis->lba0 = (uint8_t)startl;
     cmdfis->lba1 = (uint8_t)(startl >> 8);
     cmdfis->lba2 = (uint8_t)(startl >> 16);
-    cmdfis->device = 1 << 6;  // LBA mode
+
+    // LBA mode
+    cmdfis->device = 1 << 6;
     cmdfis->control = 1 << 7;
 
     cmdfis->lba3 = (uint8_t)(startl >> 24);
@@ -116,6 +123,7 @@ int ahci_read_write(hba_port_t *port, uint32_t startl, uint32_t starth, uint32_t
         spin++;
     if (spin == 1000000) {
         kprintf("Port is hung\n");
+
         return 0;
     }
 
@@ -129,6 +137,7 @@ int ahci_read_write(hba_port_t *port, uint32_t startl, uint32_t starth, uint32_t
             break;
         if (port->is_rwc & HBA_PxIS_TFES) {  // Task file error
             kprintf("Read disk error\n");
+
             return 0;
         }
     }
@@ -136,6 +145,7 @@ int ahci_read_write(hba_port_t *port, uint32_t startl, uint32_t starth, uint32_t
     // Check again
     if (port->is_rwc & HBA_PxIS_TFES) {
         kprintf("Read disk error\n");
+
         return 0;
     }
 
@@ -159,7 +169,7 @@ void stop_cmd(hba_port_t *port) {
     port->cmd &= ~HBA_PxCMD_ST;
 
     // Wait until FR (bit14), CR (bit15) are cleared
-    while(1) {
+    while (1) {
         if (port->cmd & HBA_PxCMD_FR)
             continue;
         if (port->cmd & HBA_PxCMD_CR)
@@ -173,6 +183,14 @@ void stop_cmd(hba_port_t *port) {
 
 void port_rebase(hba_port_t *port, int portno) {
     int i;
+
+    // Set bit0 of Global Host Control to reset AHCI controller, then set bit31 to re-enable AHCI
+    abar->ghc |= 0x01;
+    abar->ghc |= 0x80000000;
+    abar->ghc |= 0x02;
+
+    while ((abar->ghc & 0x01) != 0);
+
     stop_cmd(port); // Stop command engine
 
     // Command list offset: 1K*portno
@@ -194,14 +212,15 @@ void port_rebase(hba_port_t *port, int portno) {
 
     	// 8 prdt entries per command table
     	// 256 bytes per command table, 64+16+48+16*8
-        cmdheader[i].prdtl = 8; 
-                    
+        cmdheader[i].prdtl = 8;
+
         // Command table offset: 40K + 8K*portno + cmdheader_index*256
         cmdheader[i].ctba = AHCI_BASE + (40 << 10) + (portno << 13) + (i << 8);
         memset((void*)cmdheader[i].ctba, 0, 256);
     }
 
-    start_cmd(port);    // Start command engine
+    // Start command engine
+    start_cmd(port);
 }
 
 
@@ -211,7 +230,8 @@ int check_type(hba_port_t *port) {
     uint8_t ipm = (ssts >> 8) & 0x0F;
     uint8_t det = ssts & 0x0F;
 
-    if (det != HBA_PORT_DET_PRESENT)    // Check drive status
+    // Check drive status
+    if (det != HBA_PORT_DET_PRESENT)
         return AHCI_DEV_NULL;
     if (ipm != HBA_PORT_IPM_ACTIVE)
         return AHCI_DEV_NULL;
@@ -230,65 +250,57 @@ int check_type(hba_port_t *port) {
 
 // Search disk in ports impelemented
 void probe_port() {
-    uint32_t pi = abar->pi;
-    uint8_t *buf1 = (uint8_t *)0x30000;
-    uint8_t *buf2 = (uint8_t *)0x9FF000;
-
-    int i = 0, j, flag = 1;
-    uint8_t k;
-
-    abar->ghc |= 0x01;
-    abar->ghc |= 0x80000000;
-    abar->ghc |= 0x02;
+    uint32_t pi = abar->pi, dt, i = 0, j, flag = 0;
+    uint8_t *write_buffer = (uint8_t *)0x30000, *read_buffer = (uint8_t *)0x9FF000, k;
 
     while (i < 32) {
         if (pi & 1) {
-            int dt = check_type(&abar->ports[i]);
+            dt = check_type(&abar->ports[i]);
             if (dt == AHCI_DEV_SATA) {
             	kprintf("SATA drive found at port %d\n", i);
-                if (i == 1) {
-                    port_rebase(&abar->ports[i], i);
+                port_rebase(&abar->ports[i], i);
 
-                    for (k = 0; k < NUM_BLOCKS; k++) {
-
-                        for (j = 0; j < BLOCK_SIZE; j++) {
-                            *buf1 = k;
-                            buf1++;
-                        }
-                        buf1 -= j;
-
-                        ahci_read_write(&abar->ports[i], k * 8, 0, 8, buf1, 1);
+                for (k = 0; k < NUM_BLOCKS; k++) {
+                    for (j = 0; j < BLOCK_SIZE; j++) {
+                        *write_buffer = k;
+                        write_buffer++;
                     }
+                    write_buffer -= j;
 
-                    for (k = 0; k < NUM_BLOCKS; k++) {
-
-                        ahci_read_write(&abar->ports[i], k * 8, 0, 8, buf2, 0);
-                        for (j = 0; j < BLOCK_SIZE; j++) {
-                            if (buf2[j] != k)
-                                flag = 0;
-                        }
-                    }
-
-                    if (flag == 1)
-                        kprintf("Verification successful\n");
+                    ahci_read_write(&abar->ports[i], k * 8, 0, 8, write_buffer, 1);
                 }
-            }
-            else if (dt == AHCI_DEV_SATAPI) {
+
+                for (k = 0; k < NUM_BLOCKS; k++) {
+                    ahci_read_write(&abar->ports[i], k * 8, 0, 8, read_buffer, 0);
+                    for (j = 0; j < BLOCK_SIZE; j++) {
+                        if (read_buffer[j] == k) {
+                            flag = 1;
+                        } else {
+                            // Read and write does not match
+                            flag = 0;
+                            break;
+                        }
+                    }
+
+                    if (flag == 0)
+                        break;
+                }
+
+                if (flag == 1)
+                    kprintf("Read and write verified successfully at port %d\n \n", i);
+            } else if (dt == AHCI_DEV_SATAPI) {
                 kprintf("SATAPI drive found at port %d\n", i);
-            }
-            else if (dt == AHCI_DEV_SEMB) {
+            } else if (dt == AHCI_DEV_SEMB) {
                 kprintf("SEMB drive found at port %d\n", i);
-            }
-            else if (dt == AHCI_DEV_PM) {
+            } else if (dt == AHCI_DEV_PM) {
                 kprintf("PM drive found at port %d\n", i);
-            }
-            else {
+            } else {
                 kprintf("No drive found at port %d\n", i);
             }
         }
         pi >>= 1;
         i++;
-        flag = 1;
+        flag = 0;
     }
 }
 
