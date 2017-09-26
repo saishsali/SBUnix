@@ -251,7 +251,7 @@ int check_type(hba_port_t *port) {
 // Search disk in ports impelemented
 void probe_port() {
     uint32_t pi = abar->pi, dt, i = 0, j, flag = 0;
-    uint8_t *write_buffer = (uint8_t *)0x30000, *read_buffer = (uint8_t *)0x9FF000, k;
+    uint8_t *write_buffer = (uint8_t *)0x300000, *read_buffer = (uint8_t *)0x600000, k;
 
     while (i < 32) {
         if (pi & 1) {
