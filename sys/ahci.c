@@ -225,6 +225,7 @@ int write(hba_port_t *port, uint32_t startl, uint32_t starth, uint32_t count, ui
     return 1;
 }
 
+// Serial ATA AHCI 1.3.1 Specification (Section 10.4.2)
 void port_reset(hba_port_t *port) {
     int spin = 0;
 
@@ -232,7 +233,7 @@ void port_reset(hba_port_t *port) {
     port->sctl &= 0xFFFFFFF1;
 
     // Wait
-    while (spin < 1000000) {
+    while (spin < 1000000000) {
         spin++;
     }
 
@@ -263,30 +264,17 @@ void start_cmd(hba_port_t *port) {
 void stop_cmd(hba_port_t *port) {
     // Clear ST (bit0)
     port->cmd &= ~HBA_PxCMD_ST;
-
-    // Wait until FR (bit14), CR (bit15) are cleared
-    while (1) {
-        if (port->cmd & HBA_PxCMD_FR)
-            continue;
-        if (port->cmd & HBA_PxCMD_CR)
-            continue;
-        break;
-    }
+    while (port->cmd & HBA_PxCMD_CR);
 
     // Clear FRE (bit4)
     port->cmd &= ~HBA_PxCMD_FRE;
+    while (port->cmd & HBA_PxCMD_FR);
 
     port_reset(port);
 }
 
 void port_rebase(hba_port_t *port, int portno) {
     int i;
-
-    // Set bit0 of Global Host Control to reset AHCI controller, then set bit31 to re-enable AHCI
-    abar->ghc |= 0x01;
-    while ((abar->ghc & 0x01) != 0);
-    abar->ghc |= 0x80000000;
-    abar->ghc |= 0x02;
 
     stop_cmd(port); // Stop command engine
 
@@ -423,5 +411,12 @@ void probe_port() {
 void init_ahci(uint32_t bar5) {
     // Convert Physical address to virtual address
     abar = (hba_mem_t *)((uint64_t)bar5);
+
+    // Set bit0 of Global Host Control to reset AHCI controller, then set bit31 to re-enable AHCI
+    // abar->ghc |= 0x01;
+    // while ((abar->ghc & 0x01) != 0);
+    abar->ghc |= 0x80000000;
+    // abar->ghc |= 0x02;
+
     probe_port();
 }
