@@ -228,9 +228,13 @@ int write(hba_port_t *port, uint32_t startl, uint32_t starth, uint32_t count, ui
 // Serial ATA AHCI 1.3.1 Specification (Section 10.4.2)
 void port_reset(hba_port_t *port) {
     int spin = 0;
+    uint32_t flag;
 
     // Invoke a COMRESET on the interface and start a re-establishment of Phy layer communications
-    port->sctl &= 0xFFFFFFF1;
+    flag = port->sctl;
+    flag &= 0xFFFFFFF0;
+    flag |= 0x00000001;
+    port->sctl &= flag;
 
     // Wait
     while (spin < 100000000) {
@@ -247,16 +251,24 @@ void port_reset(hba_port_t *port) {
     port->serr_rwc = 0xFFFFFFFF;
 
     // Transitions to both Partial and Slumber states disabled
-    port->sctl &= 0xFFFFF3FF;
+    flag = port->sctl;
+    flag &= 0xFFFFF0FF;
+    flag |= 0x00000300;
+    port->sctl &= flag;
 }
 
 // Start command engine (Section 3.3.7 Serial ATA AHCI 1.3.1 Specification)
 void start_cmd(hba_port_t *port) {
+    uint32_t flag;
+
     // Wait until CR (bit15) is cleared
     while (port->cmd & HBA_PxCMD_CR);
 
     // Set Interface Communication Control (ICC)
-    port->cmd &= 0x1FFFFFFF;
+    flag = port->cmd;
+    flag &= 0x0FFFFFFF;
+    flag |= 0x10000000;
+    port->cmd = flag;
 
     // Set FIS Receive Enable (FRE)
     port->cmd |= 0x00000008;
