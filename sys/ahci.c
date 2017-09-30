@@ -157,7 +157,7 @@ int write(hba_port_t *port, uint32_t startl, uint32_t starth, uint32_t count, ui
     cmdheader->prdtl = (uint16_t)((count - 1) >> 3) + 1;    // PRDT entries count
 
     hba_cmd_tbl_t *cmdtbl = (hba_cmd_tbl_t*)(cmdheader->ctba);
-    memset(cmdtbl, 0, sizeof(hba_cmd_tbl_t) + (cmdheader->prdtl-1) * sizeof(hba_prdt_entry_t));
+    memset(cmdtbl, 0, sizeof(hba_cmd_tbl_t) + (cmdheader->prdtl - 1) * sizeof(hba_prdt_entry_t));
 
     // 4K bytes (8 sectors) per PRDT
     for (i = 0; i < cmdheader->prdtl - 1; i++) {
@@ -225,6 +225,29 @@ int write(hba_port_t *port, uint32_t startl, uint32_t starth, uint32_t count, ui
     return 1;
 }
 
+void port_reset(hba_port_t *port) {
+    int spin = 0;
+
+    // Invoke a COMRESET on the interface and start a re-establishment of Phy layer communications
+    port->sctl &= 0xFFFFFFF1;
+
+    // Wait
+    while (spin < 1000000) {
+        spin++;
+    }
+
+    // Vlearing PxSCTL.DET to 0h; this ensures that at least one COMRESET signal is sent over the interface
+    port->sctl &= 0xFFFFFFF0;
+
+    // Wait for communication to be re-established
+    while ((port->ssts & 0x0F) != 3);
+
+    // Write all 1s to the PxSERR register to clear any bits that were set as part of the port reset
+    port->serr_rwc = 0xFFFFFFFF;
+
+    // Transitions to both Partial and Slumber states disabled
+    port->sctl &= 0xFFFFF3FF;
+}
 
 // Start command engine
 void start_cmd(hba_port_t *port) {
@@ -252,6 +275,8 @@ void stop_cmd(hba_port_t *port) {
 
     // Clear FRE (bit4)
     port->cmd &= ~HBA_PxCMD_FRE;
+
+    port_reset(port);
 }
 
 void port_rebase(hba_port_t *port, int portno) {
@@ -259,10 +284,9 @@ void port_rebase(hba_port_t *port, int portno) {
 
     // Set bit0 of Global Host Control to reset AHCI controller, then set bit31 to re-enable AHCI
     abar->ghc |= 0x01;
+    while ((abar->ghc & 0x01) != 0);
     abar->ghc |= 0x80000000;
     abar->ghc |= 0x02;
-
-    while ((abar->ghc & 0x01) != 0);
 
     stop_cmd(port); // Stop command engine
 
@@ -316,8 +340,10 @@ int check_type(hba_port_t *port) {
             return AHCI_DEV_SEMB;
         case SATA_SIG_PM:
             return AHCI_DEV_PM;
-        default:
+        case SATA_SIG_ATA:
             return AHCI_DEV_SATA;
+        default:
+            return -1;
     }
 }
 
@@ -387,7 +413,6 @@ void probe_port() {
 
             if (device_found == 1) {
                 verify_read_write(i);
-                return;
             }
         }
         pi >>= 1;
