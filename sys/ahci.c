@@ -383,7 +383,7 @@ int check_type(hba_port_t *port) {
         case SATA_SIG_ATA:
             return AHCI_DEV_SATA;
         default:
-            // return -1;
+            return -1;
     }
 }
 
@@ -410,7 +410,7 @@ void verify_read_write(uint8_t port) {
             if (read_buffer[j] == k) {
                 flag = 1;
             } else {
-                Read and write does not match
+                // Read and write does not match
                 flag = 0;
                 break;
             }
