@@ -233,7 +233,7 @@ void port_reset(hba_port_t *port) {
     port->sctl &= 0xFFFFFFF1;
 
     // Wait
-    while (spin < 1000000000) {
+    while (spin < 100000000) {
         spin++;
     }
 
@@ -250,10 +250,25 @@ void port_reset(hba_port_t *port) {
     port->sctl &= 0xFFFFF3FF;
 }
 
-// Start command engine
+// Start command engine (Section 3.3.7 Serial ATA AHCI 1.3.1 Specification)
 void start_cmd(hba_port_t *port) {
     // Wait until CR (bit15) is cleared
     while (port->cmd & HBA_PxCMD_CR);
+
+    // Set Interface Communication Control (ICC)
+    port->cmd &= 0x1FFFFFFF;
+
+    // Set FIS Receive Enable (FRE)
+    port->cmd |= 0x00000008;
+
+    // Check Cold Presence Detection (CPD) is set
+    if (((port->cmd >> 20) & 0x01) == 1) {
+        // Set Power On Device (POD)
+        port->cmd |= 0x00000004;
+    }
+
+    // Set Spin-Up Device (SUD)
+    port->cmd |= 0x00000002;
 
     // Set FRE (bit4) and ST (bit0)
     port->cmd |= HBA_PxCMD_FRE;
