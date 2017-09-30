@@ -56,6 +56,7 @@ int find_cmdslot(hba_port_t *port)
 }
 
 
+
 int read(hba_port_t *port, uint32_t startl, uint32_t starth, uint32_t count, uint8_t *buf) {
     port->is_rwc = (uint32_t)-1;   // Clear pending interrupt bits
     int spin = 0; // Spin lock timeout counter
@@ -231,38 +232,20 @@ void port_reset(hba_port_t *port) {
     uint32_t flag;
 
     // Invoke a COMRESET on the interface and start a re-establishment of Phy layer communications
-    flag = port->sctl;
-    flag &= 0xFFFFFFF0;
-    flag |= 0x00000001;
-    port->sctl &= flag;
+    // flag = port->sctl;
+    // flag &= 0xFFFFF0F0;
+    // flag |= 0x00000301;
+    // port->sctl = flag;
+    port->sctl = 0x301;
 
     // Wait
-    while (spin < 100000000) {
+    while (spin < 1000000) {
         spin++;
     }
 
     // Vlearing PxSCTL.DET to 0h; this ensures that at least one COMRESET signal is sent over the interface
-    port->sctl &= 0xFFFFFFF0;
-
-    // Wait for communication to be re-established
-    while ((port->ssts & 0x0F) != 3);
-
-    // Write all 1s to the PxSERR register to clear any bits that were set as part of the port reset
-    port->serr_rwc = 0xFFFFFFFF;
-
-    // Transitions to both Partial and Slumber states disabled
-    flag = port->sctl;
-    flag &= 0xFFFFF0FF;
-    flag |= 0x00000300;
-    port->sctl &= flag;
-}
-
-// Start command engine (Section 3.3.7 Serial ATA AHCI 1.3.1 Specification)
-void start_cmd(hba_port_t *port) {
-    uint32_t flag;
-
-    // Wait until CR (bit15) is cleared
-    while (port->cmd & HBA_PxCMD_CR);
+    // port->sctl &= 0xFFFFFFF0;
+    port->sctl = 0x300;
 
     // Set Interface Communication Control (ICC)
     flag = port->cmd;
@@ -282,6 +265,50 @@ void start_cmd(hba_port_t *port) {
     // Set Spin-Up Device (SUD)
     port->cmd |= 0x00000002;
 
+    // Write all 1s to the PxSERR register to clear any bits that were set as part of the port reset
+    port->serr_rwc = 0xFFFFFFFF;
+    port->is_rwc = 0xFFFFFFFF;
+
+    // Wait for communication to be re-established
+    while ((port->ssts & 0x0F) != 3);
+
+    // Write all 1s to the PxSERR register to clear any bits that were set as part of the port reset
+    // port->serr_rwc = 0xFFFFFFFF;
+
+    // Transitions to both Partial and Slumber states disabled
+    // flag = port->sctl;
+    // flag &= 0xFFFFF0FF;
+    // flag |= 0x00000300;
+    // port->sctl = flag;
+}
+
+// Start command engine (Section 3.3.7 Serial ATA AHCI 1.3.1 Specification)
+void start_cmd(hba_port_t *port) {
+    // uint32_t flag;
+
+    port_reset(port);
+
+    // Wait until CR (bit15) is cleared
+    while (port->cmd & HBA_PxCMD_CR);
+
+    // // Set Interface Communication Control (ICC)
+    // flag = port->cmd;
+    // flag &= 0x0FFFFFFF;
+    // flag |= 0x10000000;
+    // port->cmd = flag;
+
+    // // Set FIS Receive Enable (FRE)
+    // port->cmd |= 0x00000008;
+
+    // // Check Cold Presence Detection (CPD) is set
+    // if (((port->cmd >> 20) & 0x01) == 1) {
+    //     // Set Power On Device (POD)
+    //     port->cmd |= 0x00000004;
+    // }
+
+    // // Set Spin-Up Device (SUD)
+    // port->cmd |= 0x00000002;
+
     // Set FRE (bit4) and ST (bit0)
     port->cmd |= HBA_PxCMD_FRE;
     port->cmd |= HBA_PxCMD_ST;
@@ -296,8 +323,6 @@ void stop_cmd(hba_port_t *port) {
     // Clear FRE (bit4)
     port->cmd &= ~HBA_PxCMD_FRE;
     while (port->cmd & HBA_PxCMD_FR);
-
-    port_reset(port);
 }
 
 void port_rebase(hba_port_t *port, int portno) {
@@ -358,7 +383,7 @@ int check_type(hba_port_t *port) {
         case SATA_SIG_ATA:
             return AHCI_DEV_SATA;
         default:
-            return -1;
+            // return -1;
     }
 }
 
@@ -375,17 +400,17 @@ void verify_read_write(uint8_t port) {
         write_buffer -= j;
 
         // ahci_read_write(&abar->ports[port], k * 8, 0, 8, write_buffer, 1);
-        write(&abar->ports[port], k * 8, 0, 8, write_buffer);
+        write(&abar->ports[port], k * 8, 0, 1, write_buffer);
     }
 
     for (k = 0; k < NUM_BLOCKS; k++) {
         // ahci_read_write(&abar->ports[port], k * 8, 0, 8, read_buffer, 0);
-        read(&abar->ports[port], k * 8, 0, 8, read_buffer);
+        read(&abar->ports[port], k * 8, 0, 1, read_buffer);
         for (j = 0; j < BLOCK_SIZE; j++) {
             if (read_buffer[j] == k) {
                 flag = 1;
             } else {
-                // Read and write does not match
+                Read and write does not match
                 flag = 0;
                 break;
             }
