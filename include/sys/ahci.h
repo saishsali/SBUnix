@@ -336,6 +336,7 @@ typedef volatile struct {
 }__attribute__((__packed__)) hba_mem_t;
 
 void init_ahci(uint32_t bar5);
+void init_pci();
 
 #endif
 
