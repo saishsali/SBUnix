@@ -36,6 +36,7 @@
 // AHCI Base Memory Register
 hba_mem_t *abar;
 
+// Add a delay
 void delay() {
     int spin = 0;
 
@@ -45,8 +46,7 @@ void delay() {
 }
 
 // Find a free command list slot
-int find_cmdslot(hba_port_t *port)
-{
+int find_cmdslot(hba_port_t *port) {
     // Check device status (DS) and command issue (CI) for each command slot status. If SACT and CI is not set, the slot is free.
     uint32_t slots = (port->sact | port->ci);
     int i;
@@ -66,11 +66,8 @@ int find_cmdslot(hba_port_t *port)
     return -1;
 }
 
-int read(hba_port_t *port, uint32_t startl, uint32_t starth, uint32_t count, uint8_t *buf)
-{
-    // volatile uint32_t *cip = &(port->ci);
+int read(hba_port_t *port, uint32_t startl, uint32_t starth, uint32_t count, uint8_t *buf) {
     port->is_rwc = (uint32_t)-1;   // Clear pending interrupt bits
-    int spin = 0; // Spin lock timeout counter
     int i;
     int slot = find_cmdslot(port);
     if (slot == -1)
@@ -78,21 +75,26 @@ int read(hba_port_t *port, uint32_t startl, uint32_t starth, uint32_t count, uin
 
     hba_cmd_header_t *cmdheader = (hba_cmd_header_t*)port->clb;
     cmdheader += slot;
-    cmdheader->cfl = sizeof(fis_reg_h2d_t) / sizeof(uint32_t); // Command FIS size
-    cmdheader->w = 0;       // Read from device
-    cmdheader->prdtl = (uint16_t)((count - 1) >> 3) + 1;    // PRDT entries count
+
+    // Command FIS size
+    cmdheader->cfl = sizeof(fis_reg_h2d_t) / sizeof(uint32_t);
+
+    // Read from device
+    cmdheader->w = 0;
+
+    // PRDT entries count
+    cmdheader->prdtl = (uint16_t)((count - 1) >> 3) + 1;
 
     hba_cmd_tbl_t *cmdtbl = (hba_cmd_tbl_t*)(cmdheader->ctba);
     memset(cmdtbl, 0, sizeof(hba_cmd_tbl_t) + (cmdheader->prdtl - 1) * sizeof(hba_prdt_entry_t));
 
-    // 8K bytes (16 sectors) per PRDT
-    for (i = 0; i < cmdheader->prdtl - 1; i++)
-    {
+    // 4K bytes (8 sectors) per PRDT
+    for (i = 0; i < cmdheader->prdtl - 1; i++) {
         cmdtbl->prdt_entry[i].dba = (uint64_t)buf;
-        cmdtbl->prdt_entry[i].dbc = 4 * 1024; // 8K bytes
+        cmdtbl->prdt_entry[i].dbc = 4 * 1024; // 4K bytes
         cmdtbl->prdt_entry[i].i = 1;
         buf += 4 * 1024;  // 4K words
-        count -= 8;    // 16 sectors
+        count -= 8;    // 8 sectors
     }
 
     // Last entry
@@ -111,7 +113,6 @@ int read(hba_port_t *port, uint32_t startl, uint32_t starth, uint32_t count, uin
     cmdfis->lba1 = (uint8_t)(startl >> 8);
     cmdfis->lba2 = (uint8_t)(startl >> 16);
     cmdfis->device = 1 << 6;  // LBA mode
-    // cmdfis->control = 1 << 7;
 
     cmdfis->lba3 = (uint8_t)(startl >> 24);
     cmdfis->lba4 = (uint8_t)starth;
@@ -120,59 +121,36 @@ int read(hba_port_t *port, uint32_t startl, uint32_t starth, uint32_t count, uin
     cmdfis->count = count;
 
     // The below loop waits until the port is no longer busy before issuing a new command
-    while ((port->tfd & (ATA_DEV_BUSY | ATA_DEV_DRQ)))// && spin < 1000000))
-    {
-        spin++;
-    }
-    
-    // if (spin == 1000000)
-    // {
-    //     kprintf("Port is hung\n");
-    //     return 0;
-    // }
-    
-
+    while ((port->tfd & (ATA_DEV_BUSY | ATA_DEV_DRQ)));
     port->ci = 1 << slot; // Issue command
 
     // Wait for completion
-    while (1)
-    {
+    while (1) {
         // In some longer duration reads, it may be helpful to spin on the DPS bit
         // in the PxIS port field as well (1 << 5)
-        if (!(port->ci & (1 << slot))){
-            kprintf("CI: %x, Slot: %x ", port->ci, (1 << slot));
+        if (!(port->ci & (1 << slot))) {
             break;
         }
 
-        if (port->is_rwc & HBA_PxIS_TFES)   // Task file error
-        {
+        // Task file error
+        if (port->is_rwc & HBA_PxIS_TFES) {
             kprintf("Read disk error\n");
             return 0;
         }
     }
 
-    // kprintf("%d %d \n\r",port->ci, (1<<slot));
-
     // Check again
-    if (port->is_rwc & HBA_PxIS_TFES)
-    {
+    if (port->is_rwc & HBA_PxIS_TFES) {
         kprintf("Read disk error\n");
         return 0;
     }
-
-    // kprintf("Read done\n");
-    // kprintf("Port CI: %x\n", port->ci);
-    // kprintf("Slot CI: %x\n", 1 << slot);
 
     return 1;
 }
 
 
-int write(hba_port_t *port, uint32_t startl, uint32_t starth, uint32_t count, uint8_t *buf)
-{
-    // volatile uint32_t *cip = &(port->ci);
+int write(hba_port_t *port, uint32_t startl, uint32_t starth, uint32_t count, uint8_t *buf) {
     port->is_rwc = (uint32_t)-1;       // Clear pending interrupt bits
-    int spin = 0; // Spin lock timeout counter
     int i;
     int slot = find_cmdslot(port);
     if (slot == -1)
@@ -180,21 +158,27 @@ int write(hba_port_t *port, uint32_t startl, uint32_t starth, uint32_t count, ui
 
     hba_cmd_header_t *cmdheader = (hba_cmd_header_t*)port->clb;
     cmdheader += slot;
-    cmdheader->cfl = sizeof(fis_reg_h2d_t) / sizeof(uint32_t); // Command FIS size
-    cmdheader->w = 1;       // Write to device
-    cmdheader->prdtl = (uint16_t)((count - 1) >> 3) + 1;    // PRDT entries count
+
+    // Command FIS size
+    cmdheader->cfl = sizeof(fis_reg_h2d_t) / sizeof(uint32_t);
+
+    // Write to device
+    cmdheader->w = 1;
+
+    // PRDT entries count
+    cmdheader->prdtl = (uint16_t)((count - 1) >> 3) + 1;
 
     hba_cmd_tbl_t *cmdtbl = (hba_cmd_tbl_t*)(cmdheader->ctba);
     memset(cmdtbl, 0, sizeof(hba_cmd_tbl_t) + (cmdheader->prdtl-1) * sizeof(hba_prdt_entry_t));
 
-    // 8K bytes (16 sectors) per PRDT
+    // 4K bytes (8 sectors) per PRDT
     for (i = 0; i < cmdheader->prdtl - 1; i++)
     {
         cmdtbl->prdt_entry[i].dba = (uint64_t)buf;
-        cmdtbl->prdt_entry[i].dbc = 4 * 1024; // 8K bytes
+        cmdtbl->prdt_entry[i].dbc = 4 * 1024; // 4K bytes
         cmdtbl->prdt_entry[i].i = 1;
         buf += 4 * 1024;  // 4K words
-        count -= 8;    // 16 sectors
+        count -= 8;    // 8 sectors
     }
 
     // Last entry
@@ -221,83 +205,55 @@ int write(hba_port_t *port, uint32_t startl, uint32_t starth, uint32_t count, ui
     cmdfis->count = count;
 
     // The below loop waits until the port is no longer busy before issuing a new command
-    while ((port->tfd & (ATA_DEV_BUSY | ATA_DEV_DRQ)))// && spin < 1000000)
-    {
-        spin++;
-    }
-    // if (spin == 1000000)
-    // {
-    //     kprintf("Port is hung\n");
-    //     return 0;
-    // }
+    while ((port->tfd & (ATA_DEV_BUSY | ATA_DEV_DRQ)));
 
-    port->ci = 1<<slot; // Issue command
+    port->ci = 1 << slot; // Issue command
 
     // Wait for completion
     while (1)
     {
         // In some longer duration reads, it may be helpful to spin on the DPS bit
         // in the PxIS port field as well (1 << 5)
-        if (!(port->ci & (1 << slot))){
-            kprintf("CI: %x, Slot: %x ", port->ci, (1 << slot));
+        if (!(port->ci & (1 << slot))) {
             break;
         }
-        if (port->is_rwc & HBA_PxIS_TFES)   // Task file error
-        {
+
+        // Task file error
+        if (port->is_rwc & HBA_PxIS_TFES) {
             kprintf("Write disk error\n");
             return 0;
         }
     }
 
     // Check again
-    if (port->is_rwc & HBA_PxIS_TFES)
-    {
+    if (port->is_rwc & HBA_PxIS_TFES) {
         kprintf("Write disk error\n");
         return 0;
     }
-
-    // kprintf("Write done\n");
 
     return 1;
 }
 
 // Serial ATA AHCI 1.3.1 Specification (Section 10.4.2)
 void port_reset(hba_port_t *port) {
-    int spin = 0;
     uint32_t flag;
 
     // Invoke a COMRESET on the interface and start a re-establishment of Phy layer communications
-    // flag = port->sctl;
-    // flag &= 0xFFFFF0F0;
-    // flag |= 0x00000301;
-    // port->sctl = flag;
+    // Transitions to both Partial and Slumber states disabled
     port->sctl = 0x301;
     delay();
 
-    // Wait
-    while (spin < 1000000) {
-        spin++;
-    }
-
-    // Vlearing PxSCTL.DET to 0h; this ensures that at least one COMRESET signal is sent over the interface
-    // port->sctl &= 0xFFFFFFF0;
+    // Clearing PxSCTL.DET to 0h; this ensures that at least one COMRESET signal is sent over the interface
     port->sctl = 0x300;
     delay();
-
-    // Set FIS Receive Enable (FRE)
-    // port->cmd |= 0x00000008;
-
 
     // Set Spin-Up Device (SUD)
     port->cmd |= 0x00000002;
     delay();
 
-    // Check Cold Presence Detection (CPD) is set
-    // if (((port->cmd >> 20) & 0x01) == 1) {
-        // Set Power On Device (POD)
-        port->cmd |= 0x00000004;
-        delay();
-    // }
+    // Set Power On Device (POD)
+    port->cmd |= 0x00000004;
+    delay();
 
     // Set Interface Communication Control (ICC)
     flag = port->cmd;
@@ -306,58 +262,31 @@ void port_reset(hba_port_t *port) {
     port->cmd = flag;
     delay();
 
-
     // Write all 1s to the PxSERR register to clear any bits that were set as part of the port reset
     port->serr_rwc = 0xFFFFFFFF;
     delay();
+
+    // Write all 1s to the PxIS register to clear any bits that were set as part of the port reset
     port->is_rwc = 0xFFFFFFFF;
     delay();
-    // port->ie = 0xFFFFFFFF;
 
     // Wait for communication to be re-established
     while ((port->ssts & 0x0F) != 3);
     delay();
-
-    // Write all 1s to the PxSERR register to clear any bits that were set as part of the port reset
-    // port->serr_rwc = 0xFFFFFFFF;
-
-    // Transitions to both Partial and Slumber states disabled
-    // flag = port->sctl;
-    // flag &= 0xFFFFF0FF;
-    // flag |= 0x00000300;
-    // port->sctl = flag;
 }
 
 // Start command engine (Section 3.3.7 Serial ATA AHCI 1.3.1 Specification)
 void start_cmd(hba_port_t *port) {
-    // uint32_t flag;
-
     port_reset(port);
 
     // Wait until CR (bit15) is cleared
     while (port->cmd & HBA_PxCMD_CR);
 
-    // // Set Interface Communication Control (ICC)
-    // flag = port->cmd;
-    // flag &= 0x0FFFFFFF;
-    // flag |= 0x10000000;
-    // port->cmd = flag;
-
-    // // Set FIS Receive Enable (FRE)
-    // port->cmd |= 0x00000008;
-
-    // // Check Cold Presence Detection (CPD) is set
-    // if (((port->cmd >> 20) & 0x01) == 1) {
-    //     // Set Power On Device (POD)
-    //     port->cmd |= 0x00000004;
-    // }
-
-    // // Set Spin-Up Device (SUD)
-    // port->cmd |= 0x00000002;
-
-    // Set FRE (bit4) and ST (bit0)
+    // Set FRE (bit4)
     port->cmd |= HBA_PxCMD_FRE;
     delay();
+
+    // Set ST (bit0)
     port->cmd |= HBA_PxCMD_ST;
     delay();
 }
@@ -373,31 +302,9 @@ void stop_cmd(hba_port_t *port) {
     port->cmd &= ~HBA_PxCMD_FRE;
     delay();
     while (port->cmd & HBA_PxCMD_FR);
-
-    // // Clear ST (bit0)
-    // port->cmd &= ~HBA_PxCMD_ST;
-
-    // // Wait until FR (bit14), CR (bit15) are cleared
-    // while(1)
-    // {
-    //     if (port->cmd & HBA_PxCMD_FR)
-    //         continue;
-    //     if (port->cmd & HBA_PxCMD_CR)
-    //         continue;
-    //     break;
-    // }
-
-    // // Clear FRE (bit4)
-    // port->cmd &= ~HBA_PxCMD_FRE;
 }
 
 void port_rebase(hba_port_t *port, int portno) {
-
-    abar->ghc |= 0x01;
-    while ((abar->ghc & 0x01) != 0);
-    abar->ghc |= 0x80000000;
-    abar->ghc |= 0x02;
-
     int i;
 
     stop_cmd(port); // Stop command engine
@@ -432,19 +339,8 @@ void port_rebase(hba_port_t *port, int portno) {
     start_cmd(port);
 }
 
-
 // Check device type
 int check_type(hba_port_t *port) {
-    // uint32_t ssts = port->ssts;
-    // uint8_t ipm = (ssts >> 8) & 0x0F;
-    // uint8_t det = ssts & 0x0F;
-
-    // Check drive status
-    // if (det != HBA_PORT_DET_PRESENT)
-    //     return AHCI_DEV_NULL;
-    // if (ipm != HBA_PORT_IPM_ACTIVE)
-    //     return AHCI_DEV_NULL;
-
     switch (port->sig) {
         case SATA_SIG_ATAPI:
             return AHCI_DEV_SATAPI;
@@ -459,116 +355,72 @@ int check_type(hba_port_t *port) {
     }
 }
 
+// Verify read and write to disks
 void verify_read_write(uint8_t port) {
-    // uint8_t flag = 0, *write_buffer = (uint8_t *)0x30000, *read_buffer = (uint8_t *)0x9FF000;
-    uint32_t k, j, i = port;
+    uint32_t i, j;
     int flag = 0;
-    uint8_t *buf1 = (uint8_t *)0x400000, *buf2 = (uint8_t *)0x500000;
-    // int spin = 0;
-    // port_rebase(&abar->ports[port], port);
+    uint8_t *write_buffer = (uint8_t *)0x400000, *read_buffer = (uint8_t *)0x500000;
+    memset(write_buffer, 0, BLOCK_SIZE);
+    write(&abar->ports[port], 0, 0, 8, write_buffer);
 
-    // for (int j = 0; j < 4096; j++) {
-    //     buf2[j] = 12;
-    // }
-    memset(buf2, 11, 4096);
+    kprintf("Writing to disk ...\n");
 
-    // for (k = 0; k < NUM_BLOCKS; k++) {
-    //     for (j = 0; j < BLOCK_SIZE; j++) {
-    //         *write_buffer = k;
-    //         write_buffer++;
-    //     }
-    //     write_buffer -= j;
-
-    //     // ahci_read_write(&abar->ports[port], k * 8, 0, 8, write_buffer, 1);
-    //     write(&abar->ports[port], k * 8, 0, 8, write_buffer);
-    // }
-
-    // for (k = 0; k < NUM_BLOCKS; k++) {
-    //     // ahci_read_write(&abar->ports[port], k * 8, 0, 8, read_buffer, 0);
-    //     read(&abar->ports[port], k * 8, 0, 8, read_buffer);
-    //     for (j = 0; j < BLOCK_SIZE; j++) {
-    //         // if (read_buffer[j] == k) {
-    //         //     flag = 1;
-    //         // } else {
-    //         //     // Read and write does not match
-    //         //     flag = 0;
-    //         //     break;
-    //         // }
-    //         kprintf("%d ", read_buffer[j]);
-    //     }
-
-    //     if (flag == 0)
-    //         break;
-    // }
-
-    for (k = 0; k < NUM_BLOCKS; k++) {
-        // tmp = buf1;
-        // for (j = 0; j < BLOCK_SIZE; j++) {
-        //     *tmp = k;
-        //     tmp++;
-        // }
-        memset(buf1, k, BLOCK_SIZE);
-        write(&abar->ports[i], k * 8, 0, 8, buf1);
+    for (i = 0; i < NUM_BLOCKS; i++) {
+        memset(write_buffer, i, BLOCK_SIZE);
+        write(&abar->ports[port], i * 8, 0, 8, write_buffer);
     }
-    kprintf("\n done writing!!!!!!!");
 
-    for (k = 0; k < NUM_BLOCKS; k++) {
-        read(&abar->ports[i], k * 8, 0, 8, buf2);
-        kprintf("Read from disk: \n");
+    kprintf("Reading from disk ...\n");
+
+    for (i = 0; i < NUM_BLOCKS; i++) {
+        read(&abar->ports[port], i * 8, 0, 8, read_buffer);
         for (j = 0; j < BLOCK_SIZE; j++) {
-            if (buf2[j] == k) {
+            if (j == 0) {
+                kprintf("%d ", read_buffer[j]);
+            }
+            // If read-write match is found
+            if (read_buffer[j] == i) {
                 flag = 1;
             } else {
+                // If read-write mismatch
                 flag = 0;
                 break;
             }
         }
-        if (flag == 0) {
-            kprintf("Block %d mismatch\n", k);
-            break;
-        } else {
-            kprintf("Block %d verified\n", k);
-        }
 
-            // kprintf("%d ", buf2[j]);
-        // kprintf("\n");
+        // Break even if a single mismatch is found
+        if (flag == 0) {
+            break;
+        }
     }
 
     if (flag == 1)
-        kprintf("Read and write verified successfully at port %d\n \n", port);
+        kprintf("\nRead and write verified successfully at port %d\n \n", port);
 }
-
 
 // Search disk in ports impelemented
 void probe_port() {
     uint32_t pi = abar->pi, dt, i = 0;
-    uint8_t device_found;
+    uint8_t disk_read_write = 0;
 
     while (i < 32) {
-        device_found = 0;
         if (pi & 1) {
             dt = check_type(&abar->ports[i]);
             if (dt == AHCI_DEV_SATA) {
                 kprintf("SATA drive found at port %d\n", i);
-                device_found = 1;
+                if (disk_read_write == 0) {
+                    port_rebase(&abar->ports[i], i);
+                    verify_read_write(i);
+                    disk_read_write = 1;
+                }
             } else if (dt == AHCI_DEV_SATAPI) {
                 kprintf("SATAPI drive found at port %d\n", i);
-                device_found = 1;
             } else if (dt == AHCI_DEV_SEMB) {
                 kprintf("SEMB drive found at port %d\n", i);
-                device_found = 1;
             } else if (dt == AHCI_DEV_PM) {
                 kprintf("PM drive found at port %d\n", i);
-                device_found = 1;
             } else {
                 kprintf("No drive found at port %d\n", i);
-                device_found = 0;
-            }
-
-            if (i==0 && device_found == 1) {
-                port_rebase(&abar->ports[i], i);
-                verify_read_write(i);
-                return;
             }
         }
         pi >>= 1;
@@ -580,23 +432,8 @@ void init_ahci(uint32_t bar5) {
     // Convert Physical address to virtual address
     abar = (hba_mem_t *)((uint64_t)bar5);
 
-    // Set bit0 of Global Host Control to reset AHCI controller, then set bit31 to re-enable AHCI
-    // abar->ghc |= 0x01;
-    // abar->ghc |= 0x80000000;
-    // abar->ghc |= 0x02;
-
-    // while ((abar->ghc & 0x01) != 0);
-
-    // abar->ghc |= 0x01;
-    // while ((abar->ghc & 0x01) != 0);
-
-    // while (spin < 1000000) {
-    //     spin++;
-    // }
-
-    // if (!(abar->ghc & 0x80000000))
-    //     abar->ghc |= 0x80000000;
-
+    // Set bit31 to enable AHCI
+    abar->ghc |= 0x80000000;
 
     probe_port();
 }
