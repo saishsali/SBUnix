@@ -169,11 +169,10 @@ int write(hba_port_t *port, uint32_t startl, uint32_t starth, uint32_t count, ui
     cmdheader->prdtl = (uint16_t)((count - 1) >> 3) + 1;
 
     hba_cmd_tbl_t *cmdtbl = (hba_cmd_tbl_t*)(cmdheader->ctba);
-    memset(cmdtbl, 0, sizeof(hba_cmd_tbl_t) + (cmdheader->prdtl-1) * sizeof(hba_prdt_entry_t));
+    memset(cmdtbl, 0, sizeof(hba_cmd_tbl_t) + (cmdheader->prdtl - 1) * sizeof(hba_prdt_entry_t));
 
     // 4K bytes (8 sectors) per PRDT
-    for (i = 0; i < cmdheader->prdtl - 1; i++)
-    {
+    for (i = 0; i < cmdheader->prdtl - 1; i++) {
         cmdtbl->prdt_entry[i].dba = (uint64_t)buf;
         cmdtbl->prdt_entry[i].dbc = 4 * 1024; // 4K bytes
         cmdtbl->prdt_entry[i].i = 1;
@@ -360,10 +359,13 @@ void verify_read_write(uint8_t port) {
     uint32_t i, j;
     int flag = 0;
     uint8_t *write_buffer = (uint8_t *)0x400000, *read_buffer = (uint8_t *)0x500000;
-    memset(write_buffer, 0, BLOCK_SIZE);
-    write(&abar->ports[port], 0, 0, 8, write_buffer);
 
     kprintf("Writing to disk ...\n");
+
+    // Write 0 to the first 4KB Block
+    // 512 bytes * 8 blocks = 4096 KB
+    memset(write_buffer, 0, BLOCK_SIZE);
+    write(&abar->ports[port], 0, 0, 8, write_buffer);
 
     for (i = 0; i < NUM_BLOCKS; i++) {
         memset(write_buffer, i, BLOCK_SIZE);
