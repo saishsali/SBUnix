@@ -3,7 +3,7 @@
 void *mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset) {
 	uint64_t ret;
 	 __asm__ (
-        "movq $10, %%rax;"
+        "movq $9, %%rax;"
         "movq %1, %%rdi;"
         "movq %2, %%rsi;"
         "movq %3, %%rdx;"
@@ -17,5 +17,5 @@ void *mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset)
         : "%rax", "%rdi", "%rsi", "%rdx", "%rbx", "%rcx", "%r12"
     );
 
-	return (void *)ret;
+	return (uint64_t *)ret;
 }
