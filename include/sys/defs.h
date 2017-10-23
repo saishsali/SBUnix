@@ -21,4 +21,11 @@ typedef uint32_t pid_t;
 
 typedef uint64_t mode_t;
 
+/*
+- Round up N to the nearest multiple of S
+- https://stackoverflow.com/questions/1010922/question-about-round-up-macro
+- ROUND_UP(121, 5) = 125, ROUND_UP(10, 5) = 10
+*/
+#define ROUND_UP(N, S) ((((N) + (S) - 1) / (S)) * (S))
+
 #endif
