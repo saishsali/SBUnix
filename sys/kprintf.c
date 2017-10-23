@@ -53,10 +53,14 @@ void print_character(char c) {
     }
 }
 
-char *decimal_conversion(unsigned int decimal, int base) {
+char *decimal_conversion(unsigned long long decimal, int base) {
     static char buf[SIZE];
     char *result = &buf[SIZE - 1], representation[] = "0123456789ABCDEF";
     int remainder;
+
+    if (decimal == 0) {
+        return "0";
+    }
 
     while (decimal > 0) {
         remainder = decimal % base;
@@ -91,7 +95,7 @@ void output(const char *fmt, va_list arguments) {
                     break;
 
                 case 'x':
-                    kprintf(decimal_conversion(va_arg(arguments, unsigned int), 16));
+                    kprintf(decimal_conversion(va_arg(arguments, unsigned long long), 16));
                     break;
 
                 case 's':
@@ -100,7 +104,7 @@ void output(const char *fmt, va_list arguments) {
 
                 case 'p':
                     kprintf("0x");
-                    kprintf(decimal_conversion(va_arg(arguments, unsigned int), 16));
+                    kprintf(decimal_conversion(va_arg(arguments, unsigned long long), 16));
                     break;
 
                 default:

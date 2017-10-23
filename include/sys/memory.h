@@ -22,6 +22,6 @@ struct Page {
 
 typedef struct Page Page;
 
-void memory_init(void *physbase, void *physfree, uint64_t num_pages);
+void memory_init(uint32_t *modulep, void *physbase, void *physfree);
 
 #endif
