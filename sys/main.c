@@ -5,7 +5,7 @@
 #include <sys/kprintf.h>
 #include <sys/tarfs.h>
 #include <sys/ahci.h>
-#include <sys/memory.h>
+#include <sys/page_descriptor.h>
 #include <sys/ahci.h>
 
 #define INITIAL_STACK_SIZE 4096
@@ -24,13 +24,13 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
     for (smap = (struct smap_t*)(modulep + 2); smap < (struct smap_t*)((char*)modulep+modulep[1] + 2 * 4); ++smap) {
         if (smap->type == 1 /* memory */ && smap->length != 0) {
             kprintf("Available Physical Memory [%p-%p]\n", smap->base, smap->base + smap->length);
+            page_init(smap->base, (smap->base + smap->length), (uint64_t)physbase, (uint64_t)physfree);
         }
     }
     kprintf("physbase %p\n", (uint64_t)physbase);
     kprintf("physfree %p\n", (uint64_t)physfree);
     kprintf("tarfs in [%p:%p]\n", &_binary_tarfs_start, &_binary_tarfs_end);
-    memory_init(modulep, physbase, physfree);
-    init_pci();
+    // init_pci();
 }
 
 void boot(void)
