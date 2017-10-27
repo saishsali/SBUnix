@@ -334,4 +334,7 @@ typedef volatile struct {
   hba_port_t ports[MAX_PORT_CNT]; // 1 ~ 32
 }__attribute__((__packed__)) hba_mem_t;
 
+void init_ahci(uint32_t bar5);
+void init_pci();
+
 #endif
