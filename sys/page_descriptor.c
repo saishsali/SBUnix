@@ -53,7 +53,7 @@ void page_init(uint64_t start, uint64_t end, uint64_t physbase, uint64_t physfre
     // To do: Mark pages used by page descriptor array as in use
 }
 
-void *allocate_page() {
+Page *allocate_page() {
     if (page_free_list == NULL) {
         kprintf("No free pages for allocation\n");
         return NULL;
