@@ -6,13 +6,15 @@
 Page *page_free_list, *pages;
 
 uint64_t page_to_physical_address(Page *p) {
+    /* (Page address - Starting address) * 4096 */
     return (p - pages) << PAGE_SHIFT;
 }
 
 void page_init(uint64_t start, uint64_t end, uint64_t physbase, uint64_t physfree) {
     static uint64_t index = 0;
-    /* Start page descriptor array at physfree */
-    pages = (Page *)physfree;
+
+    /* Start page descriptor array at KERBASE + physfree */
+    pages = (Page *)(KERNBASE + physfree);
     Page *prev = NULL;
     uint64_t i = 0;
     start = start / PAGE_SIZE;
@@ -32,8 +34,12 @@ void page_init(uint64_t start, uint64_t end, uint64_t physbase, uint64_t physfre
     }
 
     for (i = start; i < end; i++) {
-        /* Mark kernel memory as in use */
-        if (i >= (physbase / PAGE_SIZE) && i < (physfree / PAGE_SIZE)) {
+        /* Mark memory until physfree as in use */
+        if (i < (physfree / PAGE_SIZE)) {
+            pages[i].reference_count = 1;
+            pages[i].next = NULL;
+        } else if (i >= (physfree / PAGE_SIZE) && i < ROUND_UP((physfree + end * sizeof(Page)), PAGE_SIZE) / PAGE_SIZE) {
+            /* Mark memory used by page descriptor array as in use */
             pages[i].reference_count = 1;
             pages[i].next = NULL;
         } else {
@@ -49,8 +55,8 @@ void page_init(uint64_t start, uint64_t end, uint64_t physbase, uint64_t physfre
             prev = &pages[i];
         }
     }
+
     index = end;
-    // To do: Mark pages used by page descriptor array as in use
 }
 
 Page *allocate_page() {
@@ -60,6 +66,7 @@ Page *allocate_page() {
     }
     Page *free_page = page_free_list;
     page_free_list = page_free_list->next;
+    free_page->reference_count = 1;
 
     return free_page;
 }

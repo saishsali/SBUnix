@@ -1,11 +1,23 @@
 #include <sys/defs.h>
 #include <sys/paging.h>
 #include <sys/page_descriptor.h>
+#include <sys/kprintf.h>
 
 extern char kernmem;
 
 /* Page map level 4 */
 PML4 *pml4;
+
+/* Load page table base address in CR3 register */
+void load_cr3() {
+    // kprintf("Hello World\n");
+    uint64_t cr3 = (uint64_t)pml4;
+    __asm__ volatile(
+        "movq %0, %%cr3;"
+        :
+        : "r" (cr3)
+    );
+}
 
 /* Allocate Page Directory Pointer Table */
 PDPT *allocate_pdpt(PML4 *pml4, uint64_t pml4_index) {
@@ -98,3 +110,18 @@ void map_page(uint64_t virtual_address, uint64_t physical_address) {
 
     pt->entries[pt_index] = physical_address | (PTE_P | PTE_W | PTE_U);
 }
+
+// /* map the entire available memory */
+// void set_identity_paging() {
+
+//     uint64_t vaddr = ;
+//     uint64_t paddr = 0
+//     // uint64_t max_phys = get_maxphysfree();
+
+//     for(; paddr <= max_phys; paddr += PAGE_SIZE, vaddr += PAGE_SIZE){
+//         map_page(vaddr, paddr);
+//     }
+
+//     /* map the video memory physical address to the virtual address */
+//     map_page((uint64_t)0xffffffff800b8000UL, VIDEO_MEMORY);
+// }
