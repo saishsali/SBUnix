@@ -10,12 +10,11 @@ PML4 *pml4;
 
 /* Load page table base address in CR3 register */
 void load_cr3() {
-    // kprintf("Hello World\n");
     uint64_t cr3 = (uint64_t)pml4;
     __asm__ volatile(
         "movq %0, %%cr3;"
         :
-        : "r" (cr3)
+        : "b" (cr3)
     );
 }
 
@@ -52,31 +51,6 @@ PT *allocate_pt(PDT *pdt, uint64_t pdt_index) {
     return pt;
 }
 
-/* Setup page table for kernel */
-void setup_page_tables(uint64_t physbase, uint64_t physfree) {
-    uint64_t kernel_virtual_address = (uint64_t)&kernmem;
-    uint64_t pml4_index = PML4_INDEX(kernel_virtual_address);
-    uint64_t pdpt_index = PDPT_INDEX(kernel_virtual_address);
-    uint64_t pdt_index = PDT_INDEX(kernel_virtual_address);
-
-    Page *p = allocate_page();
-    pml4 = (PML4 *)page_to_physical_address(p);
-    PDPT *pdpt = allocate_pdpt(pml4, pml4_index);
-    PDT *pdt = allocate_pdt(pdpt, pdpt_index);
-    PT *pt = allocate_pt(pdt, pdt_index);
-
-    uint64_t physical_address = physbase;
-    uint64_t virtual_address  = kernel_virtual_address;
-
-    while (physical_address < physfree) {
-        uint64_t pt_index = PT_INDEX(virtual_address);
-        uint64_t pt_entry = physical_address | (PTE_P | PTE_W | PTE_U);
-        pt->entries[pt_index] = pt_entry;
-        physical_address += PAGE_SIZE;
-        virtual_address += PAGE_SIZE;
-    }
-}
-
 /* Map a Virtual address to a physical address */
 void map_page(uint64_t virtual_address, uint64_t physical_address) {
     PDPT *pdpt;
@@ -111,17 +85,50 @@ void map_page(uint64_t virtual_address, uint64_t physical_address) {
     pt->entries[pt_index] = physical_address | (PTE_P | PTE_W | PTE_U);
 }
 
-// /* map the entire available memory */
-// void set_identity_paging() {
+/*
+    Map kernel memory from virtual address KERNBASE + physbase => physical address physbase to
+    Virtual address KERNBASE + physfree => physical address physfree
+*/
+void map_kernel_memory(uint64_t physbase, uint64_t physfree) {
+    uint64_t kernel_virtual_address = (uint64_t)(KERNBASE + physbase);
+    uint64_t pml4_index = PML4_INDEX(kernel_virtual_address);
+    uint64_t pdpt_index = PDPT_INDEX(kernel_virtual_address);
+    uint64_t pdt_index = PDT_INDEX(kernel_virtual_address);
 
-//     uint64_t vaddr = ;
-//     uint64_t paddr = 0
-//     // uint64_t max_phys = get_maxphysfree();
+    Page *p = allocate_page();
+    pml4 = (PML4 *)page_to_physical_address(p);
+    PDPT *pdpt = allocate_pdpt(pml4, pml4_index);
+    PDT *pdt = allocate_pdt(pdpt, pdpt_index);
+    PT *pt = allocate_pt(pdt, pdt_index);
 
-//     for(; paddr <= max_phys; paddr += PAGE_SIZE, vaddr += PAGE_SIZE){
-//         map_page(vaddr, paddr);
-//     }
+    uint64_t physical_address = physbase;
+    uint64_t virtual_address  = kernel_virtual_address;
 
-//     /* map the video memory physical address to the virtual address */
-//     map_page((uint64_t)0xffffffff800b8000UL, VIDEO_MEMORY);
-// }
+    while (physical_address < physfree) {
+        uint64_t pt_index = PT_INDEX(virtual_address);
+        uint64_t pt_entry = physical_address | (PTE_P | PTE_W | PTE_U);
+        pt->entries[pt_index] = pt_entry;
+        physical_address += PAGE_SIZE;
+        virtual_address += PAGE_SIZE;
+    }
+}
+
+/* Map the entire available memory starting from KERNBASE + physfree to last physical address */
+void map_avaiable_memory(uint64_t physfree, uint64_t last_physical_address) {
+    uint64_t virtual_address = (KERNBASE + physfree);
+    uint64_t physical_address = physfree;
+
+    while (physical_address < last_physical_address) {
+        map_page(virtual_address, physical_address);
+        virtual_address += PAGE_SIZE;
+        physical_address += PAGE_SIZE;
+    }
+    /* map the video memory physical address to the virtual address */
+    map_page((uint64_t)(KERNBASE + 0xb8000), 0xb8000);
+}
+
+/* Setup page tables */
+void setup_page_tables(uint64_t physbase, uint64_t physfree, uint64_t last_physical_address) {
+    map_kernel_memory(physbase, physfree);
+    map_avaiable_memory(physfree, last_physical_address);
+}

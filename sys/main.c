@@ -16,6 +16,7 @@ extern char kernmem, physbase;
 
 void start(uint32_t *modulep, void *physbase, void *physfree)
 {
+    uint64_t last_physical_address = 0;
     clear_screen();
     struct smap_t {
         uint64_t base, length;
@@ -26,13 +27,14 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
         if (smap->type == 1 /* memory */ && smap->length != 0) {
             kprintf("Available Physical Memory [%p-%p]\n", smap->base, smap->base + smap->length);
             page_init(smap->base, (smap->base + smap->length), (uint64_t)physbase, (uint64_t)physfree);
+            last_physical_address = smap->base + smap->length;
         }
     }
     kprintf("physbase %p\n", (uint64_t)physbase);
     kprintf("physfree %p\n", (uint64_t)physfree);
     kprintf("tarfs in [%p:%p]\n", &_binary_tarfs_start, &_binary_tarfs_end);
-    setup_page_tables((uint64_t)physbase, (uint64_t)physfree);
-    // load_cr3();
+    setup_page_tables((uint64_t)physbase, (uint64_t)physfree, last_physical_address);
+    load_cr3();
     // init_pci();
 }
 
@@ -50,7 +52,7 @@ void boot(void)
     );
     init_gdt();
     init_idt();
-    // init_pic();
+    init_pic();
 
     start(
         (uint32_t*)((char*)(uint64_t)loader_stack[3] + (uint64_t)&kernmem - (uint64_t)&physbase),
