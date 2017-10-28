@@ -15,6 +15,7 @@ struct Page {
 typedef struct Page Page;
 
 void page_init(uint64_t start, uint64_t end, uint64_t physbase, uint64_t physfree);
-void *allocate_page();
+Page *allocate_page();
+uint64_t page_to_physical_address(Page *p);
 
 #endif
