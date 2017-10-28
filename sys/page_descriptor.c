@@ -70,3 +70,17 @@ Page *allocate_page() {
 
     return free_page;
 }
+
+Page *allocate_pages(int num_pages) {
+    if (page_free_list == NULL) {
+        kprintf("No free pages for allocation\n");
+        return NULL;
+    }
+    Page *free_page = page_free_list;
+    while (num_pages-- > 0) {
+        page_free_list->reference_count = 1;
+        page_free_list = page_free_list->next;
+    }
+
+    return free_page;
+}
