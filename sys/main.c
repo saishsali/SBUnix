@@ -14,9 +14,7 @@ uint8_t initial_stack[INITIAL_STACK_SIZE]__attribute__((aligned(16)));
 uint32_t* loader_stack;
 extern char kernmem, physbase;
 
-void start(uint32_t *modulep, void *physbase, void *physfree)
-{
-    uint64_t last_physical_address = 0;
+void start(uint32_t *modulep, void *physbase, void *physfree) {
     clear_screen();
     struct smap_t {
         uint64_t base, length;
@@ -27,20 +25,18 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
         if (smap->type == 1 /* memory */ && smap->length != 0) {
             kprintf("Available Physical Memory [%p-%p]\n", smap->base, smap->base + smap->length);
             page_init(smap->base, (smap->base + smap->length), (uint64_t)physbase, (uint64_t)physfree);
-            last_physical_address = smap->base + smap->length;
         }
     }
     kprintf("physbase %p\n", (uint64_t)physbase);
     kprintf("physfree %p\n", (uint64_t)physfree);
     kprintf("tarfs in [%p:%p]\n", &_binary_tarfs_start, &_binary_tarfs_end);
-    setup_page_tables((uint64_t)physbase, (uint64_t)physfree, last_physical_address);
+    setup_page_tables((uint64_t)physbase, (uint64_t)physfree);
     load_cr3();
     deallocate_initial_pages((uint64_t)physbase);
     // init_pci();
 }
 
-void boot(void)
-{
+void boot(void) {
     // note: function changes rsp, local stack variables can't be practically used
     register char *temp1;
     for(temp1 = (char*)0xb8001; temp1 < (char*)0xb8000+160*25; temp1 += 2) *temp1 = 7 /* white */;

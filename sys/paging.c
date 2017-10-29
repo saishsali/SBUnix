@@ -4,6 +4,7 @@
 #include <sys/kprintf.h>
 
 extern char kernmem;
+extern Page *page_free_list;
 
 /* Page map level 4 */
 PML4 *pml4;
@@ -114,11 +115,11 @@ void map_kernel_memory(uint64_t physbase, uint64_t physfree) {
 }
 
 /* Map the entire available memory starting from KERNBASE + physfree to last physical address */
-void map_available_memory(uint64_t physfree, uint64_t last_physical_address) {
+void map_available_memory(uint64_t physfree) {
     uint64_t virtual_address = (KERNBASE + physfree);
     uint64_t physical_address = physfree;
 
-    while (physical_address < last_physical_address) {
+    while (physical_address < page_to_physical_address(page_free_list)) {
         map_page(virtual_address, physical_address);
         virtual_address += PAGE_SIZE;
         physical_address += PAGE_SIZE;
@@ -128,7 +129,7 @@ void map_available_memory(uint64_t physfree, uint64_t last_physical_address) {
 }
 
 /* Setup page tables */
-void setup_page_tables(uint64_t physbase, uint64_t physfree, uint64_t last_physical_address) {
+void setup_page_tables(uint64_t physbase, uint64_t physfree) {
     map_kernel_memory(physbase, physfree);
-    map_available_memory(physfree, last_physical_address);
+    map_available_memory(physfree);
 }
