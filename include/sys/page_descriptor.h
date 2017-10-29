@@ -21,6 +21,6 @@ void page_init(uint64_t start, uint64_t end, uint64_t physbase, uint64_t physfre
 Page *allocate_page();
 Page *allocate_pages(int num_pages);
 uint64_t page_to_physical_address(Page *p);
-void free_initial_pages(uint64_t physbase);
+void deallocate_initial_pages(uint64_t physbase);
 
 #endif

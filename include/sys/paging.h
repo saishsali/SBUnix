@@ -1,4 +1,8 @@
-/* References: http://rayseyfarth.com/asm/pdf/ch04-memory-mapping.pdf */
+/*
+    References:
+    - http://rayseyfarth.com/asm/pdf/ch04-memory-mapping.pdf
+    - http://wiki.osdev.org/Paging
+*/
 #ifndef _PAGING_H
 #define _PAGING_H
 
@@ -20,7 +24,11 @@
 #define PTE_MBZ     0x180   // Bits must be zero
 #define PTE_COW     0x100   // Copy-on-write
 
+/* Last 12 bits are used for flags */
 #define GET_ADDRESS(x) (x & 0xFFFFFFFFFFFFF000)
+
+/* Video memory physical address */
+#define VIDEO_MEMORY 0xb8000
 
 /* Page Map Level 4 */
 struct PML4 {

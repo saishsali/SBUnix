@@ -114,7 +114,7 @@ void map_kernel_memory(uint64_t physbase, uint64_t physfree) {
 }
 
 /* Map the entire available memory starting from KERNBASE + physfree to last physical address */
-void map_avaiable_memory(uint64_t physfree, uint64_t last_physical_address) {
+void map_available_memory(uint64_t physfree, uint64_t last_physical_address) {
     uint64_t virtual_address = (KERNBASE + physfree);
     uint64_t physical_address = physfree;
 
@@ -124,11 +124,11 @@ void map_avaiable_memory(uint64_t physfree, uint64_t last_physical_address) {
         physical_address += PAGE_SIZE;
     }
     /* map the video memory physical address to the virtual address */
-    map_page((uint64_t)(KERNBASE + 0xb8000), 0xb8000);
+    map_page((uint64_t)(KERNBASE + VIDEO_MEMORY), VIDEO_MEMORY);
 }
 
 /* Setup page tables */
 void setup_page_tables(uint64_t physbase, uint64_t physfree, uint64_t last_physical_address) {
     map_kernel_memory(physbase, physfree);
-    map_avaiable_memory(physfree, last_physical_address);
+    map_available_memory(physfree, last_physical_address);
 }
