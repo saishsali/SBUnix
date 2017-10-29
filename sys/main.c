@@ -35,6 +35,9 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
     kprintf("tarfs in [%p:%p]\n", &_binary_tarfs_start, &_binary_tarfs_end);
     setup_page_tables((uint64_t)physbase, (uint64_t)physfree, last_physical_address);
     load_cr3();
+    free_initial_pages((uint64_t)physbase);
+    // Page *p = allocate_pages(10000);
+    // kprintf("value %d ", page_to_physical_address(p));
     // init_pci();
 }
 
