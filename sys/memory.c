@@ -13,7 +13,8 @@ void *kmalloc(size_t size) {
     virtual_address = start_address;
 
     while (num_pages--) {
-        map_page(virtual_address, page_to_physical_address(p));
+        // Not required to map pages as of now
+        // map_page(virtual_address, page_to_physical_address(p));
         memset((void *)virtual_address, 0, PAGE_SIZE);
         p = p->next;
         virtual_address = page_to_virtual_address(p);

@@ -1,8 +1,9 @@
 #include <sys/kprintf.h>
 #include <sys/string.h>
 #include <sys/stdarg.h>
-#include <sys/page_descriptor.h>
-#define VIDEO_MEM_START (0xb8000 + KERNBASE)
+#include <sys/defs.h>
+
+#define VIDEO_MEM_START (KERNBASE + 0xb8000)
 #define ROW_SIZE 25
 #define COLUMN_SIZE 160
 #define VIDEO_MEM_END (VIDEO_MEM_START + (ROW_SIZE - 1) * COLUMN_SIZE) // ROW_SIZE = 25th row is reserved for timer

@@ -3,7 +3,6 @@
 #include <sys/page_descriptor.h>
 #include <sys/kprintf.h>
 
-extern char kernmem;
 extern Page *page_free_list;
 
 /* Page map level 4 */
@@ -118,19 +117,18 @@ void map_kernel_memory(uint64_t physbase, uint64_t physfree) {
 
     while (physical_address < physfree) {
         uint64_t pt_index = PT_INDEX(virtual_address);
-        uint64_t pt_entry = physical_address | (PTE_P | PTE_W | PTE_U);
-        pt->entries[pt_index] = pt_entry;
+        pt->entries[pt_index] = physical_address | (PTE_P | PTE_W | PTE_U);
         physical_address += PAGE_SIZE;
         virtual_address += PAGE_SIZE;
     }
 }
 
 /* Map the entire available memory starting from KERNBASE + physfree to last physical address */
-void map_available_memory(uint64_t physfree) {
-    uint64_t virtual_address = (KERNBASE + physfree);
-    uint64_t physical_address = physfree;
+void map_available_memory(uint64_t last_physical_address) {
+    uint64_t physical_address = 0x0UL;
+    uint64_t virtual_address = KERNBASE;
 
-    while (physical_address <= page_to_physical_address(page_free_list)) {
+    while (physical_address < last_physical_address) {
         map_page(virtual_address, physical_address);
         virtual_address += PAGE_SIZE;
         physical_address += PAGE_SIZE;
@@ -140,7 +138,7 @@ void map_available_memory(uint64_t physfree) {
 }
 
 /* Setup page tables */
-void setup_page_tables(uint64_t physbase, uint64_t physfree) {
+void setup_page_tables(uint64_t physbase, uint64_t physfree, uint64_t last_physical_address) {
     map_kernel_memory(physbase, physfree);
-    map_available_memory(physfree);
+    map_available_memory(last_physical_address);
 }
