@@ -13,7 +13,7 @@ struct Page {
     struct Page *next;
     /* Track the number of active mappings */
     uint16_t reference_count;
-}__attribute__((packed));
+};
 
 typedef struct Page Page;
 
@@ -21,6 +21,7 @@ void page_init(uint64_t start, uint64_t end, uint64_t physbase, uint64_t physfre
 Page *allocate_page();
 Page *allocate_pages(int num_pages);
 uint64_t page_to_physical_address(Page *p);
-void free_initial_pages(uint64_t physbase);
+uint64_t page_to_virtual_address(Page *p);
+void deallocate_initial_pages(uint64_t physbase);
 
 #endif
