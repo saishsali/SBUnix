@@ -63,8 +63,8 @@ void init_idt() {
         set_idt(i, (uint64_t)isr0, type_attr);
 
     // Timer Interrupt
-    // set_idt(0x20, (uint64_t)isr32, type_attr);
+    set_idt(0x20, (uint64_t)isr32, type_attr);
 
     // Keyboard Interrupt
-    // set_idt(0x21, (uint64_t)isr33, type_attr);
+    set_idt(0x21, (uint64_t)isr33, type_attr);
 }
