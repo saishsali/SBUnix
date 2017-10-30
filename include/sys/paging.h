@@ -55,7 +55,7 @@ typedef struct PDPT PDPT;
 typedef struct PDT PDT;
 typedef struct PT PT;
 
-void setup_page_tables(uint64_t physbase, uint64_t physfree);
+void setup_page_tables(uint64_t physbase, uint64_t physfree, uint64_t last_physical_address);
 void map_page(uint64_t virtual_address, uint64_t physical_address);
 void load_cr3();
 

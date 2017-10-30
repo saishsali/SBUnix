@@ -5,9 +5,6 @@
 #define PAGE_SIZE  4096
 #define PAGE_SHIFT 12
 
-/* Kernbase: refer to linker.script */
-#define KERNBASE 0xffffffff80000000
-
 struct Page {
     /* Next page on free list */
     struct Page *next;

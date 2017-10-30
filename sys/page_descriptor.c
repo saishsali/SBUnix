@@ -97,7 +97,16 @@ Page *allocate_pages(int num_pages) {
 }
 
 /* Since the memory below physbase can now (after paging) be used as free, point page_free list to the 1st page */
+// TO DO: Correct logic
 void deallocate_initial_pages(uint64_t physbase) {
-    pages[(physbase / PAGE_SIZE) - 1].next = page_free_list;
-    page_free_list = &pages[1];
+    // pages[(physbase / PAGE_SIZE) - 1].next = page_free_list;
+    // page_free_list = &pages[1];
+    // Page *p = page_free_list;
+    // int count = 0;
+    // while (p != NULL) {
+    //     // kprintf("%p, ", p);
+    //     count++;
+    //     p = p->next;
+    // }
+    // kprintf("Number of pages: %d\n", count);
 }
