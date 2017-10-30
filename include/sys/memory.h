@@ -1,6 +1,6 @@
 #ifndef _MEMORY_H
 #define _MEMORY_H
 
-void *kmalloc(size_t size, int flags);
+void *kmalloc(size_t size);
 
 #endif

@@ -6,8 +6,12 @@
 Page *page_free_list, *pages;
 
 uint64_t page_to_physical_address(Page *p) {
-    /* (Page address - Starting address) * 4096 */
+    /* Offset * 4096 */
     return (p - pages) << PAGE_SHIFT;
+}
+
+uint64_t page_to_virtual_address(Page *p) {
+    return KERNBASE + page_to_physical_address(p);
 }
 
 void page_init(uint64_t start, uint64_t end, uint64_t physbase, uint64_t physfree) {
@@ -76,6 +80,7 @@ Page *allocate_page() {
     return free_page;
 }
 
+/* Allocate pages by returning first free page in free list and moving head pointer num_pages ahead */
 Page *allocate_pages(int num_pages) {
     if (page_free_list == NULL) {
         kprintf("No free pages for allocation\n");

@@ -8,6 +8,7 @@
 #include <sys/page_descriptor.h>
 #include <sys/ahci.h>
 #include <sys/paging.h>
+#include <sys/memory.h>
 
 #define INITIAL_STACK_SIZE 4096
 uint8_t initial_stack[INITIAL_STACK_SIZE]__attribute__((aligned(16)));
@@ -30,9 +31,14 @@ void start(uint32_t *modulep, void *physbase, void *physfree) {
     kprintf("physbase %p\n", (uint64_t)physbase);
     kprintf("physfree %p\n", (uint64_t)physfree);
     kprintf("tarfs in [%p:%p]\n", &_binary_tarfs_start, &_binary_tarfs_end);
+
+    // Paging
     setup_page_tables((uint64_t)physbase, (uint64_t)physfree);
     load_cr3();
+
+    // Free initial pages (0 - physbase) used by the bootloader
     deallocate_initial_pages((uint64_t)physbase);
+
     // init_pci();
 }
 

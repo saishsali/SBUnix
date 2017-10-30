@@ -1,17 +1,16 @@
 #include <sys/defs.h>
-#include <sys/memory.h>
-#include <sys/kprintf.h>
 #include <sys/page_descriptor.h>
+#include <sys/paging.h>
+#include <sys/kprintf.h>
 
-void *kmalloc(size_t size, int flags) {
-	uint64_t num_pages;
+void *kmalloc(size_t size) {
 	Page *p = NULL;
 
-	if(size < PAGE_SIZE) {
+	if (size < PAGE_SIZE) {
 		p = allocate_page();
 	} else {
-		num_pages = (ROUND_UP(size, PAGE_SIZE))/PAGE_SIZE;
-		p = allocate_pages(num_pages);
+		p = allocate_pages((ROUND_UP(size, PAGE_SIZE)) / PAGE_SIZE);
 	}
-	return (void*) p;
+
+	return (void*) page_to_virtual_address(p);
 }
