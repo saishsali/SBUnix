@@ -2,6 +2,7 @@
 #include <sys/defs.h>
 #include <sys/page_descriptor.h>
 #include <sys/kprintf.h>
+#include <sys/string.h>
 
 Page *page_free_list, *pages;
 
@@ -86,13 +87,13 @@ Page *allocate_pages(int num_pages) {
         kprintf("No free pages for allocation\n");
         return NULL;
     }
-    Page *free_page = page_free_list;
+    Page *free_pages = page_free_list;
     while (num_pages-- > 0) {
         page_free_list->reference_count = 1;
         page_free_list = page_free_list->next;
     }
 
-    return free_page;
+    return free_pages;
 }
 
 /* Since the memory below physbase can now (after paging) be used as free, point page_free list to the 1st page */
