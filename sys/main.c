@@ -44,6 +44,8 @@ void start(uint32_t *modulep, void *physbase, void *physfree) {
 
     kmalloc(20000000);
     kprintf("Allocation works");
+    deallocate_initial_pages((uint64_t)physbase);
+
     // init_pci();
 }
 
