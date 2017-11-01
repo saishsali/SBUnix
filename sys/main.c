@@ -9,6 +9,7 @@
 #include <sys/ahci.h>
 #include <sys/paging.h>
 #include <sys/memory.h>
+#include <sys/process.h>
 
 #define INITIAL_STACK_SIZE 4096
 uint8_t initial_stack[INITIAL_STACK_SIZE]__attribute__((aligned(16)));
@@ -42,8 +43,9 @@ void start(uint32_t *modulep, void *physbase, void *physfree) {
     // Free initial pages (0 to physbase) used by the bootloader
     // deallocate_initial_pages((uint64_t)physbase);
 
-    kmalloc(20000000);
-    kprintf("Allocation works");
+    // kmalloc(20000000);
+    // kprintf("Allocation works");
+    create_process();
     // init_pci();
 }
 

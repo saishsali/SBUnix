@@ -32,6 +32,8 @@ struct PCB {
 
 typedef struct PCB task_struct;
 
-int process_ids[MAX_PROCESS] = {0};
+int process_ids[MAX_PROCESS];
+
+void create_process();
 
 #endif
