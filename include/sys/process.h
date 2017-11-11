@@ -22,9 +22,9 @@ struct mm_struct {
 typedef enum { RUNNING, SLEEPING, ZOMBIE } STATE;
 
 struct PCB {
+    uint64_t rsp;
     char kstack[4096];
     uint64_t pid;
-    uint64_t rsp;
     STATE state;
     int exit_status;
     mm_struct *mm;

@@ -2,7 +2,9 @@
 #include <sys/memory.h>
 #include <sys/kprintf.h>
 
-task_struct *me, *next;
+task_struct *pcb1, *pcb2, *pcb0;
+
+void _context_switch(task_struct *, task_struct *);
 
 int get_process_id() {
     int i;
@@ -15,49 +17,105 @@ int get_process_id() {
     return -1;
 }
 
-void schedule() {
-    __asm__ volatile(
-        "pushq %rdi;"
-    );
+// void schedule() {
+//     __asm__ volatile(
+//         "pushq %rdi;"
+//     );
 
-    __asm__ volatile(
-        "movq %0, %%rsp;"
-        :
-        :"m"(me->rsp)
-    );
+//     __asm__ volatile(
+//         "movq %0, %%rsp;"
+//         :
+//         :"m"(me->rsp)
+//     );
 
-    __asm__ volatile(
-        "movq %%rsp, %0;"
-        :"=r"(next->rsp)
-    );
+//     __asm__ volatile(
+//         "movq %%rsp, %0;"
+//         :"=r"(next->rsp)
+//     );
 
-    __asm__ volatile(
-        "popq %rdi;"
-    );
+//     __asm__ volatile(
+//         "popq %rdi;"
+//     );
+// }
+
+void schedule(int x) {
+    // kprintf("\n");
+    if (x  == 1) {
+        _context_switch(pcb1, pcb2);
+    } else {
+        _context_switch(pcb2, pcb1);
+    }
 }
 
 void thread1() {
     while (1) {
         kprintf("Thread 1\n");
-        schedule();
+        // schedule();
+        _context_switch(pcb1, pcb2);
+        // schedule(1);
     }
 }
 
 void thread2() {
     while (1) {
         kprintf("Thread 2\n");
-        schedule();
+        _context_switch(pcb2, pcb1);
+        // schedule(2);
     }
 }
 
 void create_process() {
-    me = kmalloc(sizeof(task_struct));
-    me->state = RUNNING;
-    me->pid = get_process_id();
+    // char (*foo)(void) = thread1;
+    // foo = thread1;
 
-    next = kmalloc(sizeof(task_struct));
-    next->state = SLEEPING;
-    next->pid = get_process_id();
+    pcb0 = kmalloc(sizeof(task_struct));
 
-    thread1();
+    pcb1 = kmalloc(sizeof(task_struct));
+    pcb1->pid = get_process_id();
+    *((uint64_t *)&pcb1->kstack[496]) = (uint64_t)thread1;
+    *((uint64_t *)&pcb1->kstack[488]) = (uint64_t)pcb1;
+    pcb1->rsp = (uint64_t)&pcb1->kstack[488];
+
+
+    pcb2 = kmalloc(sizeof(task_struct));
+    pcb2->pid = get_process_id();
+    *((uint64_t *)&pcb2->kstack[496]) = (uint64_t)thread2;
+    *((uint64_t *)&pcb2->kstack[488]) = (uint64_t)pcb2;
+    pcb2->rsp = (uint64_t)&pcb2->kstack[488];
+    // pcb0->pid = get_process_id();
+    //     *((uint64_t *)&me->kstack[496]) = (uint64_t)thread1;
+    // *((uint64_t *)&me->kstack[488]) = (uint64_t)me;
+
+
+    // int i = 0;
+    // while (i < 3) {
+    //     i++;
+    //     kprintf("Charu");
+        _context_switch(pcb0, pcb1);
+    // }
+
+        // kprintf("aa gaya");
+        // schedule(1);
+        // kprintf("aa gaya 2");
+
+        //         schedule(1);
+        // kprintf("aa gaya 3");
+
+        //         schedule(1);
+        // kprintf("aa gaya 4");
+
+        //         schedule(1);
+        // kprintf("aa gaya 5");
+
+        // schedule(1);
+        // kprintf("aa gaya 6");
+
+        // schedule(1);
+        // kprintf("aa gaya 7");
+        // while(1);
+
+
+
+
+    // thread1();
 }
