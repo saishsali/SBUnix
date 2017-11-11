@@ -17,29 +17,8 @@ int get_process_id() {
     return -1;
 }
 
-// void schedule() {
-//     __asm__ volatile(
-//         "pushq %rdi;"
-//     );
-
-//     __asm__ volatile(
-//         "movq %0, %%rsp;"
-//         :
-//         :"m"(me->rsp)
-//     );
-
-//     __asm__ volatile(
-//         "movq %%rsp, %0;"
-//         :"=r"(next->rsp)
-//     );
-
-//     __asm__ volatile(
-//         "popq %rdi;"
-//     );
-// }
-
 void schedule(int x) {
-    // kprintf("\n");
+    kprintf("\n");
     if (x  == 1) {
         _context_switch(pcb1, pcb2);
     } else {
@@ -51,16 +30,16 @@ void thread1() {
     while (1) {
         kprintf("Thread 1\n");
         // schedule();
-        _context_switch(pcb1, pcb2);
-        // schedule(1);
+        // _context_switch(pcb1, pcb2);
+        schedule(1);
     }
 }
 
 void thread2() {
     while (1) {
         kprintf("Thread 2\n");
-        _context_switch(pcb2, pcb1);
-        // schedule(2);
+        // _context_switch(pcb2, pcb1);
+        schedule(2);
     }
 }
 
