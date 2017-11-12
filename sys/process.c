@@ -32,7 +32,6 @@ void thread2() {
         no_opt = (no_opt + no_opt) / 2;
         kprintf("Thread B\n");
         _context_switch(pcb2, pcb1);
-
     }
 }
 
@@ -41,15 +40,15 @@ void create_process() {
 
     pcb1 = kmalloc(sizeof(task_struct));
     pcb1->pid = get_process_id();
-    *((uint64_t *)&pcb1->kstack[496]) = (uint64_t)thread1;
-    *((uint64_t *)&pcb1->kstack[488]) = (uint64_t)pcb1;
-    pcb1->rsp = (uint64_t)&pcb1->kstack[488];
+    *((uint64_t *)&pcb1->kstack[504]) = (uint64_t)thread1;
+    *((uint64_t *)&pcb1->kstack[496]) = (uint64_t)pcb1;
+    pcb1->rsp = (uint64_t)&pcb1->kstack[496];
 
     pcb2 = kmalloc(sizeof(task_struct));
     pcb2->pid = get_process_id();
-    *((uint64_t *)&pcb2->kstack[496]) = (uint64_t)thread2;
-    *((uint64_t *)&pcb2->kstack[488]) = (uint64_t)pcb2;
-    pcb2->rsp = (uint64_t)&pcb2->kstack[488];
+    *((uint64_t *)&pcb2->kstack[504]) = (uint64_t)thread2;
+    *((uint64_t *)&pcb2->kstack[496]) = (uint64_t)pcb2;
+    pcb2->rsp = (uint64_t)&pcb2->kstack[496];
 
     _context_switch(pcb0, pcb1);
 }
