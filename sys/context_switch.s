@@ -5,8 +5,8 @@ _context_switch:
 
     cli
     pushq %rdi
-    movq %rsp, (%rdi)
-    movq (%rsi), %rsp
+    movq %rsp, 0(%rdi)
+    movq 0(%rsi), %rsp
     popq %rdi
     sti
     retq
