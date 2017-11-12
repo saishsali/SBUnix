@@ -77,7 +77,7 @@ task_struct *create_thread(void *thread) {
     return pcb;
 }
 
-/* Switch 2 new threads (thread1, thread ) and switch from current thread to thread 1 */
+/* Switch 2 new threads (thread1, thread 2) and switch from current thread to thread 1 */
 void create_threads() {
     task_struct *pcb0 = kmalloc(sizeof(task_struct));
     task_struct *pcb1 = create_thread(thread1);
