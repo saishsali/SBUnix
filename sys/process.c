@@ -1,3 +1,7 @@
+/*
+    - References: https://compas.cs.stonybrook.edu/course/cse506-f17/lectures/cse506-L5-scheduler.pdf
+*/
+
 #include <sys/process.h>
 #include <sys/memory.h>
 #include <sys/kprintf.h>
@@ -46,6 +50,7 @@ void thread2() {
     }
 }
 
+/* Add process to the end of the process list */
 void add_process(task_struct *pcb) {
     if (process_list_head == NULL) {
         process_list_head = pcb;
@@ -59,6 +64,7 @@ void add_process(task_struct *pcb) {
     }
 }
 
+/* Create thread by setting up stack and rsp */
 task_struct *create_thread(void *thread) {
     task_struct *pcb = kmalloc(sizeof(task_struct));
     pcb->pid = get_process_id();
@@ -71,6 +77,7 @@ task_struct *create_thread(void *thread) {
     return pcb;
 }
 
+/* Switch 2 new threads (thread1, thread ) and switch from current thread to thread 1 */
 void create_threads() {
     task_struct *pcb0 = kmalloc(sizeof(task_struct));
     task_struct *pcb1 = create_thread(thread1);
