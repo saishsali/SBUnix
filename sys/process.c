@@ -2,11 +2,9 @@
 #include <sys/memory.h>
 #include <sys/kprintf.h>
 
-task_struct *pcb1, *pcb2, *pcb0;
-
 void _context_switch(task_struct *, task_struct *);
 
-int no_opt; // To avoid compiler optimization
+task_struct *current, *next;
 
 int get_process_id() {
     int i;
@@ -19,36 +17,63 @@ int get_process_id() {
     return -1;
 }
 
+/* Pick the first task from the list and put suspended task at the end of the list */
+void scheduler() {
+    current = process_list_head;
+    next = process_list_head->next;
+    process_list_tail->next = current;
+    current->next = NULL;
+    process_list_head = next;
+    process_list_tail = current;
+}
+
+void yield() {
+    scheduler();
+    _context_switch(current, next);
+}
+
 void thread1() {
-    while (no_opt >= 0) {
-        no_opt = (no_opt + no_opt) / 2;
+    while (1) {
         kprintf("Thread A\n");
-        _context_switch(pcb1, pcb2);
+        yield();
     }
 }
 
 void thread2() {
-    while (no_opt >= 0) {
-        no_opt = (no_opt + no_opt) / 2;
+    while (1) {
         kprintf("Thread B\n");
-        _context_switch(pcb2, pcb1);
+        yield();
     }
 }
 
-void create_process() {
-    pcb0 = kmalloc(sizeof(task_struct));
+void add_process(task_struct *pcb) {
+    if (process_list_head == NULL) {
+        process_list_head = pcb;
+    }
 
-    pcb1 = kmalloc(sizeof(task_struct));
-    pcb1->pid = get_process_id();
-    *((uint64_t *)&pcb1->kstack[504]) = (uint64_t)thread1;
-    *((uint64_t *)&pcb1->kstack[496]) = (uint64_t)pcb1;
-    pcb1->rsp = (uint64_t)&pcb1->kstack[496];
+    if (process_list_tail == NULL) {
+        process_list_tail = pcb;
+    } else {
+        process_list_tail->next = pcb;
+        process_list_tail = pcb;
+    }
+}
 
-    pcb2 = kmalloc(sizeof(task_struct));
-    pcb2->pid = get_process_id();
-    *((uint64_t *)&pcb2->kstack[504]) = (uint64_t)thread2;
-    *((uint64_t *)&pcb2->kstack[496]) = (uint64_t)pcb2;
-    pcb2->rsp = (uint64_t)&pcb2->kstack[496];
+task_struct *create_thread(void *thread) {
+    task_struct *pcb = kmalloc(sizeof(task_struct));
+    pcb->pid = get_process_id();
+    *((uint64_t *)&pcb->kstack[504]) = (uint64_t)thread; // Push Return address
+    *((uint64_t *)&pcb->kstack[496]) = (uint64_t)pcb;    // Push PCB
+    pcb->rsp = (uint64_t)&pcb->kstack[488];              // 8 bytes (488 - 495) for rbx used by kprintf
+    pcb->next = NULL;
+    add_process(pcb);
 
+    return pcb;
+}
+
+void create_threads() {
+    task_struct *pcb0 = kmalloc(sizeof(task_struct));
+    task_struct *pcb1 = create_thread(thread1);
+    create_thread(thread2);
     _context_switch(pcb0, pcb1);
 }

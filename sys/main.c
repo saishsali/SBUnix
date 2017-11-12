@@ -45,7 +45,7 @@ void start(uint32_t *modulep, void *physbase, void *physfree) {
 
     // kmalloc(20000000);
     // kprintf("Allocation works");
-    create_process();
+    create_threads();
     // init_pci();
 }
 

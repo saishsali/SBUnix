@@ -28,12 +28,15 @@ struct PCB {
     STATE state;
     int exit_status;
     mm_struct *mm;
+    struct PCB *next;
 };
 
 typedef struct PCB task_struct;
 
+task_struct *process_list_head, *process_list_tail;
+
 int process_ids[MAX_PROCESS];
 
-void create_process();
+void create_threads();
 
 #endif
