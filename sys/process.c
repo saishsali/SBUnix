@@ -68,9 +68,9 @@ void add_process(task_struct *pcb) {
 task_struct *create_thread(void *thread) {
     task_struct *pcb = kmalloc(sizeof(task_struct));
     pcb->pid = get_process_id();
-    *((uint64_t *)&pcb->kstack[504]) = (uint64_t)thread; // Push Return address
-    *((uint64_t *)&pcb->kstack[496]) = (uint64_t)pcb;    // Push PCB
-    pcb->rsp = (uint64_t)&pcb->kstack[488];              // 8 bytes (488 - 495) for rbx used by kprintf
+    *((uint64_t *)&pcb->kstack[4088]) = (uint64_t)thread; // Push Return address
+    *((uint64_t *)&pcb->kstack[4080]) = (uint64_t)pcb;    // Push PCB
+    pcb->rsp = (uint64_t)&pcb->kstack[4072];              // 8 bytes (488 - 495) for rbx used by kprintf
     pcb->next = NULL;
     add_process(pcb);
 
