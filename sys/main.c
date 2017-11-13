@@ -45,11 +45,8 @@ void start(uint32_t *modulep, void *physbase, void *physfree) {
 
     // kmalloc(20000000);
     // kprintf("Allocation works");
-    // create_threads();
+    create_threads();
     // init_pci();
-
-    task_struct *user_process = create_user_process();
-    switch_to_ring_3(user_process);
 }
 
 void boot(void) {
