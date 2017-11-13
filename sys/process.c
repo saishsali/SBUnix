@@ -37,15 +37,19 @@ void yield() {
 }
 
 void thread1() {
+    uint64_t i = 0;
     while (1) {
-        kprintf("Thread A\n");
+        i++;
+        kprintf("Thread A %d\n", i);
         yield();
     }
 }
 
 void thread2() {
+    uint64_t j = 1000;
     while (1) {
-        kprintf("Thread B\n");
+        j++;
+        kprintf("Thread B %d\n", j);
         yield();
     }
 }
@@ -69,8 +73,9 @@ task_struct *create_thread(void *thread) {
     task_struct *pcb = kmalloc(sizeof(task_struct));
     pcb->pid = get_process_id();
     *((uint64_t *)&pcb->kstack[4088]) = (uint64_t)thread; // Push Return address
-    *((uint64_t *)&pcb->kstack[4080]) = (uint64_t)pcb;    // Push PCB
-    pcb->rsp = (uint64_t)&pcb->kstack[4072];              // 8 bytes (488 - 495) for rbx used by kprintf
+    /* Stack entries from 3984 to 4080 are reserved for 13 registers pushed/poped in context_switch.s */
+    *((uint64_t *)&pcb->kstack[3976]) = (uint64_t)pcb;    // Push PCB
+    pcb->rsp = (uint64_t)&pcb->kstack[3976];
     pcb->next = NULL;
     add_process(pcb);
 
