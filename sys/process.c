@@ -7,6 +7,7 @@
 #include <sys/kprintf.h>
 
 void _context_switch(task_struct *, task_struct *);
+void _switch_to_ring_3(uint64_t);
 
 task_struct *current, *next;
 
@@ -88,4 +89,23 @@ void create_threads() {
     task_struct *pcb1 = create_thread(thread1);
     create_thread(thread2);
     _context_switch(pcb0, pcb1);
+}
+
+void process1() {
+    while (1) {
+        kprintf("I'm in ring 3\n");
+    }
+}
+
+void switch_to_ring_3(task_struct *task) {
+    _switch_to_ring_3(task->rip);
+}
+
+
+task_struct *create_user_process() {
+    task_struct *pcb = kmalloc(sizeof(task_struct));
+    pcb->pid = get_process_id();
+    pcb->rip = (uint64_t)process1;
+
+    return pcb;
 }
