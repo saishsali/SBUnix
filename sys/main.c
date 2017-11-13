@@ -5,33 +5,51 @@
 #include <sys/kprintf.h>
 #include <sys/tarfs.h>
 #include <sys/ahci.h>
+#include <sys/page_descriptor.h>
 #include <sys/ahci.h>
+#include <sys/paging.h>
+#include <sys/memory.h>
 
 #define INITIAL_STACK_SIZE 4096
 uint8_t initial_stack[INITIAL_STACK_SIZE]__attribute__((aligned(16)));
 uint32_t* loader_stack;
 extern char kernmem, physbase;
 
-void start(uint32_t *modulep, void *physbase, void *physfree)
-{
+void start(uint32_t *modulep, void *physbase, void *physfree) {
+    uint64_t last_physical_address = 0;
     clear_screen();
     struct smap_t {
         uint64_t base, length;
         uint32_t type;
     }__attribute__((packed)) *smap;
     while (modulep[0] != 0x9001) modulep += modulep[1] + 2;
-    for(smap = (struct smap_t*)(modulep + 2); smap < (struct smap_t*)((char*)modulep+modulep[1] + 2 * 4); ++smap) {
-    if (smap->type == 1 /* memory */ && smap->length != 0) {
-        kprintf("Available Physical Memory [%p-%p]\n", smap->base, smap->base + smap->length);
+    for (smap = (struct smap_t*)(modulep + 2); smap < (struct smap_t*)((char*)modulep+modulep[1] + 2 * 4); ++smap) {
+        if (smap->type == 1 /* memory */ && smap->length != 0) {
+            kprintf("Available Physical Memory [%p-%p]\n", smap->base, smap->base + smap->length);
+            page_init(smap->base, (smap->base + smap->length), (uint64_t)physbase, (uint64_t)physfree);
+            last_physical_address = smap->base + smap->length;
+        }
     }
-    }
+
+    kprintf("physbase %p\n", (uint64_t)physbase);
     kprintf("physfree %p\n", (uint64_t)physfree);
     kprintf("tarfs in [%p:%p]\n", &_binary_tarfs_start, &_binary_tarfs_end);
-    init_pci();
+
+    // Paging
+    setup_page_tables((uint64_t)physbase, (uint64_t)physfree, last_physical_address);
+    load_cr3();
+
+    // Free initial pages (0 to physbase) used by the bootloader
+    // deallocate_initial_pages((uint64_t)physbase);
+
+    kmalloc(20000000);
+    kprintf("Allocation works");
+    deallocate_initial_pages((uint64_t)physbase);
+
+    // init_pci();
 }
 
-void boot(void)
-{
+void boot(void) {
     // note: function changes rsp, local stack variables can't be practically used
     register char *temp1;
     for(temp1 = (char*)0xb8001; temp1 < (char*)0xb8000+160*25; temp1 += 2) *temp1 = 7 /* white */;

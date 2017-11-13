@@ -1,7 +1,9 @@
 #include <sys/kprintf.h>
 #include <sys/string.h>
 #include <sys/stdarg.h>
-#define VIDEO_MEM_START 0xb8000
+#include <sys/defs.h>
+
+#define VIDEO_MEM_START (KERNBASE + 0xb8000)
 #define ROW_SIZE 25
 #define COLUMN_SIZE 160
 #define VIDEO_MEM_END (VIDEO_MEM_START + (ROW_SIZE - 1) * COLUMN_SIZE) // ROW_SIZE = 25th row is reserved for timer
@@ -58,8 +60,9 @@ char *decimal_conversion(unsigned long long decimal, int base) {
     char *result = &buf[SIZE - 1], representation[] = "0123456789ABCDEF";
     int remainder;
 
-    if (decimal == 0)
+    if (decimal == 0) {
         return "0";
+    }
 
     while (decimal > 0) {
         remainder = decimal % base;
