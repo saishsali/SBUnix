@@ -123,7 +123,7 @@ void map_kernel_memory(uint64_t physbase, uint64_t physfree) {
     }
 }
 
-/* Map the entire available memory starting from KERNBASE + physfree to last physical address */
+/* Map the entire available memory starting from 0x0 to last physical address */
 void map_available_memory(uint64_t last_physical_address) {
     uint64_t physical_address = 0x0UL;
     uint64_t virtual_address = KERNBASE;

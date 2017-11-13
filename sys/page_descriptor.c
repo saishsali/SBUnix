@@ -5,6 +5,8 @@
 #include <sys/string.h>
 
 Page *page_free_list, *pages;
+uint64_t holes[50] = {0};
+uint64_t hole_index = 0;
 
 uint64_t page_to_physical_address(Page *p) {
     /* Offset * 4096 */
@@ -29,6 +31,10 @@ void page_init(uint64_t start, uint64_t end, uint64_t physbase, uint64_t physfre
     for (i = index; i < start; i++) {
         pages[i].reference_count = 1;
         pages[i].next = NULL;
+    }
+    if(index > 0) {
+        holes[hole_index++] = (uint64_t)&pages[index-1];
+        holes[hole_index++] = (uint64_t)&pages[start];
     }
 
     /* Mark page 0 as in use */
@@ -97,16 +103,24 @@ Page *allocate_pages(int num_pages) {
 }
 
 /* Since the memory below physbase can now (after paging) be used as free, point page_free list to the 1st page */
-// TO DO: Correct logic
 void deallocate_initial_pages(uint64_t physbase) {
-    // pages[(physbase / PAGE_SIZE) - 1].next = page_free_list;
-    // page_free_list = &pages[1];
-    // Page *p = page_free_list;
-    // int count = 0;
-    // while (p != NULL) {
-    //     // kprintf("%p, ", p);
-    //     count++;
-    //     p = p->next;
-    // }
-    // kprintf("Number of pages: %d\n", count);
+    pages[(physbase / PAGE_SIZE) - 1].next = page_free_list;
+    page_free_list = &pages[1];
+    Page *p = page_free_list;
+    int count = 0;
+
+    Page *last, *first;
+    int i;
+    // page before hole starts should point to page after hole ends
+    for (i = 0; i < hole_index - 1; i = i + 2) {
+        last = (Page *)(holes[i]);
+        first = (Page *)(holes[i+1]);
+        last->next = first;
+    }
+
+    while (p != NULL) {
+        count++;
+        p = p->next;
+    }
+    kprintf("\nNumber of pages: %d\n", count);
 }
