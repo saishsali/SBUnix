@@ -149,7 +149,7 @@ int read(hba_port_t *port, uint32_t startl, uint32_t starth, uint32_t count, uin
 }
 
 
-int write(hba_port_t *port, uint32_t startl, uint32_t starth, uint32_t count, uint8_t *buf) {
+int write1(hba_port_t *port, uint32_t startl, uint32_t starth, uint32_t count, uint8_t *buf) {
     port->is_rwc = (uint32_t)-1;       // Clear pending interrupt bits
     int i;
     int slot = find_cmdslot(port);
@@ -365,11 +365,11 @@ void verify_read_write(uint8_t port) {
     // Write 0 to the first 4KB Block
     // 512 bytes * 8 blocks = 4096 KB
     memset(write_buffer, 0, BLOCK_SIZE);
-    write(&abar->ports[port], 0, 0, 8, write_buffer);
+    write1(&abar->ports[port], 0, 0, 8, write_buffer);
 
     for (i = 0; i < NUM_BLOCKS; i++) {
         memset(write_buffer, i, BLOCK_SIZE);
-        write(&abar->ports[port], i * 8, 0, 8, write_buffer);
+        write1(&abar->ports[port], i * 8, 0, 8, write_buffer);
     }
 
     kprintf("Reading from disk ...\n");

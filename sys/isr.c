@@ -1,5 +1,6 @@
 #include <sys/timer.h>
 #include <sys/keyboard.h>
+#include <sys/syscall.h>
 
 // Handler for first 32 interrupts (offset 0 - 31)
 void interrupt_handler0() {}
@@ -12,4 +13,9 @@ void interrupt_handler32() {
 // Handler for keyboard interrupt (offset 33)
 void interrupt_handler33() {
     // keyboard_interrupt();
+}
+
+// Handler for syscall
+void interrupt_handler128() {
+    syscall_handler();
 }

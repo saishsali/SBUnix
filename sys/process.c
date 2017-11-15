@@ -6,6 +6,7 @@
 #include <sys/memory.h>
 #include <sys/kprintf.h>
 #include <sys/gdt.h>
+#include <unistd.h>
 
 void _context_switch(task_struct *, task_struct *);
 void _switch_to_ring_3(uint64_t);
@@ -40,7 +41,7 @@ void yield() {
 
 void process1() {
     while (1) {
-        kprintf("I'm in ring 3\n");
+        write(0, "Ring3", 6);
     }
 }
 

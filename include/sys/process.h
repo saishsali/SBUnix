@@ -7,6 +7,8 @@
 typedef struct vm_area_struct vma_struct;
 typedef struct mm_struct mm_struct;
 
+// extern task_struct* current;
+
 struct vm_area_struct {
     mm_struct *mm;
     uint64_t start;
