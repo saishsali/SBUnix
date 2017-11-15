@@ -10,6 +10,7 @@
 #include <sys/paging.h>
 #include <sys/memory.h>
 #include <sys/process.h>
+#include <sys/tarfs.h>
 
 #define INITIAL_STACK_SIZE 4096
 uint8_t initial_stack[INITIAL_STACK_SIZE]__attribute__((aligned(16)));
@@ -45,8 +46,9 @@ void start(uint32_t *modulep, void *physbase, void *physfree) {
 
     // kmalloc(20000000);
     // kprintf("Allocation works");
-    create_threads();
+    // create_threads();
     // init_pci();
+    get_file("lib/crt1.o");
 }
 
 void boot(void) {

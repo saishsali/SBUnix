@@ -4,6 +4,10 @@
 extern char _binary_tarfs_start;
 extern char _binary_tarfs_end;
 
+#define DIRECTORY  5
+#define FILE       0
+#define BLOCK_SIZE 512
+
 struct posix_header_ustar {
   char name[100];
   char mode[8];
@@ -23,5 +27,7 @@ struct posix_header_ustar {
   char prefix[155];
   char pad[12];
 };
+
+struct posix_header_ustar *get_file(char *filename);
 
 #endif
