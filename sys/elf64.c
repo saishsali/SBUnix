@@ -35,4 +35,7 @@ void load_executable(task_struct *pcb, char *filename) {
         }
         program_header++;
     }
+
+    /* Add entry point in PCB */
+    pcb->entry = elf_header->e_entry
 }
