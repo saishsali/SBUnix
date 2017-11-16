@@ -11,7 +11,6 @@ struct posix_header_ustar *get_file(char *filename) {
 
     while (p < &_binary_tarfs_end) {
         phu = (struct posix_header_ustar*)p;
-        kprintf("Filename: %s\n", phu->name);
         if (strcmp(phu->name, filename) == 0) {
             return phu;
         }
@@ -22,6 +21,7 @@ struct posix_header_ustar *get_file(char *filename) {
             continue;
         }
 
+        // 512 byte aligned address
         p += ROUND_UP(size, BLOCK_SIZE);
     }
 

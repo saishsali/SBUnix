@@ -44,11 +44,12 @@ void start(uint32_t *modulep, void *physbase, void *physfree) {
     // Free initial pages (0 to physbase) used by the bootloader
     // deallocate_initial_pages((uint64_t)physbase);
 
-    // kmalloc(20000000);
+    // char *temp = (char *)kmalloc(20);
+
     // kprintf("Allocation works");
     // create_threads();
     // init_pci();
-    get_file("lib/crt1.o");
+    // get_file("lib/crt1.o2");
 }
 
 void boot(void) {
