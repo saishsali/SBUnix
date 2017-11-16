@@ -15,7 +15,7 @@ struct vm_area_struct {
 };
 
 struct mm_struct {
-    vma_struct *mma;
+    vma_struct *vma;
 };
 
 
@@ -39,5 +39,6 @@ task_struct *process_list_head, *process_list_tail;
 int process_ids[MAX_PROCESS];
 
 void create_threads();
+task_struct *create_user_process(char *);
 
 #endif

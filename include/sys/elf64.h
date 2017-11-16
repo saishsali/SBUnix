@@ -1,6 +1,5 @@
 #ifndef _ELF64_H
 #define _ELF64_H
-#include <sys/defs.h>
 #include <sys/process.h>
 
 #define EI_NIDENT 16

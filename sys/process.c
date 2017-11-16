@@ -5,6 +5,8 @@
 #include <sys/process.h>
 #include <sys/memory.h>
 #include <sys/kprintf.h>
+#include <sys/paging.h>
+#include <sys/elf64.h>
 
 void _context_switch(task_struct *, task_struct *);
 
@@ -88,4 +90,25 @@ void create_threads() {
     task_struct *pcb1 = create_thread(thread1);
     create_thread(thread2);
     _context_switch(pcb0, pcb1);
+}
+
+task_struct *create_user_process(char *filename) {
+    uint64_t current_cr3 = get_cr3();
+    task_struct *pcb = kmalloc(sizeof(task_struct));
+    pcb->pid = get_process_id();
+    pcb->state = RUNNING;
+    uint64_t new_cr3 = (uint64_t)set_user_address_space();
+    set_cr3(new_cr3);
+
+    mm_struct *mm = (mm_struct *)kmalloc(sizeof(mm_struct));
+    pcb->mm = mm;
+
+    pcb->rsp = (uint64_t)pcb->kstack + 4096 - 8;
+
+    load_executable(pcb, filename);
+
+    set_cr3(current_cr3);
+
+    kprintf("User process created\n");
+    return pcb;
 }

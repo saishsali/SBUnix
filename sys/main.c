@@ -51,8 +51,7 @@ void start(uint32_t *modulep, void *physbase, void *physfree) {
     // create_threads();
     // init_pci();
     // get_file("lib/crt1.o");
-    task_struct *temp = kmalloc(sizeof(task_struct));
-    load_executable(temp, "bin/ls");
+    create_user_process("bin/ls");
 }
 
 void boot(void) {

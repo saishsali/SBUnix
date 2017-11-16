@@ -2,6 +2,7 @@
 #include <sys/paging.h>
 #include <sys/page_descriptor.h>
 #include <sys/kprintf.h>
+#include <sys/memory.h>
 
 extern Page *page_free_list;
 
@@ -19,6 +20,28 @@ uint64_t physical_to_virtual_address(void *physical_address) {
 /* Load page table base address in CR3 register */
 void load_cr3() {
     uint64_t cr3 = virtual_to_physical_address(pml4);
+    __asm__ volatile(
+        "movq %0, %%cr3;"
+        :
+        : "b" (cr3)
+    );
+}
+
+/* Get CR3 register value */
+uint64_t get_cr3() {
+    uint64_t cr3;
+    __asm__ volatile(
+        "movq %%cr3, %0;"
+        : "=r"(cr3)
+    );
+
+    return physical_to_virtual_address((void *)cr3);
+}
+
+/* Set page table base address in CR3 register */
+void set_cr3(uint64_t cr3) {
+    pml4 = (PML4 *)cr3;
+    cr3 = virtual_to_physical_address((void *)cr3);
     __asm__ volatile(
         "movq %0, %%cr3;"
         :
@@ -141,4 +164,12 @@ void map_available_memory(uint64_t last_physical_address) {
 void setup_page_tables(uint64_t physbase, uint64_t physfree, uint64_t last_physical_address) {
     map_kernel_memory(physbase, physfree);
     map_available_memory(last_physical_address);
+}
+
+void *set_user_address_space() {
+    PML4 *new_pml4 = (PML4 *)kmalloc(sizeof(PML4));
+    PML4 *current_pml4 = (PML4 *)get_cr3();
+    new_pml4->entries[511] = current_pml4->entries[511];
+
+    return (void *)new_pml4;
 }
