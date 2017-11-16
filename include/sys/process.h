@@ -7,8 +7,6 @@
 typedef struct vm_area_struct vma_struct;
 typedef struct mm_struct mm_struct;
 
-// extern task_struct* current;
-
 struct vm_area_struct {
     mm_struct *mm;
     uint64_t start;
@@ -25,6 +23,8 @@ typedef enum { RUNNING, SLEEPING, ZOMBIE } STATE;
 struct PCB {
     uint64_t rsp;
     char kstack[4096];
+    uint64_t u_rsp;
+    char ustack[4096];
     uint64_t pid;
     STATE state;
     int exit_status;

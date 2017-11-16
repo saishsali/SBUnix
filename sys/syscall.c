@@ -2,50 +2,33 @@
 #include <sys/process.h>
 #include <sys/kprintf.h>
 
-// extern task_struct* current;
-
 #define NUM_SYSCALLS 2
 
-// These will get invoked in kernel mode. */
-int sys_write(int n, uint64_t addr, int len)
-{
-    kprintf("I am here");
-    return 1;
+int sys_write(int n, uint64_t str, int len) {
+    kprintf("Value -  %s\n", str);
+    return 100;
 }
 
-int sys_read(int n)
-{
+int sys_read(int n) {
     return 0;
 }
 
-// Set up the system call table
-void* syscall_tbl[NUM_SYSCALLS] = 
-{
+void* syscall_tbl[NUM_SYSCALLS] = {
 	sys_read,
     sys_write
 };
 
 
-void syscall_handler(void)
-{
-    uint64_t syscallNo;
-
-    __asm__ __volatile__("movq %%rax, %0;" : "=r"(syscallNo));
-
-    if (syscallNo >= 0 && syscallNo < NUM_SYSCALLS) {
-        void *func_ptr;
-        uint64_t ret;
-
-        __asm__ __volatile__("pushq %rdx;");
-        func_ptr = syscall_tbl[syscallNo];
+void syscall_handler(uint64_t syscall_no) {
+    void *func_ptr;
+    if (syscall_no >= 0 && syscall_no < NUM_SYSCALLS) {
+        func_ptr = syscall_tbl[syscall_no];
         __asm__ __volatile__(
-                "movq %%rax, %0;"
-                // "popq %%rdx;"
-                "callq *%%rax;"
-                : "=a" (ret) : "r" (func_ptr)
-                );
+            "callq %0;"
+            :
+            : "r" (func_ptr)
+        );
     }
 
-    __asm__ __volatile__("iretq;");
 }
 

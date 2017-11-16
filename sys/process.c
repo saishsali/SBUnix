@@ -6,10 +6,10 @@
 #include <sys/memory.h>
 #include <sys/kprintf.h>
 #include <sys/gdt.h>
-#include <unistd.h>
+#include <sys/unistd.h>
 
 void _context_switch(task_struct *, task_struct *);
-void _switch_to_ring_3(uint64_t);
+void _switch_to_ring_3(uint64_t, uint64_t);
 
 task_struct *current, *next;
 
@@ -22,6 +22,24 @@ int get_process_id() {
         }
     }
     return -1;
+}
+
+ssize_t write(int fd, const void *buf, size_t count) {
+    ssize_t num_bytes;
+
+    __asm__ __volatile__(
+        "movq $1, %%rax;"
+        "movq %1, %%rdi;"
+        "movq %2, %%rsi;"
+        "movq %3, %%rdx;"
+        "int $0x80;"
+        "movq %%rax, %0;"
+        : "=r" (num_bytes)
+        : "r" ((int64_t)fd), "r" (buf), "r" (count)
+        : "%rax", "%rdi", "%rsi", "%rdx"
+    );
+
+    return num_bytes;
 }
 
 /* Pick the first task from the list and put suspended task at the end of the list */
@@ -40,22 +58,22 @@ void yield() {
 }
 
 void process1() {
-    while (1) {
-        write(0, "Ring3", 6);
-    }
+    int y = write(0, "Ring3", 5);
+    kprintf("return value is %d", y);
+    while (1);
 }
 
 void thread1() {
-    uint64_t rsp;
     task_struct *pcb = kmalloc(sizeof(task_struct));
     pcb->pid = get_process_id();
+    pcb->rsp = (uint64_t)pcb->kstack + 4096 - 8;
+    pcb->u_rsp = (uint64_t)pcb->ustack + 4096 - 8;
+
     pcb->rip = (uint64_t)process1;
-    __asm__ volatile(
-        "movq %%rsp, %0;"
-        :"=r" (rsp)
-    );
-    set_tss_rsp((uint64_t *)rsp);
-    _switch_to_ring_3(pcb->rip);
+    set_tss_rsp((uint64_t *)pcb->rsp);
+    next = current;
+    current = pcb;
+    _switch_to_ring_3(pcb->rip, pcb->u_rsp);
 }
 
 void thread2() {

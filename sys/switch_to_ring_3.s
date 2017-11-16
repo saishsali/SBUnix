@@ -4,13 +4,13 @@
 _switch_to_ring_3:
 
         cli
-        movq $0x23, %rax
-        movq %rax, %ds
-        movq %rax, %es
-        movq %rax, %fs
-        movq %rax, %gs
+        # movq $0x23, %rax
+        # movq %rax, %ds
+        # movq %rax, %es
+        # movq %rax, %fs
+        # movq %rax, %gs
 
-        movq %rsp, %rax
+        movq %rsi, %rax
         pushq $0x23
         pushq %rax
         pushfq
