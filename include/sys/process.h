@@ -29,6 +29,7 @@ struct PCB {
     int exit_status;
     mm_struct *mm;
     struct PCB *next;
+    uint64_t entry;
 };
 
 typedef struct PCB task_struct;

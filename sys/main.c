@@ -49,7 +49,7 @@ void start(uint32_t *modulep, void *physbase, void *physfree) {
     // kprintf("Allocation works");
     // create_threads();
     // init_pci();
-    // get_file("lib/crt1.o2");
+    // get_file("lib/crt1.o");
 }
 
 void boot(void) {
