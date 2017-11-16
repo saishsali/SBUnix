@@ -1,7 +1,6 @@
 // http://wiki.osdev.org/ELF
 #include <sys/elf64.h>
 #include <sys/tarfs.h>
-#include <sys/process.h>
 #include <sys/page_descriptor.h>
 #include <sys/paging.h>
 
@@ -30,7 +29,7 @@ void load_executable(task_struct *pcb, char *filename) {
                 map_page(va, page_to_physical_address(p));
 
                 for (page_offset = 0; page_offset < PAGE_SIZE && copy_offset <= program_header->p_filesz; page_offset++, copy_offset++) {
-                    *((char *)va + page_offset) = *((char *)elf_header + copy_offset);
+                    *((char *)va + page_offset) = *((char *)elf_header + program_header->p_offset + copy_offset);
                 }
             }
         }

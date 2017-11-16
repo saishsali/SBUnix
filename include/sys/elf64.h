@@ -1,6 +1,7 @@
 #ifndef _ELF64_H
 #define _ELF64_H
 #include <sys/defs.h>
+#include <sys/process.h>
 
 #define EI_NIDENT 16
 #define SEGMENT_LOAD 1
@@ -41,5 +42,7 @@ typedef struct {
   Elf64_Xword   p_memsz;
   Elf64_Xword   p_align;
 } Elf64_Phdr;
+
+void load_executable(task_struct *pcb, char *filename);
 
 #endif

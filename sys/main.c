@@ -11,6 +11,7 @@
 #include <sys/memory.h>
 #include <sys/process.h>
 #include <sys/tarfs.h>
+#include <sys/elf64.h>
 
 #define INITIAL_STACK_SIZE 4096
 uint8_t initial_stack[INITIAL_STACK_SIZE]__attribute__((aligned(16)));
@@ -50,6 +51,8 @@ void start(uint32_t *modulep, void *physbase, void *physfree) {
     // create_threads();
     // init_pci();
     // get_file("lib/crt1.o");
+    task_struct *temp = kmalloc(sizeof(task_struct));
+    load_executable(temp, "bin/ls");
 }
 
 void boot(void) {
