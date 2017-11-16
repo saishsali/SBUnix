@@ -23,8 +23,6 @@ typedef enum { RUNNING, SLEEPING, ZOMBIE } STATE;
 struct PCB {
     uint64_t rsp;
     char kstack[4096];
-    uint64_t u_rsp;
-    char ustack[4096];
     uint64_t pid;
     STATE state;
     int exit_status;

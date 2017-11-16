@@ -6,7 +6,6 @@
 #include <sys/memory.h>
 #include <sys/kprintf.h>
 #include <sys/gdt.h>
-#include <sys/unistd.h>
 
 void _context_switch(task_struct *, task_struct *);
 void _switch_to_ring_3(uint64_t, uint64_t);
@@ -40,7 +39,7 @@ ssize_t write(int fd, const void *buf, size_t count) {
     );
 
     return num_bytes;
-}
+} 
 
 /* Pick the first task from the list and put suspended task at the end of the list */
 void scheduler() {
@@ -67,13 +66,13 @@ void thread1() {
     task_struct *pcb = kmalloc(sizeof(task_struct));
     pcb->pid = get_process_id();
     pcb->rsp = (uint64_t)pcb->kstack + 4096 - 8;
-    pcb->u_rsp = (uint64_t)pcb->ustack + 4096 - 8;
+    char ustack[4096];
 
     pcb->rip = (uint64_t)process1;
     set_tss_rsp((uint64_t *)pcb->rsp);
     next = current;
     current = pcb;
-    _switch_to_ring_3(pcb->rip, pcb->u_rsp);
+    _switch_to_ring_3(pcb->rip, (uint64_t)ustack + 4096 - 8 );
 }
 
 void thread2() {

@@ -31,4 +31,3 @@ void syscall_handler(uint64_t syscall_no) {
     }
 
 }
-
