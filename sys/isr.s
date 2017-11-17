@@ -8,7 +8,7 @@
         cli
 
         # Push all registers
-        pushq %rax
+        # pushq %rax
         pushq %rbx
         pushq %rcx
         pushq %rdx
@@ -29,11 +29,11 @@
         popq %rdx
         popq %rcx
         popq %rbx
-        popq %rax
+        # popq %rax
 
         # End-of-interrupt command
-        movb $0x20, %al
-        outb %al, $0x20
+        # movb $0x20, %al
+        # outb %al, $0x20
 
         # Set interrupt
         sti
@@ -43,3 +43,4 @@
 INTERRUPT_HANDLER 0
 INTERRUPT_HANDLER 32
 INTERRUPT_HANDLER 33
+INTERRUPT_HANDLER 128

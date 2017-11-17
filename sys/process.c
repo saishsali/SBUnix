@@ -8,7 +8,7 @@
 #include <sys/gdt.h>
 
 void _context_switch(task_struct *, task_struct *);
-void _switch_to_ring_3(uint64_t);
+void _switch_to_ring_3(uint64_t, uint64_t);
 
 task_struct *current, *next;
 
@@ -23,6 +23,24 @@ int get_process_id() {
     return -1;
 }
 
+ssize_t write(int fd, const void *buf, size_t count) {
+    ssize_t num_bytes;
+
+    __asm__ __volatile__(
+        "movq $1, %%rax;"
+        "movq %1, %%rdi;"
+        "movq %2, %%rsi;"
+        "movq %3, %%rdx;"
+        "int $0x80;"
+        "movq %%rax, %0;"
+        : "=r" (num_bytes)
+        : "r" ((int64_t)fd), "r" (buf), "r" (count)
+        : "%rax", "%rdi", "%rsi", "%rdx"
+    );
+
+    return num_bytes;
+}
+
 /* Pick the first task from the list and put suspended task at the end of the list */
 void scheduler() {
     current = process_list_head;
@@ -35,35 +53,51 @@ void scheduler() {
 
 void yield() {
     scheduler();
+    set_tss_rsp((void *)((uint64_t)next->kstack + 4096 - 8));
     _context_switch(current, next);
 }
 
+void user_yield() {
+    __asm__ __volatile__(
+       "movq $2, %%rax;"
+       "int $0x80;"
+       : : :
+   );
+}
+
 void process1() {
+
     while (1) {
-        kprintf("I'm in ring 3\n");
+        int ret = write(0, "\nProcess 1 Ring 3 - ", 16);
+        kprintf("return value is %d", ret);
+        user_yield();
+    }
+}
+
+void process2() {
+    while (1) {
+        int ret = write(0, "\nProcess 2 Ring 3 - ", 16);
+        kprintf("return value is %d", ret);
+        user_yield();
     }
 }
 
 void thread1() {
-    uint64_t rsp;
-    task_struct *pcb = kmalloc(sizeof(task_struct));
-    pcb->pid = get_process_id();
-    pcb->rip = (uint64_t)process1;
-    __asm__ volatile(
-        "movq %%rsp, %0;"
-        :"=r" (rsp)
-    );
-    set_tss_rsp((uint64_t *)rsp);
-    _switch_to_ring_3(pcb->rip);
+    uint64_t *stack = kmalloc_user(4096);
+    current->u_rsp = (uint64_t)stack + 4096 - 8;
+
+    current->rip = (uint64_t)process1;
+    set_tss_rsp((void *)((uint64_t)current->kstack + 4096 - 8));
+    _switch_to_ring_3(current->rip, current->u_rsp);
 }
 
 void thread2() {
-    uint64_t j = 1000;
-    while (1) {
-        j++;
-        kprintf("Thread B %d\n", j);
-        yield();
-    }
+    uint64_t *stack = kmalloc_user(4096);
+    next->u_rsp = (uint64_t)stack + 4096 - 8;
+
+    next->rip = (uint64_t)process2;
+    set_tss_rsp((void *)((uint64_t)next->kstack + 4096 - 8));
+    _switch_to_ring_3(next->rip, next->u_rsp);
 }
 
 /* Add process to the end of the process list */
@@ -98,6 +132,8 @@ task_struct *create_thread(void *thread) {
 void create_threads() {
     task_struct *pcb0 = kmalloc(sizeof(task_struct));
     task_struct *pcb1 = create_thread(thread1);
-    create_thread(thread2);
+    task_struct *pcb2 = create_thread(thread2);
+    current = pcb1;
+    next = pcb2;
     _context_switch(pcb0, pcb1);
 }

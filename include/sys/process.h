@@ -4,6 +4,9 @@
 #include <sys/defs.h>
 #define MAX_PROCESS 10
 
+#define STACK_START 0xF0000000
+#define HEAP_START  0x08000000
+
 typedef struct vm_area_struct vma_struct;
 typedef struct mm_struct mm_struct;
 
@@ -22,6 +25,7 @@ typedef enum { RUNNING, SLEEPING, ZOMBIE } STATE;
 
 struct PCB {
     uint64_t rsp;
+    uint64_t u_rsp;
     char kstack[4096];
     uint64_t pid;
     STATE state;
@@ -42,5 +46,7 @@ void create_threads();
 task_struct *create_user_process();
 
 void switch_to_ring_3(task_struct *task);
+
+void yield();
 
 #endif
