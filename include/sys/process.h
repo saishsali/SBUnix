@@ -18,7 +18,6 @@ struct mm_struct {
     vma_struct *mma;
 };
 
-
 typedef enum { RUNNING, SLEEPING, ZOMBIE } STATE;
 
 struct PCB {
@@ -29,6 +28,7 @@ struct PCB {
     int exit_status;
     mm_struct *mm;
     struct PCB *next;
+    uint64_t rip;
 };
 
 typedef struct PCB task_struct;
@@ -38,5 +38,9 @@ task_struct *process_list_head, *process_list_tail;
 int process_ids[MAX_PROCESS];
 
 void create_threads();
+
+task_struct *create_user_process();
+
+void switch_to_ring_3(task_struct *task);
 
 #endif

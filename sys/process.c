@@ -5,8 +5,10 @@
 #include <sys/process.h>
 #include <sys/memory.h>
 #include <sys/kprintf.h>
+#include <sys/gdt.h>
 
 void _context_switch(task_struct *, task_struct *);
+void _switch_to_ring_3(uint64_t);
 
 task_struct *current, *next;
 
@@ -36,13 +38,23 @@ void yield() {
     _context_switch(current, next);
 }
 
-void thread1() {
-    uint64_t i = 0;
+void process1() {
     while (1) {
-        i++;
-        kprintf("Thread A %d\n", i);
-        yield();
+        kprintf("I'm in ring 3\n");
     }
+}
+
+void thread1() {
+    uint64_t rsp;
+    task_struct *pcb = kmalloc(sizeof(task_struct));
+    pcb->pid = get_process_id();
+    pcb->rip = (uint64_t)process1;
+    __asm__ volatile(
+        "movq %%rsp, %0;"
+        :"=r" (rsp)
+    );
+    set_tss_rsp((uint64_t *)rsp);
+    _switch_to_ring_3(pcb->rip);
 }
 
 void thread2() {
