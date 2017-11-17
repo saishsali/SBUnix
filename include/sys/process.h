@@ -7,19 +7,35 @@
 typedef struct vm_area_struct vma_struct;
 typedef struct mm_struct mm_struct;
 
+struct file {
+    uint64_t start;
+    uint64_t offset;
+    uint64_t size;
+    uint64_t bss_size;
+};
+
+typedef struct file file;
+
+typedef enum vma_types {TEXT, DATA, STACK, HEAP, NOTYPE} VMA_TYPE;
+
 struct vm_area_struct {
     mm_struct *mm;
     uint64_t start;
     uint64_t end;
     vma_struct *next;
+    uint64_t flags;
+    uint64_t type;
+    file *file;
 };
+
+typedef struct vm_area_struct vma_struct;
 
 struct mm_struct {
-    vma_struct *vma;
+    vma_struct *head, *current;
+    uint64_t start_code, end_code, start_data, end_data;
 };
 
-
-typedef enum { RUNNING, SLEEPING, ZOMBIE } STATE;
+typedef enum { RUNNING, SLEEPING, ZOMBIE, READY } STATE;
 
 struct PCB {
     uint64_t rsp;

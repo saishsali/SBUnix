@@ -5,6 +5,10 @@
 #define EI_NIDENT 16
 #define SEGMENT_LOAD 1
 
+#define FLAG_READ     4
+#define FLAG_WRITE    2
+#define FLAG_EXECUTE  1
+
 typedef uint64_t Elf64_Addr;
 typedef uint16_t Elf64_Half;
 typedef uint64_t Elf64_Lword;

@@ -96,7 +96,7 @@ task_struct *create_user_process(char *filename) {
     uint64_t current_cr3 = get_cr3();
     task_struct *pcb = kmalloc(sizeof(task_struct));
     pcb->pid = get_process_id();
-    pcb->state = RUNNING;
+    pcb->state = READY;
     uint64_t new_cr3 = (uint64_t)set_user_address_space();
     set_cr3(new_cr3);
 
@@ -109,6 +109,5 @@ task_struct *create_user_process(char *filename) {
 
     set_cr3(current_cr3);
 
-    kprintf("User process created\n");
     return pcb;
 }

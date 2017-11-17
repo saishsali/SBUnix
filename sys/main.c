@@ -51,7 +51,7 @@ void start(uint32_t *modulep, void *physbase, void *physfree) {
     // create_threads();
     // init_pci();
     // get_file("lib/crt1.o");
-    create_user_process("bin/ls");
+    create_user_process("bin/cat");
 }
 
 void boot(void) {
