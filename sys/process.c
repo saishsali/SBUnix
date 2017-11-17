@@ -8,7 +8,7 @@
 #include <sys/gdt.h>
 
 void _context_switch(task_struct *, task_struct *);
-void _switch_to_ring_3(uint64_t, uint64_t);
+void _switch_to_ring_3(uint64_t);
 
 task_struct *current, *next;
 
@@ -35,7 +35,7 @@ ssize_t write(int fd, const void *buf, size_t count) {
         "movq %%rax, %0;"
         : "=r" (num_bytes)
         : "r" ((int64_t)fd), "r" (buf), "r" (count)
-        : "%rax", "%rdi", "%rsi", "%rdx"
+        : "%rax", "%rdi", "%rsi", "%rdx", "%rsp"
     );
 
     return num_bytes;
@@ -66,13 +66,12 @@ void thread1() {
     task_struct *pcb = kmalloc(sizeof(task_struct));
     pcb->pid = get_process_id();
     pcb->rsp = (uint64_t)pcb->kstack + 4096 - 8;
-    char ustack[4096];
 
     pcb->rip = (uint64_t)process1;
     set_tss_rsp((uint64_t *)pcb->rsp);
     next = current;
     current = pcb;
-    _switch_to_ring_3(pcb->rip, (uint64_t)ustack + 4096 - 8 );
+    _switch_to_ring_3(pcb->rip);
 }
 
 void thread2() {

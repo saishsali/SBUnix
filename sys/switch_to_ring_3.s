@@ -10,7 +10,7 @@ _switch_to_ring_3:
         # movq %rax, %fs
         # movq %rax, %gs
 
-        movq %rsi, %rax
+        movq %rsp, %rax
         pushq $0x23
         pushq %rax
         pushfq
