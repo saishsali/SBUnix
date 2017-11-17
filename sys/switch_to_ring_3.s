@@ -8,9 +8,9 @@ _switch_to_ring_3:
         pushq $0x23
         pushq %rax
         pushfq
-        # popq %rax
-        # orq $0x200, %rax
-        # pushq %rax
-        pushq $0x1b
+        popq %rax
+        orq $0x200, %rax
+        pushq %rax
+        pushq $0x2b
         pushq %rdi
         iretq
