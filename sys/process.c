@@ -68,14 +68,16 @@ void user_yield() {
 void process1() {
 
     while (1) {
-        write(0, "Process 1 Ring 3", 16);
+        int ret = write(0, "\nProcess 1 Ring 3 - ", 16);
+        kprintf("return value is %d", ret);
         user_yield();
     }
 }
 
 void process2() {
     while (1) {
-        write(0, "Process 2 Ring 3", 16);
+        int ret = write(0, "\nProcess 2 Ring 3 - ", 16);
+        kprintf("return value is %d", ret);
         user_yield();
     }
 }

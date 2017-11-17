@@ -6,7 +6,8 @@
 #define NUM_SYSCALLS 3
 
 int sys_write(int n, uint64_t str, int len) {
-    kprintf("%s\n", str);
+    kprintf("%s", str);
+    // TODO return no of bytes written
     return 100;
 }
 
