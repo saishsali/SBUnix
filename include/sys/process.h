@@ -31,7 +31,7 @@ struct vm_area_struct {
 typedef struct vm_area_struct vma_struct;
 
 struct mm_struct {
-    vma_struct *head, *current;
+    vma_struct *head, *tail;
     uint64_t start_code, end_code, start_data, end_data;
 };
 

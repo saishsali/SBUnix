@@ -25,5 +25,7 @@ struct posix_header_ustar *get_file(char *filename) {
         p += ROUND_UP(size, BLOCK_SIZE);
     }
 
+    kprintf("No such file exists!\n");
+
     return NULL;
 }
