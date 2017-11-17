@@ -1,11 +1,12 @@
 #include <sys/syscall.h>
 #include <sys/process.h>
 #include <sys/kprintf.h>
+#include <sys/process.h>
 
 #define NUM_SYSCALLS 3
 
 int sys_write(int n, uint64_t str, int len) {
-    kprintf("Value -  %s\n", str);
+    kprintf("%s\n", str);
     return 100;
 }
 
@@ -13,9 +14,8 @@ int sys_read(int n) {
     return 0;
 }
 
-void sys_yield()
-{
-    
+void sys_yield() {
+    yield();
 }
 
 void* syscall_tbl[NUM_SYSCALLS] = {

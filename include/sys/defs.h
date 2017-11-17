@@ -31,4 +31,7 @@ typedef uint64_t mode_t;
 /* Kernbase: refer to linker.script */
 #define KERNBASE 0xffffffff80000000
 
+/* Virtual base address */
+#define VIRTUAL_BASE 0xFFFFFFFF00000000
+
 #endif
