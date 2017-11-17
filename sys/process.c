@@ -53,7 +53,6 @@ void scheduler() {
 
 void yield() {
     scheduler();
-    // set_tss_rsp((uint64_t *)current->rsp);
     set_tss_rsp((void *)((uint64_t)next->kstack + 4096 - 8));
     _context_switch(current, next);
 }
