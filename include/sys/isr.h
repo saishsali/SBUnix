@@ -4,6 +4,7 @@
 #include <sys/defs.h>
 
 struct stack_registers {
+    // Pushed by isr_common_stub
     uint64_t r9;
     uint64_t r8;
     uint64_t rsi;
@@ -14,9 +15,11 @@ struct stack_registers {
     uint64_t rax;
     uint64_t rdi;
 
+    // Interrupt number and error code
     uint64_t interrupt_number;
     uint64_t error_code;
 
+    // Registers pushed by IRETQ
     uint64_t rip;
     uint64_t cs;
     uint64_t rflags;
