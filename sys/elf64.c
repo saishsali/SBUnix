@@ -60,6 +60,7 @@ void read_program_header(task_struct *pcb, Elf64_Ehdr *elf_header, Elf64_Phdr *p
         page_offset = 0;
         while (page_offset < PAGE_SIZE && copy_offset <= program_header->p_filesz) {
             *((char *)virtual_address + page_offset) = *((char *)elf_header + program_header->p_offset + copy_offset);
+            kprintf("%c", *((char *)virtual_address + page_offset));
             page_offset++;
             copy_offset++;
         }

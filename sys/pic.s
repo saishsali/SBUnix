@@ -18,7 +18,8 @@ _x86_64_asm_pic_remapping:
     movb $0x02, %al
     outb  %al, $0xA1
 
-    movb $0x01, %al
+    # Disable interrupts
+    movb $0x0, %al
     outb %al, $0x21
     outb %al, $0xA1
 

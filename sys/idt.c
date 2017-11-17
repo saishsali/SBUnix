@@ -6,6 +6,7 @@ extern void isr0();
 extern void isr14();
 extern void isr32();
 extern void isr33();
+extern void isr128();
 
 // Interrupt Descriptor Table
 struct IDT {
@@ -70,4 +71,10 @@ void init_idt() {
 
     // Keyboard Interrupt
     set_idt(0x21, (uint64_t)isr33, type_attr);
+
+    // 32-bit Interrupt gate: 0x8E (P=1, DPL=11b, S=0, type=1110b => type_attr=1110_1110b=0x8E)
+    type_attr = 0xEE;
+
+    set_idt(0x80, (uint64_t)isr128, type_attr);
+
 }

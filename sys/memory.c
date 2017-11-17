@@ -42,3 +42,10 @@ void *kmalloc_user(size_t size) {
 
     return (void*) start_address;
 }
+
+void *kmalloc_address(uint64_t virtual_address) {
+    Page *p = allocate_page();
+    map_page(virtual_address, page_to_physical_address(p));
+
+    return (void *)virtual_address;
+}
