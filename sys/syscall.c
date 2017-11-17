@@ -2,7 +2,7 @@
 #include <sys/process.h>
 #include <sys/kprintf.h>
 
-#define NUM_SYSCALLS 2
+#define NUM_SYSCALLS 3
 
 int sys_write(int n, uint64_t str, int len) {
     kprintf("Value -  %s\n", str);
@@ -13,11 +13,16 @@ int sys_read(int n) {
     return 0;
 }
 
-void* syscall_tbl[NUM_SYSCALLS] = {
-	sys_read,
-    sys_write
-};
+void sys_yield()
+{
+    
+}
 
+void* syscall_tbl[NUM_SYSCALLS] = {
+    sys_read,
+    sys_write,
+    sys_yield
+};
 
 void syscall_handler(uint64_t syscall_no) {
     void *func_ptr;
