@@ -1,23 +1,19 @@
 #include <sys/timer.h>
 #include <sys/keyboard.h>
 #include <sys/kprintf.h>
+#include <sys/isr.h>
+#include <sys/page_fault.h>
 
-// Handler for first 32 interrupts (offset 0 - 31)
-void interrupt_handler0() {}
-
-// Handler for Page fault (offset 14)
-void interrupt_handler14() {
-    kprintf("Page fault\n");
-    while(1);
-}
-
-
-// Handler for timer interrupt (offset 32)
-void interrupt_handler32() {
-    // timer_interrupt();
-}
-
-// Handler for keyboard interrupt (offset 33)
-void interrupt_handler33() {
-    // keyboard_interrupt();
+void interrupt_handler(stack_registers *registers) {
+    switch (registers->interrupt_number) {
+        case 14:
+            page_fault_exception(registers);
+            break;
+        case 32:
+            timer_interrupt();
+            break;
+        case 33:
+            keyboard_interrupt();
+            break;
+    }
 }

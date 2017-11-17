@@ -1,46 +1,62 @@
 .text
 
 .macro INTERRUPT_HANDLER num
-    .global isr\num
+    .globl isr\num
     isr\num:
+        pushq $0
+        pushq $\num
+        jmp isr_common_stub
+.ENDM
 
-        # Clear interrupt
-        cli
+.macro INTERRUPT_HANDLER_EXCEPTION num
+    .globl isr\num
+    isr\num:
+        pushq $\num
+        jmp isr_common_stub
+.ENDM
 
-        # Push all registers
-        pushq %rax
-        pushq %rbx
-        pushq %rcx
-        pushq %rdx
-        pushq %rbp
-        pushq %rsi
-        pushq %rdi
-        pushq %r8
-        pushq %r9
 
-        call interrupt_handler\num
+.globl isr_common_stub
+isr_common_stub:
+    # Clear interrupt
+    cli
 
-        # Restore all registers
-        popq %r9
-        popq %r8
-        popq %rdi
-        popq %rsi
-        popq %rbp
-        popq %rdx
-        popq %rcx
-        popq %rbx
-        popq %rax
+    # Push all registers
+    pushq %rax
+    pushq %rbx
+    pushq %rcx
+    pushq %rdx
+    pushq %rbp
+    pushq %rsi
+    pushq %rdi
+    pushq %r8
+    pushq %r9
 
-        # End-of-interrupt command
-        movb $0x20, %al
-        outb %al, $0x20
+    movq %rsp, %rdi
+    call interrupt_handler
 
-        # Set interrupt
-        sti
-        iretq
-.endm
+    # Restore all registers
+    popq %r9
+    popq %r8
+    popq %rdi
+    popq %rsi
+    popq %rbp
+    popq %rdx
+    popq %rcx
+    popq %rbx
+    popq %rax
+
+    # End-of-interrupt command
+    movb $0x20, %al
+    outb %al, $0x20
+
+    addq $16 ,%rsp
+
+    # Set interrupt
+    sti
+    iretq
 
 INTERRUPT_HANDLER 0
-INTERRUPT_HANDLER 14
+INTERRUPT_HANDLER_EXCEPTION 14
 INTERRUPT_HANDLER 32
 INTERRUPT_HANDLER 33
