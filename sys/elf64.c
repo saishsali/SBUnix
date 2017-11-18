@@ -18,6 +18,18 @@ Elf64_Ehdr *get_elf_header(char *filename) {
     return (Elf64_Ehdr *)(phu + 1);
 }
 
+int is_elf_file(Elf64_Ehdr *elf_header)
+{
+    if (elf_header == NULL)
+        return 0;
+
+    // Check magic number (4 bytes): Magic number - 0x7F, then 'ELF' in ASCII
+    if (elf_header->e_ident[1] == 'E' && elf_header->e_ident[2] == 'L' && elf_header->e_ident[3] == 'F')
+        return 1;
+
+    return 0;
+}
+
 void read_program_header(task_struct *pcb, Elf64_Ehdr *elf_header, Elf64_Phdr *program_header) {
     uint64_t page_offset, copy_offset = 0, virtual_address;
 
@@ -25,25 +37,15 @@ void read_program_header(task_struct *pcb, Elf64_Ehdr *elf_header, Elf64_Phdr *p
         return;
     }
 
-    vma_struct *vma = kmalloc(sizeof(vma_struct));
+    vma_struct *vma = add_vma(
+        pcb,
+        program_header->p_vaddr,
+        program_header->p_memsz,
+        program_header->p_flags,
+        NOTYPE,
+        0
+    );
 
-    if (pcb->mm->head == NULL) {
-        pcb->mm->head = vma;
-    } else {
-        pcb->mm->tail->next = vma;
-    }
-
-    pcb->mm->tail = vma;
-    vma->mm = pcb->mm;
-
-    vma->start = program_header->p_vaddr;
-    vma->end = program_header->p_vaddr + program_header->p_memsz;
-    vma->flags = program_header->p_flags;
-    vma->next = NULL;
-    vma->type = NOTYPE;
-
-    pcb->mm->start_code = program_header->p_vaddr;
-    pcb->mm->end_code = program_header->p_vaddr + program_header->p_memsz;
     vma->file = (file *)kmalloc(sizeof(file));
     vma->file->start = (uint64_t)elf_header;
     vma->file->offset = program_header->p_offset;
@@ -76,7 +78,7 @@ void read_program_header(task_struct *pcb, Elf64_Ehdr *elf_header, Elf64_Phdr *p
 
 void load_executable(task_struct *pcb, char *filename) {
     Elf64_Ehdr *elf_header = get_elf_header(filename);
-    if (elf_header == NULL) {
+    if (elf_header == NULL || is_elf_file(elf_header) == 0) {
         return;
     }
 

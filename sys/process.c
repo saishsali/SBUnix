@@ -125,10 +125,11 @@ task_struct *create_user_process(char *filename) {
     task_struct *pcb = kmalloc(sizeof(task_struct));
     pcb->pid = get_process_id();
     pcb->state = READY;
-    uint64_t new_cr3 = (uint64_t)set_user_address_space();
-    set_cr3(new_cr3);
+    pcb->cr3 = (uint64_t)set_user_address_space();
+    set_cr3(pcb->cr3);
 
     mm_struct *mm = (mm_struct *)kmalloc(sizeof(mm_struct));
+    mm->head = mm->tail = NULL;
     pcb->mm = mm;
 
     pcb->rsp = (uint64_t)pcb->kstack + 4096 - 8;
