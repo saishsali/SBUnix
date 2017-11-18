@@ -10,12 +10,10 @@
 #define RIGHT_SHIFT_SC 0x36
 #define SIZE 0x80
 
-// char scan_buf[1024];
 char output_buf[1024];
 static volatile int scan_flag = 0;
 static volatile int scan_len = 0;
 static volatile int max_scan_len = 0;
-// int curr_scan m= 0;
 
 // Scancode to ASCII mapping (src: https://gist.github.com/davazp/d2fde634503b2a5bc664)
 unsigned char scancode_ascii[SIZE] =
@@ -185,7 +183,7 @@ int scanf(void *buff, int len) {
     while(temp >= 0) {
         output_buf[temp--] = '\0';
     }
-    
+
     temp = scan_len;
     scan_len = 0;
     return temp;
