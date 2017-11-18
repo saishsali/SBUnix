@@ -48,10 +48,10 @@ void start(uint32_t *modulep, void *physbase, void *physfree) {
     // char *temp = (char *)kmalloc(20);
 
     // kprintf("Allocation works");
-    // create_threads();
+    create_threads();
     // init_pci();
     // get_file("lib/crt1.o");
-    create_user_process("bin/cat");
+    // create_user_process("bin/cat");
 }
 
 void boot(void) {

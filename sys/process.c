@@ -8,12 +8,14 @@
 #include <sys/gdt.h>
 #include <sys/paging.h>
 #include <sys/elf64.h>
+#include <sys/syscall.h>
 
 void _context_switch(task_struct *, task_struct *);
 void _switch_to_ring_3(uint64_t, uint64_t);
 
 task_struct *current, *next;
 
+/* Get next free process id */
 int get_process_id() {
     int i;
     for (i = 0; i < MAX_PROCESS; i++) {
@@ -25,26 +27,8 @@ int get_process_id() {
     return -1;
 }
 
-ssize_t write(int fd, const void *buf, size_t count) {
-    ssize_t num_bytes;
-
-    __asm__ __volatile__(
-        "movq $1, %%rax;"
-        "movq %1, %%rdi;"
-        "movq %2, %%rsi;"
-        "movq %3, %%rdx;"
-        "int $0x80;"
-        "movq %%r10, %0;"
-        : "=r" (num_bytes)
-        : "r" ((int64_t)fd), "r" (buf), "r" (count)
-        : "%rax", "%rdi", "%rsi", "%rdx"
-    );
-
-    return num_bytes;
-}
-
 /* Pick the first task from the list and put suspended task at the end of the list */
-void scheduler() {
+void strawman_scheduler() {
     current = process_list_head;
     next = process_list_head->next;
     process_list_tail->next = current;
@@ -53,52 +37,44 @@ void scheduler() {
     process_list_tail = current;
 }
 
-void yield() {
-    scheduler();
+/* Schedule next task, set TSS rsp and context switch */
+void schedule() {
+    strawman_scheduler();
     set_tss_rsp((void *)((uint64_t)next->kstack + 4096 - 8));
     _context_switch(current, next);
 }
 
-void user_yield() {
-    __asm__ __volatile__(
-       "movq $2, %%rax;"
-       "int $0x80;"
-       : : :
-   );
-}
-
-void process1() {
-
+void user_thread1() {
     while (1) {
-        int ret = write(0, "\nProcess 1 Ring 3 - ", 16);
-        kprintf("return value is %d", ret);
-        user_yield();
+        int ret = write(0, "User thread: 1, ", 16);
+        kprintf("Return value: %d\n", ret);
+        yield();
     }
 }
 
-void process2() {
+void user_thread2() {
     while (1) {
-        int ret = write(0, "\nProcess 2 Ring 3 - ", 16);
-        kprintf("return value is %d", ret);
-        user_yield();
+        int ret = write(0, "User thread: 2, ", 16);
+        kprintf("Return value: %d\n", ret);
+        yield();
     }
 }
 
-void thread1() {
+void kernel_thread1() {
     uint64_t *stack = kmalloc_user(4096);
     current->u_rsp = (uint64_t)stack + 4096 - 8;
 
-    current->entry = (uint64_t)process1;
-    set_tss_rsp((void *)((uint64_t)current->kstack + 4096 - 8));
+    current->entry = (uint64_t)user_thread1;
+    set_tss_rsp((void *)((uint64_t)current->rsp));
     _switch_to_ring_3(current->entry, current->u_rsp);
 }
 
-void thread2() {
+void kernel_thread2() {
     uint64_t *stack = kmalloc_user(4096);
     next->u_rsp = (uint64_t)stack + 4096 - 8;
 
-    next->entry = (uint64_t)process2;
-    set_tss_rsp((void *)((uint64_t)next->kstack + 4096 - 8));
+    next->entry = (uint64_t)user_thread2;
+    set_tss_rsp((void *)((uint64_t)next->rsp));
     _switch_to_ring_3(next->entry, next->u_rsp);
 }
 
@@ -107,7 +83,6 @@ void add_process(task_struct *pcb) {
     if (process_list_head == NULL) {
         process_list_head = pcb;
     }
-
     if (process_list_tail == NULL) {
         process_list_tail = pcb;
     } else {
@@ -133,8 +108,8 @@ task_struct *create_thread(void *thread) {
 /* Switch 2 new threads (thread1, thread 2) and switch from current thread to thread 1 */
 void create_threads() {
     task_struct *pcb0 = kmalloc(sizeof(task_struct));
-    task_struct *pcb1 = create_thread(thread1);
-    task_struct *pcb2 = create_thread(thread2);
+    task_struct *pcb1 = create_thread(kernel_thread1);
+    task_struct *pcb2 = create_thread(kernel_thread2);
     current = pcb1;
     next = pcb2;
     _context_switch(pcb0, pcb1);

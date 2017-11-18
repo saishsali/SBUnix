@@ -63,8 +63,6 @@ task_struct *create_user_process(char *);
 
 task_struct *create_user_process();
 
-void switch_to_ring_3(task_struct *task);
-
-void yield();
+void schedule();
 
 #endif
