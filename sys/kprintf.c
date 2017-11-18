@@ -143,6 +143,14 @@ void kprintf_pos(int row, int column, const char *fmt, ...) {
     scroll_flag = 1;
 }
 
+void kprintf_backspace(char buf[1024], int curr_scan) {
+    while((curr_scan--) > 0) {
+        *video_memory = DEFAULT_COLOR;
+        video_memory = video_memory - 2;
+    }
+    kprintf(" %s", buf);
+}
+
 // Clear entire screen and set default color to white
 void clear_screen() {
     char *vm = (char *)VIDEO_MEM_START;

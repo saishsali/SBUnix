@@ -52,6 +52,7 @@ void user_thread1() {
         // TODO - Return value comes wrong because of 51 line in isr.s
         read(0, buf, 128);
         kprintf("----%s-----", buf);
+        kprintf("");
         // yield();
     }
 }

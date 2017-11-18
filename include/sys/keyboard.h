@@ -2,7 +2,7 @@
 #define __KEYBOARD_H
 
 #define ENTER 28
-
+#define BACKSPACE 14
 
 void keyboard_interrupt();
 
