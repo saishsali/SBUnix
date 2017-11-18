@@ -127,27 +127,30 @@ void keyboard_interrupt() {
 
         output_buf[scan_len] = scancode_ascii[scancode];
 
-        if(scancode == BACKSPACE) {
-            if(scan_len > 0) {
-                output_buf[scan_len - 1] = '\0';
-                kprintf_backspace(output_buf, scan_len);
-                scan_len--;
-            }
+        if(scan_flag == 1) {
+            if(scancode == BACKSPACE) {
+                if(scan_len > 0) {
+                    output_buf[scan_len - 1] = '\0';
+                    kprintf_backspace(output_buf, scan_len);
+                    scan_len--;
+                }
 
-        } else {
-            kprintf("%c", output_buf[scan_len]);
-            flag = 1;
+            } else {
+                kprintf("%c", output_buf[scan_len]);
+                flag = 1;
+            }
+            if(scancode == ENTER) {
+                scan_flag = 0;
+
+                // mark the enter scancode as null
+                output_buf[scan_len] = '\0';
+                if(max_scan_len < scan_len + 1) {
+                    max_scan_len = scan_len + 1;
+                }
+            }
         }
 
-        if(scancode == ENTER) {
-            scan_flag = 0;
-
-            // mark the enter scancode as null
-            output_buf[scan_len] = '\0';
-            if(max_scan_len < scan_len + 1) {
-                max_scan_len = scan_len + 1;
-            }
-        } else if (shift_key(scancode)) { // If a shift key is pressed
+        if (shift_key(scancode)) { // If a shift key is pressed
             return;
         } else if (control_key(scancode)) { // If a control key is pressed
             return;
@@ -169,6 +172,7 @@ void keyboard_interrupt() {
 }
 
 int scanf(void *buff, int len) {
+
     scan_flag = 1;
     __asm__ __volatile__("sti;");
 
