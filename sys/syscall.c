@@ -4,6 +4,7 @@
 #include <sys/process.h>
 #include <sys/dirent.h>
 #include <sys/memory.h>
+#include <sys/keyboard.h>
 #include <sys/memcpy.h>
 
 #define NUM_SYSCALLS 3
@@ -52,8 +53,54 @@ int sys_write(uint64_t fd, uint64_t str, int length) {
 
 }
 
-int sys_read(int n) {
-    return 0;
+int sys_read(uint64_t fd, char* buff, uint64_t length) {
+
+    //uint64_t end = 0, cursor_pointer = 0;
+
+    if (fd == stdin) {
+        length = scanf(buff, length);
+    }
+
+    // } else if(fd > 2) {
+
+    //     if ((current->file_descriptor[fd]) == NULL) {
+    //         length = -1;
+
+    //     } else if(((file_descriptor *)current->file_descriptor[fd])->permission == O_WRONLY ){
+    //         //kprintf("\n Not valid permissions"); 
+    //         length = -1; 
+        
+    //     } else if(((file_descriptor *)current->file_descriptor[fd])->node->f_inode_no != 0) { 
+    //         //This file descriptor is associated with file on disk 
+
+    //         vma_struct *iter; 
+
+    //         cursor_pointer = (uint64_t)((file_descriptor *)(current->file_descriptor[fd]))->cursor;
+            
+    //         // get start and end of vma 
+    //         for (iter = current->mm->head; iter != NULL; iter = iter->next) {
+    //             if(iter->vm_file_descriptor == fd){
+    //                 end = iter->end;
+    //                 break; 
+    //             }
+    //         }
+            
+    //     } else {
+
+    //         cursor_pointer = (uint64_t)((file_descriptor *)(current->file_descriptor[fd]))->cursor;
+    //         end = ((file_descriptor *)(current->file_descriptor[fd]))->node->end;
+    //     }
+        
+    //     if ((end - cursor_pointer) < length) {
+    //         length = (end - cursor_pointer);
+    //     }
+
+    //     memcpy((void *)buff, (void *)cursor_pointer, length);
+
+    //     ((file_descriptor *)(current->file_descriptor[fd]))->cursor += length;
+    // }
+
+    return length;
 }
 
 void sys_yield() {
@@ -89,6 +136,25 @@ ssize_t write(int fd, const void *buf, size_t count) {
         "movq %3, %%rdx;"
         "int $0x80;"
         "movq %%r10, %0;"
+        : "=r" (num_bytes)
+        : "r" ((int64_t)fd), "r" (buf), "r" (count)
+        : "%rax", "%rdi", "%rsi", "%rdx"
+    );
+
+    return num_bytes;
+}
+
+
+ssize_t read(int fd, void *buf, size_t count) {
+    ssize_t num_bytes;
+
+    __asm__ (
+        "movq $0, %%rax;"
+        "movq %1, %%rdi;"
+        "movq %2, %%rsi;"
+        "movq %3, %%rdx;"
+        "int $0x80;"
+        "movq %%rax, %0;"
         : "=r" (num_bytes)
         : "r" ((int64_t)fd), "r" (buf), "r" (count)
         : "%rax", "%rdi", "%rsi", "%rdx"

@@ -48,8 +48,8 @@ isr_common_stub:
     popq %rax
 
     # End-of-interrupt command
-    # movb $0x20, %al
-    # outb %al, $0x20
+    movb $0x20, %al
+    outb %al, $0x20
 
     addq $16 ,%rsp
 

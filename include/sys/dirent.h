@@ -24,7 +24,7 @@ struct file_t {
     struct file_t* child[20];
     char name[20];
     int type;
-    uint64_t inode_no;
+    uint64_t f_inode_no;
 };
 typedef struct file_t file_t;
 

@@ -5,5 +5,6 @@
 void syscall_handler();
 ssize_t write(int fd, const void *buf, size_t count);
 void yield();
+ssize_t read(int fd, void *buf, size_t count);
 
 #endif

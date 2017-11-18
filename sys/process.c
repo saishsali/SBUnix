@@ -45,10 +45,14 @@ void schedule() {
 }
 
 void user_thread1() {
+    char buf[1024];
     while (1) {
-        int ret = write(0, "User thread: 1, ", 16);
-        kprintf("Return value: %d\n", ret);
-        yield();
+        // int remt = write(0, "User thread: 1, ", 16);
+        kprintf("\n write something -- ");
+        // TODO - Return value comes wrong because of 51 line in isr.s
+        read(0, buf, 128);
+        kprintf("----%s-----", buf);
+        // yield();
     }
 }
 

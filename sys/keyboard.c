@@ -1,11 +1,19 @@
 #include <sys/kprintf.h>
 #include <sys/io.h>
+#include <sys/keyboard.h>
+#include <sys/memcpy.h>
+
 #define ROW 24
 #define COLUMN 55
 #define CONTROL_SC 29
 #define LEFT_SHIFT_SC 0x2A
 #define RIGHT_SHIFT_SC 0x36
 #define SIZE 0x80
+
+static volatile char scan_buf[1024];
+static volatile int scan_flag = 0;
+static volatile int scan_len = 0;
+static volatile int max_scan_len = 0;
 
 // Scancode to ASCII mapping (src: https://gist.github.com/davazp/d2fde634503b2a5bc664)
 unsigned char scancode_ascii[SIZE] =
@@ -115,7 +123,19 @@ void keyboard_interrupt() {
 
     // If a key is pressed
     if (scancode < SIZE) {
-        if (shift_key(scancode)) { // If a shift key is pressed
+
+        scan_buf[scan_len++] = scancode_ascii[scancode];
+
+        if(scancode == ENTER) {
+            scan_flag = 0;
+            // mark the enter scancode as null
+            scan_buf[scan_len - 1] = '\0';
+            // mark the end of the string
+            scan_buf[scan_len] = '\0';
+            if(max_scan_len < scan_len) {
+                max_scan_len = scan_len;
+            }
+        } else if (shift_key(scancode)) { // If a shift key is pressed
             return;
         } else if (control_key(scancode)) { // If a control key is pressed
             return;
@@ -132,4 +152,24 @@ void keyboard_interrupt() {
 
         kprintf_pos(ROW, COLUMN, "Last pressed glyph: %c%c", ch1, ch2);
     }
+}
+
+int scanf(void *buff, int len) {
+    scan_flag = 1;
+    __asm__ __volatile__("sti;");
+
+    while (scan_flag == 1);
+
+    if (len <  scan_len)
+        scan_len = len;
+
+    memcpy((void *)buff, (void *)scan_buf, scan_len);
+
+    int y = max_scan_len;
+
+    while(y >= 0) {
+        scan_buf[y--] = '\0';
+    }
+    scan_len = 0;
+    return scan_len;
 }
