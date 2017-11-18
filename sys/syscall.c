@@ -6,8 +6,9 @@
 #include <sys/memory.h>
 #include <sys/keyboard.h>
 #include <sys/memcpy.h>
+#include <sys/page_descriptor.h>
 
-#define NUM_SYSCALLS 3
+#define NUM_SYSCALLS 10
 
 extern task_struct *current;
 
@@ -31,7 +32,7 @@ int sys_write(uint64_t fd, uint64_t str, int length) {
 
             //iterate till end of vma
             for (iter = current->mm->head; iter != NULL; iter = iter->next) {
-                if(iter->vm_file_descriptor == fd){
+                if(iter->file_descriptor == fd){
                     end = iter->end;
                     break;
                 }
@@ -68,27 +69,27 @@ int sys_read(uint64_t fd, char* buff, uint64_t length) {
         } else if(((file_descriptor *)current->file_descriptor[fd])->permission == O_WRONLY ){
             //kprintf("\n Not valid permissions");
             length = -1;
-        
+
         } else if(((file_descriptor *)current->file_descriptor[fd])->node->f_inode_no != 0) {
             //This file descriptor is associated with file on disk
             vma_struct *iter;
 
             cursor_pointer = (uint64_t)((file_descriptor *)(current->file_descriptor[fd]))->cursor;
-            
+
             // get start and end of vma
             for (iter = current->mm->head; iter != NULL; iter = iter->next) {
-                if(iter->vm_file_descriptor == fd){
+                if(iter->file_descriptor == fd){
                     end = iter->end;
                     break;
                 }
             }
-            
+
         } else {
 
             cursor_pointer = (uint64_t)((file_descriptor *)(current->file_descriptor[fd]))->cursor;
             end = ((file_descriptor *)(current->file_descriptor[fd]))->node->last;
         }
-        
+
         if ((end - cursor_pointer) < length) {
             length = (end - cursor_pointer);
         }
@@ -105,10 +106,28 @@ void sys_yield() {
     schedule();
 }
 
+void *sys_mmap(void *start, size_t length, uint64_t flags) {
+    if ((uint64_t)start < 0) {
+        kprintf("Not a valid address\n");
+        return NULL;
+    } else if ((uint64_t)start == 0) {
+        // Address not specified, use address after vma tail->end
+        start = (uint64_t *)ROUND_UP(current->mm->tail->end, PAGE_SIZE);
+    } else if (validate_address(current, (uint64_t)start, length) == 0) {
+        kprintf("Address already in use\n");
+        return NULL;
+    }
+
+    add_vma(current, (uint64_t)start, length, flags, ANON, 0);
+
+    return start;
+}
+
 void* syscall_tbl[NUM_SYSCALLS] = {
     sys_read,
     sys_write,
-    sys_yield
+    sys_yield,
+    sys_mmap
 };
 
 void syscall_handler(uint64_t syscall_no) {

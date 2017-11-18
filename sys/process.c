@@ -137,5 +137,6 @@ task_struct *create_user_process(char *filename) {
 
     set_cr3(current_cr3);
 
+    current = pcb;
     return pcb;
 }

@@ -21,7 +21,7 @@ struct file {
 
 typedef struct file file;
 
-typedef enum vma_types {TEXT, DATA, STACK, HEAP, NOTYPE} VMA_TYPE;
+typedef enum vma_types {TEXT, DATA, STACK, HEAP, ANON, NOTYPE} VMA_TYPE;
 
 struct vm_area_struct {
     mm_struct *mm;
@@ -31,7 +31,7 @@ struct vm_area_struct {
     uint64_t flags;
     uint64_t type;
     file *file;
-    uint64_t vm_file_descriptor;         // reference to file descriptors for file opened for writing
+    uint64_t file_descriptor;         // reference to file descriptors for file opened for writing
 };
 
 typedef struct vm_area_struct vma_struct;
