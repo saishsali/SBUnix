@@ -20,7 +20,6 @@ Elf64_Ehdr *get_elf_header(char *filename) {
 
 void read_program_header(task_struct *pcb, Elf64_Ehdr *elf_header, Elf64_Phdr *program_header) {
     uint64_t page_offset, copy_offset = 0, virtual_address;
-    Page *p;
 
     if (program_header->p_type != SEGMENT_LOAD) {
         return;
@@ -52,15 +51,13 @@ void read_program_header(task_struct *pcb, Elf64_Ehdr *elf_header, Elf64_Phdr *p
 
     virtual_address = program_header->p_vaddr;
     while (virtual_address < (program_header->p_vaddr + program_header->p_memsz)) {
-        p = allocate_page();
         // To do: pass permissions as a parameter
-        map_page(virtual_address, page_to_physical_address(p));
-        memset((void *)virtual_address, 0, PAGE_SIZE);
+        kmalloc_map(PAGE_SIZE, virtual_address);
 
         page_offset = 0;
         while (page_offset < PAGE_SIZE && copy_offset <= program_header->p_filesz) {
             *((char *)virtual_address + page_offset) = *((char *)elf_header + program_header->p_offset + copy_offset);
-            kprintf("%c", *((char *)virtual_address + page_offset));
+            // kprintf("%c", *((char *)virtual_address + page_offset));
             page_offset++;
             copy_offset++;
         }

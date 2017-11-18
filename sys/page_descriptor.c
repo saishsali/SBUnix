@@ -83,6 +83,7 @@ Page *allocate_page() {
     Page *free_page = page_free_list;
     page_free_list = page_free_list->next;
     free_page->reference_count = 1;
+    memset((void *)page_to_virtual_address(free_page), 0, PAGE_SIZE);
 
     return free_page;
 }
@@ -95,6 +96,7 @@ Page *allocate_pages(int num_pages) {
     }
     Page *free_pages = page_free_list;
     while (num_pages-- > 0) {
+        memset((void *)page_to_virtual_address(page_free_list), 0, PAGE_SIZE);
         page_free_list->reference_count = 1;
         page_free_list = page_free_list->next;
     }
