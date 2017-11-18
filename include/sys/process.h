@@ -37,8 +37,8 @@ struct vm_area_struct {
 typedef struct vm_area_struct vma_struct;
 
 struct mm_struct {
-    vma_struct *head, *tail;
-    uint64_t start_code, end_code, start_data, end_data;
+    vma_struct *head;
+    vma_struct *tail;
 };
 
 typedef enum { RUNNING, SLEEPING, ZOMBIE, READY } STATE;
@@ -53,6 +53,7 @@ struct PCB {
     mm_struct *mm;
     struct PCB *next;
     uint64_t entry;
+    uint64_t cr3;
     struct file_descriptor* file_descriptor[MAX_FD];
 };
 

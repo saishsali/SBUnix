@@ -72,7 +72,14 @@ int validate_address(task_struct *task, uint64_t address, uint64_t size) {
 }
 
 /* Allocate new vma and add details */
-vma_struct *allocate_vma(uint64_t address, uint64_t size, uint64_t flags, uint64_t type, uint64_t file_descriptor) {
+vma_struct *allocate_vma(
+    task_struct *task,
+    uint64_t address,
+    uint64_t size,
+    uint64_t flags,
+    uint64_t type,
+    uint64_t file_descriptor
+) {
     vma_struct *vma = kmalloc(sizeof(vma_struct));
 
     vma->start           = address;
@@ -81,6 +88,7 @@ vma_struct *allocate_vma(uint64_t address, uint64_t size, uint64_t flags, uint64
     vma->flags           = flags;
     vma->type            = type;
     vma->file_descriptor = file_descriptor;
+    vma->mm              = task->mm;
 
     return vma;
 }
@@ -94,9 +102,14 @@ vma_struct *add_vma(
     uint64_t type,
     uint64_t file_descriptor
 ) {
-    vma_struct *new_vma = allocate_vma(address, size, flags, type, file_descriptor);
+    vma_struct *new_vma = allocate_vma(task, address, size, flags, type, file_descriptor);
 
     vma_struct *vma = task->mm->head;
+
+    if (vma == NULL) {
+        task->mm->head = new_vma;
+        return new_vma;
+    }
 
     // Add new vma as a head node
     if (new_vma->end <= vma->start) {
