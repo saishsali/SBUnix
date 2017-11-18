@@ -10,12 +10,12 @@
 #define RIGHT_SHIFT_SC 0x36
 #define SIZE 0x80
 
-static volatile char scan_buf[1024];
+// char scan_buf[1024];
 char output_buf[1024];
 static volatile int scan_flag = 0;
 static volatile int scan_len = 0;
-int max_scan_len = 0;
-int curr_scan = 0;
+static volatile int max_scan_len = 0;
+// int curr_scan m= 0;
 
 // Scancode to ASCII mapping (src: https://gist.github.com/davazp/d2fde634503b2a5bc664)
 unsigned char scancode_ascii[SIZE] =
@@ -119,34 +119,33 @@ int control_key(int scancode) {
     return 0;
 }
 
-int prev_scancode = 0;
 void keyboard_interrupt() {
     int scancode = inb(0x60);
     char ch1 = 0, ch2 = 0;
+    int flag = 0;
 
     // If a key is pressed
     if (scancode < SIZE) {
 
-        scan_buf[scan_len] = scancode_ascii[scancode];
-        output_buf[curr_scan] = scancode_ascii[scancode];
+        output_buf[scan_len] = scancode_ascii[scancode];
 
         if(scancode == BACKSPACE) {
-            if(curr_scan > 0) {
-                output_buf[curr_scan-1] = '\0';
-                kprintf_backspace(output_buf, curr_scan);
-                curr_scan--;
+            if(scan_len > 0) {
+                output_buf[scan_len - 1] = '\0';
+                kprintf_backspace(output_buf, scan_len);
+                scan_len--;
             }
-            
+
         } else {
-            kprintf("%c", output_buf[curr_scan]);
-            curr_scan++;
+            kprintf("%c", output_buf[scan_len]);
+            flag = 1;
         }
 
         if(scancode == ENTER) {
             scan_flag = 0;
-            curr_scan = 0;
+
             // mark the enter scancode as null
-            scan_buf[scan_len] = '\0';
+            output_buf[scan_len] = '\0';
             if(max_scan_len < scan_len + 1) {
                 max_scan_len = scan_len + 1;
             }
@@ -164,11 +163,11 @@ void keyboard_interrupt() {
         } else {
             ch1 = scancode_ascii[scancode];
         }
-        prev_scancode = scancode;
-        scan_len++;
-        
+
         kprintf_pos(ROW, COLUMN, "Last pressed glyph: %c%c", ch1, ch2);
     }
+    if(flag)
+        scan_len++;
 }
 
 int scanf(void *buff, int len) {
@@ -180,14 +179,13 @@ int scanf(void *buff, int len) {
     if (len <  scan_len)
         scan_len = len;
 
-    memcpy((void *)buff, (void *)scan_buf, scan_len);
+    memcpy((void *)buff, (void *)output_buf, scan_len);
 
-    int temp = 0;
-
-    temp = max_scan_len;
+    int temp = max_scan_len;
     while(temp >= 0) {
-        scan_buf[temp--] = '\0';
+        output_buf[temp--] = '\0';
     }
+    
     temp = scan_len;
     scan_len = 0;
     return temp;
