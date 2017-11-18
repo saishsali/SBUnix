@@ -1,5 +1,5 @@
 #include <sys/defs.h>
-#include <dirent.h>
+#include <sys/dirent.h>
 
 int getdents(unsigned int fd, char *dirp, unsigned int count) {
     int64_t output;

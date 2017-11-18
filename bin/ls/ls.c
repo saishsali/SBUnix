@@ -1,6 +1,6 @@
 #include <unistd.h>
 #include <stdio.h>
-#include <dirent.h>
+#include <sys/dirent.h>
 #include <string.h>
 #include <fcntl.h>
 #define BUFSIZE 1024

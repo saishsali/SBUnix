@@ -7,6 +7,8 @@
 #define STACK_START 0xF0000000
 #define HEAP_START  0x08000000
 
+#define MAX_FD 10
+
 typedef struct vm_area_struct vma_struct;
 typedef struct mm_struct mm_struct;
 
@@ -29,6 +31,7 @@ struct vm_area_struct {
     uint64_t flags;
     uint64_t type;
     file *file;
+    uint64_t vm_file_descriptor;         // reference to file descriptors for file opened for writing
 };
 
 typedef struct vm_area_struct vma_struct;
@@ -50,6 +53,7 @@ struct PCB {
     mm_struct *mm;
     struct PCB *next;
     uint64_t entry;
+    struct file_descriptor* file_descriptor[MAX_FD];
 };
 
 typedef struct PCB task_struct;
