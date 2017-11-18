@@ -86,7 +86,14 @@ vma_struct *allocate_vma(uint64_t address, uint64_t size, uint64_t flags, uint64
 }
 
 /* Add new vma to the process list of vmas */
-vma_struct *add_vma(task_struct *task, uint64_t address, uint64_t size, uint64_t flags, uint64_t type, uint64_t file_descriptor) {
+vma_struct *add_vma(
+    task_struct *task,
+    uint64_t address,
+    uint64_t size,
+    uint64_t flags,
+    uint64_t type,
+    uint64_t file_descriptor
+) {
     vma_struct *new_vma = allocate_vma(address, size, flags, type, file_descriptor);
 
     vma_struct *vma = task->mm->head;
