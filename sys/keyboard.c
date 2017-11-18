@@ -125,6 +125,7 @@ void keyboard_interrupt() {
     if (scancode < SIZE) {
 
         scan_buf[scan_len++] = scancode_ascii[scancode];
+        kprintf("%c", scancode_ascii[scancode]);
 
         if(scancode == ENTER) {
             scan_flag = 0;

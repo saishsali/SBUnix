@@ -55,50 +55,48 @@ int sys_write(uint64_t fd, uint64_t str, int length) {
 
 int sys_read(uint64_t fd, char* buff, uint64_t length) {
 
-    //uint64_t end = 0, cursor_pointer = 0;
+    uint64_t end = 0, cursor_pointer = 0;
 
     if (fd == stdin) {
         length = scanf(buff, length);
+
+    } else if(fd > 2) {
+
+        if ((current->file_descriptor[fd]) == NULL) {
+            length = -1;
+
+        } else if(((file_descriptor *)current->file_descriptor[fd])->permission == O_WRONLY ){
+            //kprintf("\n Not valid permissions");
+            length = -1;
+        
+        } else if(((file_descriptor *)current->file_descriptor[fd])->node->f_inode_no != 0) {
+            //This file descriptor is associated with file on disk
+            vma_struct *iter;
+
+            cursor_pointer = (uint64_t)((file_descriptor *)(current->file_descriptor[fd]))->cursor;
+            
+            // get start and end of vma
+            for (iter = current->mm->head; iter != NULL; iter = iter->next) {
+                if(iter->vm_file_descriptor == fd){
+                    end = iter->end;
+                    break;
+                }
+            }
+            
+        } else {
+
+            cursor_pointer = (uint64_t)((file_descriptor *)(current->file_descriptor[fd]))->cursor;
+            end = ((file_descriptor *)(current->file_descriptor[fd]))->node->last;
+        }
+        
+        if ((end - cursor_pointer) < length) {
+            length = (end - cursor_pointer);
+        }
+
+        memcpy((void *)buff, (void *)cursor_pointer, length);
+
+        ((file_descriptor *)(current->file_descriptor[fd]))->cursor += length;
     }
-
-    // } else if(fd > 2) {
-
-    //     if ((current->file_descriptor[fd]) == NULL) {
-    //         length = -1;
-
-    //     } else if(((file_descriptor *)current->file_descriptor[fd])->permission == O_WRONLY ){
-    //         //kprintf("\n Not valid permissions"); 
-    //         length = -1; 
-        
-    //     } else if(((file_descriptor *)current->file_descriptor[fd])->node->f_inode_no != 0) { 
-    //         //This file descriptor is associated with file on disk 
-
-    //         vma_struct *iter; 
-
-    //         cursor_pointer = (uint64_t)((file_descriptor *)(current->file_descriptor[fd]))->cursor;
-            
-    //         // get start and end of vma 
-    //         for (iter = current->mm->head; iter != NULL; iter = iter->next) {
-    //             if(iter->vm_file_descriptor == fd){
-    //                 end = iter->end;
-    //                 break; 
-    //             }
-    //         }
-            
-    //     } else {
-
-    //         cursor_pointer = (uint64_t)((file_descriptor *)(current->file_descriptor[fd]))->cursor;
-    //         end = ((file_descriptor *)(current->file_descriptor[fd]))->node->end;
-    //     }
-        
-    //     if ((end - cursor_pointer) < length) {
-    //         length = (end - cursor_pointer);
-    //     }
-
-    //     memcpy((void *)buff, (void *)cursor_pointer, length);
-
-    //     ((file_descriptor *)(current->file_descriptor[fd]))->cursor += length;
-    // }
 
     return length;
 }
