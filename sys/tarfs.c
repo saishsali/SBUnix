@@ -34,7 +34,6 @@ posix_header_ustar *get_file(char *filename) {
 
 void create_new_node(file_node *current_node, file_node *parent_node, char *name, uint64_t first, uint64_t last, int type) {
     strcpy(current_node->name, name);
-    kprintf(" current_node->name %s",current_node->name );
     current_node->first = first;
     current_node->last = last;
     current_node->cursor = first;
@@ -54,10 +53,8 @@ void parse(char *dir_path, int type, uint64_t first, uint64_t last) {
     strcpy(path, dir_path);
 
     temp = strtok(path, "/");
-    kprintf("\n");
     while (temp != NULL) {
         aux_node = currnode;
-        kprintf("%s", temp);
 
         // iterate through all childrens of currnode
         for(i = 2; i < currnode->last; i++){
@@ -90,8 +87,6 @@ void* init_tarfs() {
 
     root_node = (file_node *)kmalloc(sizeof(file_node));
     create_new_node(root_node, root_node, "/", 0, 2, DIRECTORY);
-
-    kprintf("\n root_node name %s, %x", root_node->name, root_node);
 
     temp_node = (file_node *)kmalloc(sizeof(file_node));
     create_new_node(temp_node, root_node, "rootfs", 0, 2, DIRECTORY);

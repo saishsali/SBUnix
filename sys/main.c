@@ -69,7 +69,10 @@ void start(uint32_t *modulep, void *physbase, void *physfree) {
     // temp = sys_mmap(NULL, 4097, 1);
 
     /* Init tarfs and create directory structure */
-    // init_tarfs();
+    init_tarfs();
+
+    // get_file("lib/crt1.o");
+    create_threads();
 }
 
 void boot(void) {
