@@ -27,7 +27,9 @@ struct posix_header_ustar {
   char prefix[155];
   char pad[12];
 };
+typedef struct posix_header_ustar posix_header_ustar;
 
+void* init_tarfs();
 struct posix_header_ustar *get_file(char *filename);
 
 #endif

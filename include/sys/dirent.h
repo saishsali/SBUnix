@@ -17,22 +17,23 @@ struct dirent {
     char           d_name[];
 };
 
-struct file_t {
+struct file_node {
     uint64_t first;
     uint64_t last;
-    uint64_t current;
-    struct file_t* child[20];
+    uint64_t cursor;
+    struct file_node* child[20];
     char name[20];
     int type;
     uint64_t f_inode_no;
 };
-typedef struct file_t file_t;
+typedef struct file_node file_node;
+file_node* root_node;
 
 struct file_descriptor {
     uint64_t cursor;
     uint64_t permission;
     uint64_t inode_no;
-    file_t* node;
+    file_node* node;
 };
 typedef struct file_descriptor file_descriptor;
 
