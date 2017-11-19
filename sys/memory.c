@@ -25,7 +25,7 @@ void *kmalloc_user(size_t size) {
     start_address = virtual_address;
 
     while (num_pages--) {
-        map_page(virtual_address, page_to_physical_address(p), PTE_P | PTE_W | PTE_U);
+        map_page(virtual_address, page_to_physical_address(p), RW_FLAG);
         p = p->next;
         virtual_address += PAGE_SIZE;
     }

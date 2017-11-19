@@ -31,10 +31,18 @@ int is_elf_file(Elf64_Ehdr *elf_header)
 }
 
 void read_program_header(task_struct *pcb, Elf64_Ehdr *elf_header, Elf64_Phdr *program_header) {
-    uint64_t page_offset, copy_offset = 0, virtual_address;
+    uint64_t page_offset, copy_offset = 0, virtual_address, vm_type;
 
     if (program_header->p_type != SEGMENT_LOAD) {
         return;
+    }
+
+    if (program_header->p_flags == 5) {
+        vm_type = TEXT;
+    } else if (program_header->p_flags == 6) {
+        vm_type = DATA;
+    } else {
+        vm_type = NOTYPE;
     }
 
     vma_struct *vma = add_vma(
@@ -42,7 +50,7 @@ void read_program_header(task_struct *pcb, Elf64_Ehdr *elf_header, Elf64_Phdr *p
         program_header->p_vaddr,
         program_header->p_memsz,
         program_header->p_flags,
-        NOTYPE
+        vm_type
     );
 
     vma->file = (file *)kmalloc(sizeof(file));
@@ -52,7 +60,7 @@ void read_program_header(task_struct *pcb, Elf64_Ehdr *elf_header, Elf64_Phdr *p
 
     virtual_address = program_header->p_vaddr;
     while (virtual_address < (program_header->p_vaddr + program_header->p_memsz)) {
-        kmalloc_map(PAGE_SIZE, virtual_address, program_header->p_flags | PTE_P);
+        kmalloc_map(PAGE_SIZE, virtual_address, vm_type == TEXT ? RX_FLAG : RW_FLAG);
 
         page_offset = 0;
         while (page_offset < PAGE_SIZE && copy_offset <= program_header->p_filesz) {

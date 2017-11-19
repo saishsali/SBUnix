@@ -35,6 +35,10 @@ isr_common_stub:
     movq %rsp, %rdi
     call interrupt_handler
 
+    # End-of-interrupt command
+    movb $0x20, %al
+    outb %al, $0x20
+
     # Restore all registers
     movq %rax, %r10
     popq %r9
@@ -46,10 +50,6 @@ isr_common_stub:
     popq %rcx
     popq %rbx
     popq %rax
-
-    # End-of-interrupt command
-    movb $0x20, %al
-    outb %al, $0x20
 
     addq $16 ,%rsp
 

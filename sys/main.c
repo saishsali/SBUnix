@@ -13,6 +13,7 @@
 #include <sys/tarfs.h>
 #include <sys/elf64.h>
 #include <sys/syscall.h>
+#include <sys/string.h>
 
 #define INITIAL_STACK_SIZE 4096
 uint8_t initial_stack[INITIAL_STACK_SIZE]__attribute__((aligned(16)));
@@ -59,30 +60,38 @@ void start(uint32_t *modulep, void *physbase, void *physfree) {
     // init_pci();
 
     /* Create user process and load its executable*/
-    create_user_process("bin/ls");
+    // create_user_process("bin/ls");
 
     /* Check sys_mmap and page fault handler */
-    // char *temp = sys_mmap((void *)0x4000, 100, 1);
+    // char *temp = sys_mmap((void *)0x1000, 100, RW_FLAG);
+    // temp = sys_mmap(NULL, 4097, 1);
     // temp[0] = 'a';
     // temp[1] = '\0';
+    // strcpy(temp, "Saish");
     // kprintf("Accessible after sys_mmap and page fault: %s\n", temp);
-    // temp = sys_mmap(NULL, 4097, 1);
+    // sys_munmap((void *)0x1000, 100);
+
+    // char *q = (char *)0x1000;
+    // q[0] = 'b';
+    // q[1] = '\0';
+
+    // void *p = get_page_table_entry((void *)0x1000);
+    // kprintf("PTE: %x\n", *(uint64_t *)p);
+    // kprintf("Accessible after sys_mmap and page fault: %s\n", q);
 
     /* Init tarfs and create directory structure */
-    init_tarfs();
+    // init_tarfs();
+
 
     /* get current working directory */
-    char buf[1024];
-    getcwd(buf, 1024);
-    kprintf("\n getcwd %s", buf);
+    // char buf[1024];
+    // getcwd(buf, 1024);
+    // kprintf("\n getcwd %s", buf);
 
-    chdir("/../../../rootfs/boot/defaults/../../bin");
+    // chdir("/../../../rootfs/boot/defaults/../../bin");
 
-    getcwd(buf, 1024);
-    kprintf("\n getcwd %s", buf);
-
-
-
+    // getcwd(buf, 1024);
+    // kprintf("\n getcwd %s", buf);
 }
 
 void boot(void) {

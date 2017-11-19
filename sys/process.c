@@ -152,7 +152,7 @@ task_struct *create_user_process(char *filename) {
     }
     strcat(curr_dir, new_filename);
 
-    kprintf("\n curr dorectory is %s ", curr_dir);
+    kprintf("\n curr directory is %s\n", curr_dir);
 
     strcpy(pcb->current_dir, curr_dir);
 

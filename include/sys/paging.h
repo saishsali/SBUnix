@@ -24,6 +24,9 @@
 #define PTE_MBZ     0x180   // Bits must be zero
 #define PTE_COW     0x100   // Copy-on-write
 
+#define RX_FLAG  (PTE_P | PTE_U)
+#define RW_FLAG  (PTE_P | PTE_U | PTE_W)
+
 /* Last 12 bits are used for flags */
 #define GET_ADDRESS(x) (x & 0xFFFFFFFFFFFFF000)
 
