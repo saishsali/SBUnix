@@ -59,7 +59,7 @@ void start(uint32_t *modulep, void *physbase, void *physfree) {
     // init_pci();
 
     /* Create user process and load its executable*/
-    // create_user_process("bin/ls");
+    create_user_process("bin/ls");
 
     /* Check sys_mmap and page fault handler */
     // char *temp = sys_mmap((void *)0x4000, 100, 1);
@@ -71,8 +71,18 @@ void start(uint32_t *modulep, void *physbase, void *physfree) {
     /* Init tarfs and create directory structure */
     init_tarfs();
 
-    // get_file("lib/crt1.o");
-    create_threads();
+    /* get current working directory */
+    char buf[1024];
+    getcwd(buf, 1024);
+    kprintf("\n getcwd %s", buf);
+
+    chdir("/../../../rootfs/boot/defaults/../../bin");
+
+    getcwd(buf, 1024);
+    kprintf("\n getcwd %s", buf);
+
+
+
 }
 
 void boot(void) {

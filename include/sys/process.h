@@ -55,6 +55,7 @@ struct PCB {
     uint64_t entry;
     uint64_t cr3;
     struct file_descriptor* file_descriptor[MAX_FD];
+    char current_dir[100];
 };
 
 typedef struct PCB task_struct;

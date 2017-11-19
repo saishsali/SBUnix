@@ -12,4 +12,7 @@ DIR* opendir(void *path);
 // Delete this
 void *sys_mmap(void *start, size_t length, uint64_t flags);
 
+int getcwd(char *buf, size_t size);
+int chdir(char *path);
+
 #endif

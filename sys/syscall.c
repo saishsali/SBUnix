@@ -51,10 +51,12 @@ DIR* sys_opendir(char *path) {
     char *name;
     int i = 0;
     DIR* ret_dir;
+    char directory_path[100];
+    strcpy(directory_path, path);
 
     node = root_node;
-    if (strcmp(path, "/") != 0) {
-        name = strtok(path,"/");
+    if (strcmp(directory_path, "/") != 0) {
+        name = strtok(directory_path, "/");
         while (name != NULL) {
             if (strcmp(name, ".") == 0 ) {
                 node = node->child[0];
@@ -75,7 +77,6 @@ DIR* sys_opendir(char *path) {
             name = strtok(NULL,"/");
         }
     }
-
     if (node->type == DIRECTORY) {
         ret_dir = (DIR *)kmalloc(sizeof(DIR));
         ret_dir->cursor = 2;
@@ -85,6 +86,59 @@ DIR* sys_opendir(char *path) {
         return (DIR *)NULL;
     }
 
+}
+
+int sys_getcwd(char *buf, size_t size) {
+    if(size < strlen(current->current_dir))
+        return -1;
+    strcpy(buf, current->current_dir);
+    return 1;
+}
+
+int sys_chdir(char *path) {
+    char curr[100];
+    strcpy(curr, current->current_dir);
+    int i = strlen(curr) - 1;
+    char directory_path[100];
+    strcpy(directory_path, path);
+
+    char *curr_name = strtok(directory_path, "/");
+
+    while (curr_name != NULL) {
+
+        if (strcmp(curr_name, ".") == 0) {
+
+        } else if (strcmp(curr_name, "..") == 0) {
+            if (strcmp(curr_name, ".") != 0) {
+                for (i = strlen(curr) - 2; i >= 0; i--) {
+                    if (curr[i] == '/') {
+                        memcpy(curr, curr, i + 1);
+                        curr[i+1] = '\0';
+                        break;
+                    }
+                }
+            }
+            
+        } else {
+            kprintf("here");
+            strcat(curr, curr_name);
+            strcat(curr, "/");
+        }
+
+        // DIR* current_dir = sys_opendir(curr);
+        // if (current_dir == NULL) {
+        //     kprintf("\n%s: It is not a directory", curr);
+        //     return -1;
+        // } else {
+        //     kprintf("Here part3");
+        // }
+        strcpy(current->current_dir, curr);
+
+        curr_name = strtok(NULL, "/");
+
+    }
+
+    return 1;
 }
 
 void sys_yield() {
@@ -113,7 +167,9 @@ void* syscall_tbl[NUM_SYSCALLS] = {
     sys_write,
     sys_yield,
     sys_mmap,
-    sys_opendir
+    sys_opendir,
+    sys_getcwd,
+    sys_chdir
 };
 
 void syscall_handler(stack_registers * registers) {
@@ -179,7 +235,6 @@ void yield() {
    );
 }
 
-
 DIR* opendir(void *path) {
     DIR * ret_directory = NULL;
     __asm__ __volatile__(
@@ -193,3 +248,35 @@ DIR* opendir(void *path) {
     );
     return ret_directory;
 }
+
+int getcwd(char *buf, size_t size) {
+    int64_t output;
+    __asm__ __volatile__(
+        "movq $5, %%rax;"
+        "movq %1, %%rdi;"
+        "movq %2, %%rsi;"
+        "int $0x80;"
+        "movq %%r10, %0;"
+        : "=r" ((int64_t)output)
+        : "r" (buf), "r" (size)
+        : "%rax", "%rdi", "%rsi"
+    );
+
+    return output;
+}
+
+int chdir(char *path) {
+    ssize_t output;
+    __asm__ (
+        "movq $6, %%rax;"
+        "movq %1, %%rdi;"
+        "int $0x80;"
+        "movq %%r10, %0;"
+        : "=r" (output)
+        : "r" (path)
+        : "%rax", "%rdi"
+    );
+
+    return output;
+}
+

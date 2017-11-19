@@ -18,6 +18,7 @@ uint64_t physical_to_virtual_address(void *physical_address) {
 }
 
 /* Load page table base address in CR3 register */
+// TODO remove this -- same as set_cr3
 void load_cr3() {
     uint64_t cr3 = virtual_to_physical_address(pml4);
     __asm__ volatile(

@@ -9,6 +9,7 @@
 #include <sys/paging.h>
 #include <sys/elf64.h>
 #include <sys/syscall.h>
+#include <sys/string.h>
 
 void _context_switch(task_struct *, task_struct *);
 void _switch_to_ring_3(uint64_t, uint64_t);
@@ -56,12 +57,6 @@ void user_thread1() {
         // kprintf("----%s-----", buf);
         // kprintf("");
 
-        DIR* curr_dir_ptr = opendir("/rootfs/bin");
-        if(curr_dir_ptr == NULL) {
-            kprintf("\n does not exists");
-        } else {
-            kprintf("\n Directory exists");
-        }
         while(1);
         // yield();
     // }
@@ -130,7 +125,10 @@ void create_threads() {
 }
 
 task_struct *create_user_process(char *filename) {
+    char curr_dir[30], new_filename[1024];
+    int i;
     uint64_t current_cr3 = get_cr3();
+
     task_struct *pcb = kmalloc(sizeof(task_struct));
     pcb->pid = get_process_id();
     pcb->state = READY;
@@ -140,6 +138,22 @@ task_struct *create_user_process(char *filename) {
     mm_struct *mm = (mm_struct *)kmalloc(sizeof(mm_struct));
     mm->head = mm->tail = NULL;
     pcb->mm = mm;
+
+    // Adding current working directory to pcb
+
+    curr_dir[0] = '\0';
+    strcat(curr_dir, "/rootfs/");
+
+    for(i = strlen(filename) - 1; i >= 0; i--) {
+        if(filename[i] == '/') {
+            memcpy(new_filename, filename, i + 1);
+        }
+    }
+    strcat(curr_dir, new_filename);
+
+    kprintf("\n curr dorectory is %s ", curr_dir);
+
+    strcpy(pcb->current_dir, curr_dir);
 
     pcb->rsp = (uint64_t)pcb->kstack + 4096 - 8;
 
