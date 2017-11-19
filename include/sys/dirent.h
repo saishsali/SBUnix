@@ -10,11 +10,17 @@
 #define O_RDONLY 0
 #define O_WRONLY 1
 
+typedef struct file_descriptor file_descriptor;
+typedef struct file_node file_node;
+typedef struct dir DIR;
+typedef struct dirent dentry;
+file_node* root_node;
+
 struct dirent {
-    unsigned long  d_ino;
-    unsigned long  d_off;
-    unsigned short d_reclen;
-    char           d_name[];
+    uint64_t inode_no;
+    char name[30];
+    uint16_t d_reclen;
+
 };
 
 struct file_node {
@@ -24,10 +30,7 @@ struct file_node {
     struct file_node* child[20];
     char name[20];
     int type;
-    uint64_t f_inode_no;
 };
-typedef struct file_node file_node;
-file_node* root_node;
 
 struct file_descriptor {
     uint64_t cursor;
@@ -35,15 +38,14 @@ struct file_descriptor {
     uint64_t inode_no;
     file_node* node;
 };
-typedef struct file_descriptor file_descriptor;
 
-typedef struct dirent dirent;
-typedef struct DIR DIR;
-
-
+struct dir {
+    file_node* node;
+    uint64_t cursor;
+    dentry current_dentry;
+    int file_descriptor;
+};
 
 int getdents(unsigned int fd, char *dirp, unsigned int count);
-
-
 
 #endif

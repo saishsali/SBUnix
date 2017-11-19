@@ -9,17 +9,17 @@ void readdir(int fd)
 {
     int buffer_position, read_length, k;
     char dir_buff[BUFSIZE];
-    dirent *current_directory;
+    dentry *current_directory;
 
     read_length = getdents(fd , dir_buff, 1024);
 
     for (buffer_position = 0; buffer_position < read_length;) {
-        current_directory = (dirent *) (dir_buff + buffer_position);
+        current_directory = (dentry *) (dir_buff + buffer_position);
 
-        if (current_directory->d_name[0] != '.' && strcmp(current_directory->d_name, "..") != 0) {
+        if (current_directory->name[0] != '.' && strcmp(current_directory->name, "..") != 0) {
 
-            for (k = 0; k < strlen(current_directory->d_name); k++) {
-                putchar(current_directory->d_name[k]);
+            for (k = 0; k < strlen(current_directory->name); k++) {
+                putchar(current_directory->name[k]);
             }
             putchar(' ');
             putchar(' ');

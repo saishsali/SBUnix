@@ -2,6 +2,7 @@
 #define _PROCESS_H
 
 #include <sys/defs.h>
+#include <sys/dirent.h>
 #define MAX_PROCESS 10
 
 #define STACK_START 0xF0000000
@@ -31,7 +32,6 @@ struct vm_area_struct {
     uint64_t flags;
     uint64_t type;
     file *file;
-    uint64_t file_descriptor;         // reference to file descriptors for file opened for writing
 };
 
 typedef struct vm_area_struct vma_struct;
