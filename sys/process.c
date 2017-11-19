@@ -47,17 +47,24 @@ void schedule() {
 }
 
 void user_thread1() {
-    while (1) {
-        char buf[1024];
-        kprintf("\n write something -- ");
+    // while (1) {
+        // char buf[1024];
+        // write(1, "User thread: 1, ", 16);
+        // kprintf("\n write something -- ");
         // TODO - Return value comes wrong because of 51 line in isr.s
-        read(0, buf, 128);
-        kprintf("----%s-----", buf);
-        kprintf("");
-        // int ret = write(0, "User thread: 1, ", 16);
-        // kprintf("Return value: %d\n", ret);
+        // read(0, buf, 128);
+        // kprintf("----%s-----", buf);
+        // kprintf("");
+
+        DIR* curr_dir_ptr = opendir("/rootfs/bin");
+        if(curr_dir_ptr == NULL) {
+            kprintf("\n does not exists");
+        } else {
+            kprintf("\n Directory exists");
+        }
+        while(1);
         // yield();
-    }
+    // }
 }
 
 void user_thread2() {

@@ -42,8 +42,7 @@ void read_program_header(task_struct *pcb, Elf64_Ehdr *elf_header, Elf64_Phdr *p
         program_header->p_vaddr,
         program_header->p_memsz,
         program_header->p_flags,
-        NOTYPE,
-        0
+        NOTYPE
     );
 
     vma->file = (file *)kmalloc(sizeof(file));

@@ -77,8 +77,7 @@ vma_struct *allocate_vma(
     uint64_t address,
     uint64_t size,
     uint64_t flags,
-    uint64_t type,
-    uint64_t file_descriptor
+    uint64_t type
 ) {
     vma_struct *vma = kmalloc(sizeof(vma_struct));
 
@@ -88,7 +87,6 @@ vma_struct *allocate_vma(
     vma->next            = NULL;
     vma->flags           = flags;
     vma->type            = type;
-    vma->file_descriptor = file_descriptor;
     vma->mm              = task->mm;
 
     return vma;
@@ -100,10 +98,9 @@ vma_struct *add_vma(
     uint64_t address,
     uint64_t size,
     uint64_t flags,
-    uint64_t type,
-    uint64_t file_descriptor
+    uint64_t type
 ) {
-    vma_struct *new_vma = allocate_vma(task, address, size, flags, type, file_descriptor);
+    vma_struct *new_vma = allocate_vma(task, address, size, flags, type);
 
     vma_struct *vma = task->mm->head;
 

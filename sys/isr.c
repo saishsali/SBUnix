@@ -17,7 +17,7 @@ void interrupt_handler(stack_registers *registers) {
             keyboard_interrupt();
             break;
         case 128:
-            syscall_handler(registers->rax);
+            syscall_handler(registers);
             break;
     }
 }
