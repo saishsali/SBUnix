@@ -41,9 +41,7 @@ struct file_descriptor {
 
 struct dir {
     file_node* node;
-    uint64_t cursor;
-    dentry current_dentry;
-    int file_descriptor;
+    dentry dentry;
 };
 
 int getdents(unsigned int fd, char *dirp, unsigned int count);

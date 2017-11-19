@@ -63,6 +63,7 @@ DIR* sys_opendir(char *path) {
 
             } else if (strcmp(name, "..") == 0) {
                 node = node->child[1];
+
             } else {
                 for (i = 2; i < node->last ; i++) {
                     if (strcmp(name, node->child[i]->name) == 0) {
@@ -79,7 +80,6 @@ DIR* sys_opendir(char *path) {
     }
     if (node->type == DIRECTORY) {
         ret_dir = (DIR *)kmalloc(sizeof(DIR));
-        ret_dir->cursor = 2;
         ret_dir->node = node;
         return ret_dir;
     } else {
@@ -95,21 +95,31 @@ int sys_getcwd(char *buf, size_t size) {
     return 1;
 }
 
+// int sys_readdir(DIRm* dir) {
+
+// }
+
 int sys_chdir(char *path) {
     char curr[100];
     strcpy(curr, current->current_dir);
-    int i = strlen(curr) - 1;
     char directory_path[100];
     strcpy(directory_path, path);
+    int i;
 
-    char *curr_name = strtok(directory_path, "/");
+    DIR* current_dir = sys_opendir(path);
+    if (current_dir == NULL) {
+        kprintf("\n%s: It is not a directory", path);
+        return -1;
+    }
 
-    while (curr_name != NULL) {
+    char *name = strtok(directory_path, "/");
+    while (name != NULL) {
 
-        if (strcmp(curr_name, ".") == 0) {
+        if (strcmp(name, ".") == 0) {
 
-        } else if (strcmp(curr_name, "..") == 0) {
-            if (strcmp(curr_name, ".") != 0) {
+        } else if (strcmp(name, "..") == 0) {
+
+            if (strcmp(name, ".") != 0) {
                 for (i = strlen(curr) - 2; i >= 0; i--) {
                     if (curr[i] == '/') {
                         memcpy(curr, curr, i + 1);
@@ -120,21 +130,13 @@ int sys_chdir(char *path) {
             }
 
         } else {
-            kprintf("here");
-            strcat(curr, curr_name);
+            strcat(curr, name);
             strcat(curr, "/");
         }
 
-        // DIR* current_dir = sys_opendir(curr);
-        // if (current_dir == NULL) {
-        //     kprintf("\n%s: It is not a directory", curr);
-        //     return -1;
-        // } else {
-        //     kprintf("Here part3");
-        // }
         strcpy(current->current_dir, curr);
 
-        curr_name = strtok(NULL, "/");
+        name = strtok(NULL, "/");
 
     }
 
@@ -247,6 +249,7 @@ void* syscall_tbl[NUM_SYSCALLS] = {
     sys_opendir,
     sys_getcwd,
     sys_munmap,
+    sys_chdir,
 };
 
 void syscall_handler(stack_registers * registers) {
@@ -315,7 +318,7 @@ void yield() {
 DIR* opendir(void *path) {
     DIR * ret_directory = NULL;
     __asm__ __volatile__(
-        "movq $5, %%rax;"
+        "movq $4, %%rax;"
         "movq %1, %%rdi;"
         "int $0x80;"
         "movq %%r10, %0;"
@@ -345,7 +348,7 @@ int getcwd(char *buf, size_t size) {
 int chdir(char *path) {
     ssize_t output;
     __asm__ (
-        "movq $6, %%rax;"
+        "movq $7, %%rax;"
         "movq %1, %%rdi;"
         "int $0x80;"
         "movq %%r10, %0;"
