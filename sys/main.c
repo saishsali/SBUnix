@@ -12,6 +12,7 @@
 #include <sys/process.h>
 #include <sys/tarfs.h>
 #include <sys/elf64.h>
+#include <sys/syscall.h>
 
 #define INITIAL_STACK_SIZE 4096
 uint8_t initial_stack[INITIAL_STACK_SIZE]__attribute__((aligned(16)));
@@ -46,12 +47,17 @@ void start(uint32_t *modulep, void *physbase, void *physfree) {
     // deallocate_initial_pages((uint64_t)physbase);
 
     // char *temp = (char *)kmalloc(20);
-
-    // kprintf("Allocation works");
-    create_threads();
+    // temp[0] = 'a';
+    // temp[1] = '\0';
+    // kprintf("Allocation works %s\n", temp);
+    // create_threads();
     // init_pci();
     // get_file("lib/crt1.o");
-    // create_user_process("bin/cat");
+    create_user_process("bin/ls");
+    char *temp = sys_mmap((void *)0x4000, 100, 1);
+    temp[0] = 'a';
+    temp[1] = '\0';
+    kprintf("Allocation works %s\n", temp);
 }
 
 void boot(void) {

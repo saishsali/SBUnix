@@ -54,7 +54,7 @@ void read_program_header(task_struct *pcb, Elf64_Ehdr *elf_header, Elf64_Phdr *p
     virtual_address = program_header->p_vaddr;
     while (virtual_address < (program_header->p_vaddr + program_header->p_memsz)) {
         // To do: pass permissions as a parameter
-        kmalloc_map(PAGE_SIZE, virtual_address);
+        kmalloc_map(PAGE_SIZE, virtual_address, program_header->p_flags);
 
         page_offset = 0;
         while (page_offset < PAGE_SIZE && copy_offset <= program_header->p_filesz) {

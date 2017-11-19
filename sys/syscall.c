@@ -7,6 +7,7 @@
 #include <sys/keyboard.h>
 #include <sys/memcpy.h>
 #include <sys/page_descriptor.h>
+#include <sys/paging.h>
 
 #define NUM_SYSCALLS 10
 
@@ -40,7 +41,7 @@ int sys_write(uint64_t fd, uint64_t str, int length) {
 
             // adjust the end of vma if the asked length is greater than the limit
             if (cursor_pointer + length > end) {
-                kmalloc_map((cursor_pointer + length) - end, end);
+                kmalloc_map((cursor_pointer + length) - end, end, PTE_P | PTE_W | PTE_U);
                 end = cursor_pointer + length;
             }
 
