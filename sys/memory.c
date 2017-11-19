@@ -135,3 +135,20 @@ vma_struct *add_vma(
 
     return new_vma;
 }
+
+void remove_vma(vma_struct **vma, mm_struct **mm, vma_struct **prev) {
+    if (*vma == (*mm)->head) {
+        (*mm)->head = (*vma)->next;
+        add_to_free_list(*vma);
+        *vma = (*mm)->head;
+    } else if (*vma == (*mm)->tail) {
+        (*prev)->next = (*vma)->next;
+        add_to_free_list(*vma);
+        (*mm)->tail = *prev;
+        return;
+    } else {
+        (*prev)->next = (*vma)->next;
+        add_to_free_list(*vma);
+        *vma = (*prev)->next;
+    }
+}

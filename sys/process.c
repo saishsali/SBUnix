@@ -122,6 +122,7 @@ void create_threads() {
     _context_switch(pcb0, pcb1);
 }
 
+/* Create new user process */
 task_struct *create_user_process(char *filename) {
     uint64_t current_cr3 = get_cr3();
     task_struct *pcb = kmalloc(sizeof(task_struct));

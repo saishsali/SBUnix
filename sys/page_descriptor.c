@@ -3,6 +3,7 @@
 #include <sys/page_descriptor.h>
 #include <sys/kprintf.h>
 #include <sys/string.h>
+#include <sys/paging.h>
 
 Page *page_free_list, *pages;
 uint64_t holes[50] = {0};
@@ -125,4 +126,18 @@ void deallocate_initial_pages(uint64_t physbase) {
         p = p->next;
     }
     kprintf("\nNumber of pages: %d\n", count);
+}
+
+void add_to_free_list(void *virtual_address) {
+    void *pte_entry = get_page_table_entry(virtual_address);
+    if (pte_entry == NULL)
+        return;
+
+    uint64_t physical_address = GET_ADDRESS(*(uint64_t *)pte_entry);
+    *(uint64_t *)pte_entry = 0;
+    uint64_t free_page_index = physical_address / PAGE_SIZE;
+
+    pages[free_page_index].next = page_free_list;
+    pages[free_page_index].reference_count = 0;
+    page_free_list = &pages[free_page_index];
 }

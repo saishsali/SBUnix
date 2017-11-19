@@ -14,5 +14,6 @@ vma_struct *add_vma(
     uint64_t type,
     uint64_t file_descriptor
 );
+void remove_vma(vma_struct **vma, mm_struct **mm, vma_struct **prev);
 
 #endif

@@ -61,5 +61,6 @@ void load_cr3();
 uint64_t get_cr3();
 void set_cr3(uint64_t cr3);
 void *set_user_address_space();
+void *get_page_table_entry(void *virtual_address);
 
 #endif

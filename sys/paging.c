@@ -119,6 +119,43 @@ void map_page(uint64_t virtual_address, uint64_t physical_address, uint16_t flag
     pt->entries[pt_index] = physical_address | flags;
 }
 
+/* Get page table entry for a virtual address */
+void *get_page_table_entry(void *virtual_address) {
+    PDPT *pdpt;
+    PDT *pdt;
+    PT *pt;
+    uint64_t pml4_index = PML4_INDEX((uint64_t)virtual_address);
+    uint64_t pdpt_index = PDPT_INDEX((uint64_t)virtual_address);
+    uint64_t pdt_index = PDT_INDEX((uint64_t)virtual_address);
+    uint64_t pt_index = PT_INDEX((uint64_t)virtual_address);
+
+    uint64_t pml4_entry = pml4->entries[pml4_index];
+    if (pml4_entry & PTE_P) {
+        pdpt = (PDPT *)GET_ADDRESS(pml4_entry);
+        pdpt = (PDPT *)physical_to_virtual_address(pdpt);
+    } else {
+        return NULL;
+    }
+
+    uint64_t pdpt_entry = pdpt->entries[pdpt_index];
+    if (pdpt_entry & PTE_P) {
+        pdt = (PDT *)GET_ADDRESS(pdpt_entry);
+        pdt = (PDT *)physical_to_virtual_address(pdt);
+    } else {
+        return NULL;
+    }
+
+    uint64_t pdt_entry = pdt->entries[pdt_index];
+    if (pdt_entry & PTE_P) {
+        pt = (PT *)GET_ADDRESS(pdt_entry);
+        pt = (PT *)physical_to_virtual_address(pt);
+    } else {
+        return NULL;
+    }
+
+    return &pt->entries[pt_index];
+}
+
 /*
     Map kernel memory from virtual address KERNBASE + physbase => physical address physbase to
     Virtual address KERNBASE + physfree => physical address physfree
