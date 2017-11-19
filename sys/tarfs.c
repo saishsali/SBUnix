@@ -71,7 +71,7 @@ void parse(char *dir_path, int type, uint64_t first, uint64_t last) {
         if (i == aux_node->last) {
 
             temp_node = (file_node *)kmalloc(sizeof(file_node));
-            create_new_node(temp_node, currnode, temp, first, last, type, 0);
+            create_new_node(temp_node, currnode, temp, first, last, type);
 
             currnode->child[currnode->last] = temp_node;
             currnode->last += 1;
@@ -89,12 +89,12 @@ void* init_tarfs() {
     file_node *temp_node;
 
     root_node = (file_node *)kmalloc(sizeof(file_node));
-    create_new_node(root_node, root_node, "/", 0, 2, DIRECTORY, 0);
+    create_new_node(root_node, root_node, "/", 0, 2, DIRECTORY);
 
     kprintf("\n root_node name %s, %x", root_node->name, root_node);
 
     temp_node = (file_node *)kmalloc(sizeof(file_node));
-    create_new_node(temp_node, root_node, "rootfs", 0, 2, DIRECTORY, 0);
+    create_new_node(temp_node, root_node, "rootfs", 0, 2, DIRECTORY);
     root_node->child[2] = temp_node;
     root_node->last += 1;
 
