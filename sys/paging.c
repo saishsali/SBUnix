@@ -83,7 +83,7 @@ PT *allocate_pt(PDT *pdt, uint64_t pdt_index) {
 }
 
 /* Map a Virtual address to a physical address */
-void map_page(uint64_t virtual_address, uint64_t physical_address) {
+void map_page(uint64_t virtual_address, uint64_t physical_address, uint16_t flags) {
     PDPT *pdpt;
     PDT *pdt;
     PT *pt;
@@ -116,7 +116,7 @@ void map_page(uint64_t virtual_address, uint64_t physical_address) {
         pt = allocate_pt(pdt, pdt_index);
     }
 
-    pt->entries[pt_index] = physical_address | (PTE_P | PTE_W | PTE_U);
+    pt->entries[pt_index] = physical_address | flags;
 }
 
 /*
@@ -152,12 +152,12 @@ void map_available_memory(uint64_t last_physical_address) {
     uint64_t virtual_address = KERNBASE;
 
     while (physical_address < last_physical_address) {
-        map_page(virtual_address, physical_address);
+        map_page(virtual_address, physical_address, PTE_P | PTE_W | PTE_U);
         virtual_address += PAGE_SIZE;
         physical_address += PAGE_SIZE;
     }
     /* map the video memory physical address to the virtual address */
-    map_page((uint64_t)(KERNBASE + VIDEO_MEMORY), VIDEO_MEMORY);
+    map_page((uint64_t)(KERNBASE + VIDEO_MEMORY), VIDEO_MEMORY, PTE_P | PTE_W | PTE_U);
 }
 
 /* Setup page tables */

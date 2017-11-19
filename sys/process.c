@@ -13,7 +13,7 @@
 void _context_switch(task_struct *, task_struct *);
 void _switch_to_ring_3(uint64_t, uint64_t);
 
-task_struct *current, *next;
+task_struct *current;
 
 /* Get next free process id */
 int get_process_id() {
@@ -28,18 +28,20 @@ int get_process_id() {
 }
 
 /* Pick the first task from the list and put suspended task at the end of the list */
-void strawman_scheduler() {
+task_struct *strawman_scheduler() {
     current = process_list_head;
-    next = process_list_head->next;
+    task_struct *next = process_list_head->next;
     process_list_tail->next = current;
     current->next = NULL;
     process_list_head = next;
     process_list_tail = current;
+
+    return next;
 }
 
 /* Schedule next task, set TSS rsp and context switch */
 void schedule() {
-    strawman_scheduler();
+    task_struct *next = strawman_scheduler();
     set_tss_rsp((void *)((uint64_t)next->kstack + 4096 - 8));
     _context_switch(current, next);
 }
@@ -47,12 +49,13 @@ void schedule() {
 void user_thread1() {
     while (1) {
         char buf[1024];
-        // int remt = write(0, "User thread: 1, ", 16);
         kprintf("\n write something -- ");
         // TODO - Return value comes wrong because of 51 line in isr.s
         read(0, buf, 128);
         kprintf("----%s-----", buf);
         kprintf("");
+        // int ret = write(0, "User thread: 1, ", 16);
+        // kprintf("Return value: %d\n", ret);
         // yield();
     }
 }
@@ -67,26 +70,27 @@ void user_thread2() {
 
 void kernel_thread1() {
     uint64_t *stack = kmalloc_user(4096);
-    current->u_rsp = (uint64_t)stack + 4096 - 8;
+    process_list_head->u_rsp = (uint64_t)stack + 4096 - 8;
 
-    current->entry = (uint64_t)user_thread1;
-    set_tss_rsp((void *)((uint64_t)current->rsp));
-    _switch_to_ring_3(current->entry, current->u_rsp);
+    process_list_head->entry = (uint64_t)user_thread1;
+    set_tss_rsp((void *)((uint64_t)process_list_head->rsp));
+    _switch_to_ring_3(process_list_head->entry, process_list_head->u_rsp);
 }
 
 void kernel_thread2() {
     uint64_t *stack = kmalloc_user(4096);
-    next->u_rsp = (uint64_t)stack + 4096 - 8;
+    process_list_head->u_rsp = (uint64_t)stack + 4096 - 8;
 
-    next->entry = (uint64_t)user_thread2;
-    set_tss_rsp((void *)((uint64_t)next->rsp));
-    _switch_to_ring_3(next->entry, next->u_rsp);
+    process_list_head->entry = (uint64_t)user_thread2;
+    set_tss_rsp((void *)((uint64_t)process_list_head->rsp));
+    _switch_to_ring_3(process_list_head->entry, process_list_head->u_rsp);
 }
 
 /* Add process to the end of the process list */
 void add_process(task_struct *pcb) {
     if (process_list_head == NULL) {
         process_list_head = pcb;
+        current = pcb;
     }
     if (process_list_tail == NULL) {
         process_list_tail = pcb;
@@ -114,9 +118,7 @@ task_struct *create_thread(void *thread) {
 void create_threads() {
     task_struct *pcb0 = kmalloc(sizeof(task_struct));
     task_struct *pcb1 = create_thread(kernel_thread1);
-    task_struct *pcb2 = create_thread(kernel_thread2);
-    current = pcb1;
-    next = pcb2;
+    create_thread(kernel_thread2);
     _context_switch(pcb0, pcb1);
 }
 

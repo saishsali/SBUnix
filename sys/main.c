@@ -12,6 +12,7 @@
 #include <sys/process.h>
 #include <sys/tarfs.h>
 #include <sys/elf64.h>
+#include <sys/syscall.h>
 
 #define INITIAL_STACK_SIZE 4096
 uint8_t initial_stack[INITIAL_STACK_SIZE]__attribute__((aligned(16)));
@@ -38,21 +39,37 @@ void start(uint32_t *modulep, void *physbase, void *physfree) {
     kprintf("physfree %p\n", (uint64_t)physfree);
     kprintf("tarfs in [%p:%p]\n", &_binary_tarfs_start, &_binary_tarfs_end);
 
-    // Paging
+    /* Setup Paging and load CR3 */
     setup_page_tables((uint64_t)physbase, (uint64_t)physfree, last_physical_address);
     load_cr3();
 
-    // Free initial pages (0 to physbase) used by the bootloader
+    /* Free initial pages (0 to physbase) used by the bootloader */
     // deallocate_initial_pages((uint64_t)physbase);
 
+    /* Test kmalloc */
     // char *temp = (char *)kmalloc(20);
+    // temp[0] = 'a';
+    // temp[1] = '\0';
+    // kprintf("Allocation works %s\n", temp);
 
-    // kprintf("Allocation works");
+    /* Create threads and switch to ring 3 */
     // create_threads();
+
+    /* AHCI controller */
     // init_pci();
-    // get_file("lib/crt1.o");
-    // create_user_process("bin/cat");
-    init_tarfs();
+
+    /* Create user process and load its executable*/
+    // create_user_process("bin/ls");
+
+    /* Check sys_mmap and page fault handler */
+    // char *temp = sys_mmap((void *)0x4000, 100, 1);
+    // temp[0] = 'a';
+    // temp[1] = '\0';
+    // kprintf("Accessible after sys_mmap and page fault: %s\n", temp);
+    // temp = sys_mmap(NULL, 4097, 1);
+
+    /* Init tarfs and create directory structure */
+    // init_tarfs();
 }
 
 void boot(void) {

@@ -4,6 +4,7 @@
 #include <sys/process.h>
 #include <sys/memory.h>
 #include <sys/kprintf.h>
+#include <sys/paging.h>
 
 extern task_struct *current;
 
@@ -26,14 +27,14 @@ void page_fault_exception(stack_registers *registers) {
         vma_struct *vma = current->mm->head;
         while (vma != NULL) {
             if (page_fault_address >= vma->start && page_fault_address < vma->end) {
-                kmalloc_map(vma->end - vma->start, vma->start);
+                kmalloc_map(vma->end - vma->start, vma->start, vma->flags | PTE_P);
                 break;
             }
             vma = vma->next;
         }
 
         if (vma == NULL) {
-            kprintf("Segmentation Fault, Address: %x, Error: %x", page_fault_address, registers->error_code);
+            kprintf("Segmentation Fault, Address: %x, Error: %x\n", page_fault_address, registers->error_code);
         }
     }
 }

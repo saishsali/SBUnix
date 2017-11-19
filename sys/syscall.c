@@ -7,6 +7,7 @@
 #include <sys/keyboard.h>
 #include <sys/memcpy.h>
 #include <sys/page_descriptor.h>
+#include <sys/paging.h>
 
 #define NUM_SYSCALLS 10
 
@@ -40,7 +41,7 @@ int sys_write(uint64_t fd, uint64_t str, int length) {
 
             // adjust the end of vma if the asked length is greater than the limit
             if (cursor_pointer + length > end) {
-                kmalloc_map((cursor_pointer + length) - end, end);
+                kmalloc_map((cursor_pointer + length) - end, end, PTE_P | PTE_W | PTE_U);
                 end = cursor_pointer + length;
             }
 
@@ -112,7 +113,7 @@ void *sys_mmap(void *start, size_t length, uint64_t flags) {
         return NULL;
     } else if ((uint64_t)start == 0) {
         // Address not specified, use address after vma tail->end
-        start = (uint64_t *)ROUND_UP(current->mm->tail->end, PAGE_SIZE);
+        start = (uint64_t *)current->mm->tail->end;
     } else if (validate_address(current, (uint64_t)start, length) == 0) {
         kprintf("Address already in use\n");
         return NULL;

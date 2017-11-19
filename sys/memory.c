@@ -25,7 +25,7 @@ void *kmalloc_user(size_t size) {
     start_address = virtual_address;
 
     while (num_pages--) {
-        map_page(virtual_address, page_to_physical_address(p));
+        map_page(virtual_address, page_to_physical_address(p), PTE_P | PTE_W | PTE_U);
         p = p->next;
         virtual_address += PAGE_SIZE;
     }
@@ -33,7 +33,7 @@ void *kmalloc_user(size_t size) {
     return (void*) start_address;
 }
 
-void *kmalloc_map(size_t size, uint64_t virtual_address) {
+void *kmalloc_map(size_t size, uint64_t virtual_address, uint16_t flags) {
     uint64_t num_pages, start_address;
     Page *p = NULL;
 
@@ -42,7 +42,7 @@ void *kmalloc_map(size_t size, uint64_t virtual_address) {
     start_address = virtual_address;
 
     while (num_pages--) {
-        map_page(virtual_address, page_to_physical_address(p));
+        map_page(virtual_address, page_to_physical_address(p), flags);
         p = p->next;
         virtual_address += PAGE_SIZE;
     }
@@ -81,8 +81,9 @@ vma_struct *allocate_vma(
 ) {
     vma_struct *vma = kmalloc(sizeof(vma_struct));
 
-    vma->start           = address;
-    vma->end             = address + size;
+    // Start and end addresses are 4K aligned always
+    vma->start           = ROUND_DOWN(address, PAGE_SIZE);
+    vma->end             = ROUND_UP(address + size, PAGE_SIZE);
     vma->next            = NULL;
     vma->flags           = flags;
     vma->type            = type;
