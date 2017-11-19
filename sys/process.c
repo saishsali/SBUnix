@@ -124,6 +124,7 @@ void create_threads() {
     _context_switch(pcb0, pcb1);
 }
 
+/* Create new user process */
 task_struct *create_user_process(char *filename) {
     char curr_dir[30], new_filename[1024];
     int i;

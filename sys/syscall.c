@@ -147,19 +147,96 @@ void sys_yield() {
 
 void *sys_mmap(void *start, size_t length, uint64_t flags) {
     if ((uint64_t)start < 0) {
-        kprintf("Not a valid address\n");
+        // Not a valid address
         return NULL;
     } else if ((uint64_t)start == 0) {
         // Address not specified, use address after vma tail->end
         start = (uint64_t *)current->mm->tail->end;
     } else if (validate_address(current, (uint64_t)start, length) == 0) {
-        kprintf("Address already in use\n");
+        // Address already in use
         return NULL;
     }
 
     add_vma(current, (uint64_t)start, length, flags, ANON);
 
     return start;
+}
+
+int8_t sys_munmap(void *addr, size_t len) {
+    if (((uint64_t)addr & 0xFFF) != 0) {
+        return -1;
+    }
+
+    uint64_t start_address = (uint64_t)addr;
+    uint64_t end_address   = ROUND_UP(start_address + len, PAGE_SIZE);
+    uint16_t flags;
+    uint64_t vma_start, vma_end, virtual_address;
+
+    vma_struct *vma = current->mm->head;
+    if (vma == NULL) {
+        return 0;
+    }
+    vma_struct *prev = NULL;
+
+    while (vma != NULL) {
+        if (end_address <= vma->start) {
+            break;
+        }
+
+        if (vma->type != ANON) {
+            prev = vma;
+            vma  = vma->next;
+            continue;
+        }
+
+        if (start_address <= vma->start && end_address >= vma->end) {
+            for (virtual_address = vma->start; virtual_address < vma->end; virtual_address += PAGE_SIZE) {
+                add_to_free_list((void *)virtual_address);
+            }
+
+            // Remove vma
+            remove_vma(&vma, &current->mm, &prev);
+        } else if (start_address <= vma->start && end_address > vma->start && end_address < vma->end) {
+            for (virtual_address = vma->start; virtual_address < end_address; virtual_address += PAGE_SIZE) {
+                add_to_free_list((void *)virtual_address);
+            }
+
+            // Remove vma and add new vma with start as end address and end as vma->end
+            flags = vma->flags;
+            vma_end = vma->end;
+            remove_vma(&vma, &current->mm, &prev);
+            add_vma(current, end_address, vma_end, flags, ANON);
+
+        } else if (start_address > vma->start && end_address < vma->end) {
+            for (virtual_address = start_address; virtual_address < end_address; virtual_address += PAGE_SIZE) {
+                add_to_free_list((void *)virtual_address);
+            }
+
+            // Remove vma and create 2 new VMA's
+            flags = vma->flags;
+            vma_start = vma->start;
+            vma_end = vma->end;
+            remove_vma(&vma, &current->mm, &prev);
+            add_vma(current, vma_start, start_address, flags, ANON);
+            add_vma(current, end_address, vma_end, flags, ANON);
+        } else if (start_address > vma->start && start_address < vma->end && end_address >= vma->end) {
+            for (virtual_address = start_address; virtual_address < vma->end; virtual_address += PAGE_SIZE) {
+                add_to_free_list((void *)virtual_address);
+            }
+
+            // Remove vma and add new vma with start as vma start and end as start address
+            flags = vma->flags;
+            vma_start = vma->start;
+            vma_end = vma->end;
+            remove_vma(&vma, &current->mm, &prev);
+            add_vma(current, vma_start, start_address, flags, ANON);
+        } else {
+            prev = vma;
+            vma  = vma->next;
+        }
+    }
+
+    return 1;
 }
 
 void* syscall_tbl[NUM_SYSCALLS] = {
@@ -169,7 +246,7 @@ void* syscall_tbl[NUM_SYSCALLS] = {
     sys_mmap,
     sys_opendir,
     sys_getcwd,
-    sys_chdir
+    sys_munmap,
 };
 
 void syscall_handler(stack_registers * registers) {
@@ -238,7 +315,7 @@ void yield() {
 DIR* opendir(void *path) {
     DIR * ret_directory = NULL;
     __asm__ __volatile__(
-        "movq $4, %%rax;"
+        "movq $5, %%rax;"
         "movq %1, %%rdi;"
         "int $0x80;"
         "movq %%r10, %0;"
