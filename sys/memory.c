@@ -82,8 +82,9 @@ vma_struct *allocate_vma(
 ) {
     vma_struct *vma = kmalloc(sizeof(vma_struct));
 
-    vma->start           = address;
-    vma->end             = address + size;
+    // Start and end addresses are 4K aligned always
+    vma->start           = ROUND_DOWN(address, PAGE_SIZE);
+    vma->end             = ROUND_UP(address + size, PAGE_SIZE);
     vma->next            = NULL;
     vma->flags           = flags;
     vma->type            = type;

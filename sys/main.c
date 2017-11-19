@@ -59,16 +59,17 @@ void start(uint32_t *modulep, void *physbase, void *physfree) {
     // init_pci();
 
     /* Create user process and load its executable*/
-    //create_user_process("bin/ls");
+    // create_user_process("bin/ls");
 
     /* Check sys_mmap and page fault handler */
     // char *temp = sys_mmap((void *)0x4000, 100, 1);
-    // temp[0] = '';
+    // temp[0] = 'a';
     // temp[1] = '\0';
     // kprintf("Accessible after sys_mmap and page fault: %s\n", temp);
+    // temp = sys_mmap(NULL, 4097, 1);
 
     /* Init tarfs and create directory structure */
-    init_tarfs();
+    // init_tarfs();
 }
 
 void boot(void) {

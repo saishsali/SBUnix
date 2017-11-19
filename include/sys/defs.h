@@ -28,6 +28,8 @@ typedef uint64_t mode_t;
 */
 #define ROUND_UP(N, S) ((((N) + (S) - 1) / (S)) * (S))
 
+#define ROUND_DOWN(N, S) ((N / S) * S)
+
 /* Kernbase: refer to linker.script */
 #define KERNBASE 0xffffffff80000000
 
