@@ -139,6 +139,8 @@ int8_t sys_munmap(void *addr, size_t len) {
             for (virtual_address = vma->start; virtual_address < vma->end; virtual_address += PAGE_SIZE) {
                 add_to_free_list((void *)virtual_address);
             }
+
+            // Remove vma
             remove_vma(&vma, &current->mm, &prev);
         } else if (start_address <= vma->start && end_address > vma->start && end_address < vma->end) {
             for (virtual_address = vma->start; virtual_address < end_address; virtual_address += PAGE_SIZE) {
