@@ -54,7 +54,7 @@ PDPT *allocate_pdpt(PML4 *pml4, uint64_t pml4_index) {
     Page *p = allocate_page();
     PDPT *pdpt = (PDPT *)page_to_physical_address(p);
     uint64_t pdpt_entry = (uint64_t)pdpt;
-    pdpt_entry |= (PTE_P | PTE_W | PTE_U);
+    pdpt_entry |= RW_FLAG;
     pml4->entries[pml4_index] = pdpt_entry;
 
     return (PDPT *)(physical_to_virtual_address(pdpt));
@@ -65,7 +65,7 @@ PDT *allocate_pdt(PDPT *pdpt, uint64_t pdpt_index) {
     Page *p = allocate_page();
     PDT *pdt = (PDT *)page_to_physical_address(p);
     uint64_t pdt_entry = (uint64_t)pdt;
-    pdt_entry |= (PTE_P | PTE_W | PTE_U);
+    pdt_entry |= RW_FLAG;
     pdpt->entries[pdpt_index] = pdt_entry;
 
     return (PDT *)(physical_to_virtual_address(pdt));
@@ -76,7 +76,7 @@ PT *allocate_pt(PDT *pdt, uint64_t pdt_index) {
     Page *p = allocate_page();
     PT *pt = (PT *)page_to_physical_address(p);
     uint64_t pt_entry = (uint64_t)pt;
-    pt_entry |= (PTE_P | PTE_W | PTE_U);
+    pt_entry |= RW_FLAG;
     pdt->entries[pdt_index] = pt_entry;
 
     return (PT *)(physical_to_virtual_address(pt));
@@ -177,7 +177,7 @@ void map_kernel_memory(uint64_t physbase, uint64_t physfree) {
 
     while (physical_address < physfree) {
         uint64_t pt_index = PT_INDEX(virtual_address);
-        pt->entries[pt_index] = physical_address | (PTE_P | PTE_W | PTE_U);
+        pt->entries[pt_index] = physical_address | RW_FLAG;
         physical_address += PAGE_SIZE;
         virtual_address += PAGE_SIZE;
     }
@@ -189,12 +189,12 @@ void map_available_memory(uint64_t last_physical_address) {
     uint64_t virtual_address = KERNBASE;
 
     while (physical_address < last_physical_address) {
-        map_page(virtual_address, physical_address, PTE_P | PTE_W | PTE_U);
+        map_page(virtual_address, physical_address, RW_FLAG);
         virtual_address += PAGE_SIZE;
         physical_address += PAGE_SIZE;
     }
     /* map the video memory physical address to the virtual address */
-    map_page((uint64_t)(KERNBASE + VIDEO_MEMORY), VIDEO_MEMORY, PTE_P | PTE_W | PTE_U);
+    map_page((uint64_t)(KERNBASE + VIDEO_MEMORY), VIDEO_MEMORY, RW_FLAG);
 }
 
 /* Setup page tables */

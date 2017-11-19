@@ -27,7 +27,7 @@ void page_fault_exception(stack_registers *registers) {
         vma_struct *vma = current->mm->head;
         while (vma != NULL) {
             if (page_fault_address >= vma->start && page_fault_address < vma->end) {
-                kmalloc_map(vma->end - vma->start, vma->start, vma->flags | PTE_P);
+                kmalloc_map(vma->end - vma->start, vma->start, RW_FLAG);
                 break;
             }
             vma = vma->next;
