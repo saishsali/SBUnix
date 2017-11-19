@@ -57,6 +57,16 @@ void user_thread1() {
         // kprintf("----%s-----", buf);
         // kprintf("");
 
+    kprintf("coming jere");
+    DIR* ret = opendir("/../../../rootfs/../../rootfs/bin");
+    if(ret == NULL) {
+        kprintf("NULL");
+    } else {
+        kprintf("ret node %s", ret->node->name);
+        kprintf("It exists");
+    }
+    // kprintf("\n ret node %p", ret->node);
+
         while(1);
         // yield();
     // }
@@ -126,7 +136,7 @@ void create_threads() {
 
 /* Create new user process */
 task_struct *create_user_process(char *filename) {
-    char curr_dir[30], new_filename[1024];
+    char curr_dir[30], new_curr_directory[1024];
     int i;
     uint64_t current_cr3 = get_cr3();
 
@@ -143,16 +153,14 @@ task_struct *create_user_process(char *filename) {
     // Adding current working directory to pcb
 
     curr_dir[0] = '\0';
-    strcat(curr_dir, "/rootfs/");
+    strcpy(curr_dir, "/rootfs/");
 
     for(i = strlen(filename) - 1; i >= 0; i--) {
         if(filename[i] == '/') {
-            memcpy(new_filename, filename, i + 1);
+            memcpy(new_curr_directory, filename, i + 1);
         }
     }
-    strcat(curr_dir, new_filename);
-
-    kprintf("\n curr directory is %s\n", curr_dir);
+    strcat(curr_dir, new_curr_directory);
 
     strcpy(pcb->current_dir, curr_dir);
 

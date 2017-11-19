@@ -73,18 +73,19 @@ void start(uint32_t *modulep, void *physbase, void *physfree) {
     kprintf("%s\n", p);
 
     /* Init tarfs and create directory structure */
-    // init_tarfs();
-
+    init_tarfs();
+    // create_threads();
 
     /* get current working directory */
     // char buf[1024];
     // getcwd(buf, 1024);
     // kprintf("\n getcwd %s", buf);
 
-    // chdir("/../../../rootfs/boot/defaults/../../bin");
+    // chdir("/../../../rootfs/bin/../etc/../");
 
     // getcwd(buf, 1024);
     // kprintf("\n getcwd %s", buf);
+
 }
 
 void boot(void) {
