@@ -118,7 +118,7 @@ int sys_chdir(char *path) {
                     }
                 }
             }
-            
+
         } else {
             kprintf("here");
             strcat(curr, curr_name);
