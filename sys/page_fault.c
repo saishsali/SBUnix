@@ -35,6 +35,7 @@ void page_fault_exception(stack_registers *registers) {
 
         if (vma == NULL) {
             kprintf("Segmentation Fault, Address: %x, Error: %x\n", page_fault_address, registers->error_code);
+            while(1);
         }
     }
 }

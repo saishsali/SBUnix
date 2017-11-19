@@ -60,24 +60,17 @@ void start(uint32_t *modulep, void *physbase, void *physfree) {
     // init_pci();
 
     /* Create user process and load its executable*/
-    // create_user_process("bin/ls");
+    create_user_process("bin/ls");
 
     /* Check sys_mmap and page fault handler */
-    // char *temp = sys_mmap((void *)0x1000, 100, RW_FLAG);
-    // temp = sys_mmap(NULL, 4097, 1);
-    // temp[0] = 'a';
-    // temp[1] = '\0';
-    // strcpy(temp, "Saish");
-    // kprintf("Accessible after sys_mmap and page fault: %s\n", temp);
-    // sys_munmap((void *)0x1000, 100);
+    // p = sys_mmap(NULL, 4097, 1);
+    char *p = sys_mmap((void *)0x1000, 100, RW_FLAG);
+    strcpy(p, "Hello");
+    kprintf("Accessible after sys_mmap and page fault: %s\n", p);
 
-    // char *q = (char *)0x1000;
-    // q[0] = 'b';
-    // q[1] = '\0';
-
-    // void *p = get_page_table_entry((void *)0x1000);
-    // kprintf("PTE: %x\n", *(uint64_t *)p);
-    // kprintf("Accessible after sys_mmap and page fault: %s\n", q);
+    sys_munmap(p, 100);
+    strcpy(p, "World");
+    kprintf("%s\n", p);
 
     /* Init tarfs and create directory structure */
     // init_tarfs();

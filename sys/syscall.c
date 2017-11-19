@@ -16,6 +16,8 @@
 
 extern task_struct *current;
 
+void _flush_tlb();
+
 int sys_write(uint64_t fd, uint64_t str, int length) {
     if (fd == stdout || fd == stderr) {
         kprintf("%s", str);
@@ -171,6 +173,7 @@ int8_t sys_munmap(void *addr, size_t len) {
     uint64_t end_address   = ROUND_UP(start_address + len, PAGE_SIZE);
     uint16_t flags;
     uint64_t vma_start, vma_end, virtual_address;
+    uint8_t unmap = 0;
 
     vma_struct *vma = current->mm->head;
     if (vma == NULL) {
@@ -196,6 +199,7 @@ int8_t sys_munmap(void *addr, size_t len) {
 
             // Remove vma
             remove_vma(&vma, &current->mm, &prev);
+            unmap = 1;
         } else if (start_address <= vma->start && end_address > vma->start && end_address < vma->end) {
             for (virtual_address = vma->start; virtual_address < end_address; virtual_address += PAGE_SIZE) {
                 add_to_free_list((void *)virtual_address);
@@ -206,7 +210,7 @@ int8_t sys_munmap(void *addr, size_t len) {
             vma_end = vma->end;
             remove_vma(&vma, &current->mm, &prev);
             add_vma(current, end_address, vma_end, flags, ANON);
-
+            unmap = 1;
         } else if (start_address > vma->start && end_address < vma->end) {
             for (virtual_address = start_address; virtual_address < end_address; virtual_address += PAGE_SIZE) {
                 add_to_free_list((void *)virtual_address);
@@ -219,6 +223,7 @@ int8_t sys_munmap(void *addr, size_t len) {
             remove_vma(&vma, &current->mm, &prev);
             add_vma(current, vma_start, start_address, flags, ANON);
             add_vma(current, end_address, vma_end, flags, ANON);
+            unmap = 1;
         } else if (start_address > vma->start && start_address < vma->end && end_address >= vma->end) {
             for (virtual_address = start_address; virtual_address < vma->end; virtual_address += PAGE_SIZE) {
                 add_to_free_list((void *)virtual_address);
@@ -230,10 +235,15 @@ int8_t sys_munmap(void *addr, size_t len) {
             vma_end = vma->end;
             remove_vma(&vma, &current->mm, &prev);
             add_vma(current, vma_start, start_address, flags, ANON);
+            unmap = 1;
         } else {
             prev = vma;
             vma  = vma->next;
         }
+    }
+
+    if (unmap == 1) {
+        _flush_tlb();
     }
 
     return 1;
