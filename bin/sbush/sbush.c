@@ -329,8 +329,10 @@ void lifetime(int argc, char* argv[]) {
 }
 
 int main(int argc, char* argv[], char *envp[]) {
-    env = envp;
-    lifetime(argc, argv);
-
+    // env = envp;
+    // lifetime(argc, argv);
+    // while(1);
+    write(1, "Hello world", 11);
+    while(1);
     return 0;
 }
