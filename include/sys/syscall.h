@@ -17,5 +17,6 @@ int8_t sys_munmap(void *addr, size_t len);
 int getcwd(char *buf, size_t size);
 int chdir(char *path);
 dentry* readdir(DIR *dir);
+int8_t closedir(DIR *dir);
 
 #endif

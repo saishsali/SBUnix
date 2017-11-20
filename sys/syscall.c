@@ -72,9 +72,6 @@ DIR* sys_opendir(char *path) {
                         break;
                     }
                 }
-                if (i == node->last) {
-                    return (DIR *)NULL;
-                }
             }
             name = strtok(NULL,"/");
         }
@@ -91,6 +88,21 @@ DIR* sys_opendir(char *path) {
 
 }
 
+/* close the directory stream referred to by the argument dir */
+int8_t sys_closedir(DIR *dir) {
+    if (dir->cursor <= 1) {
+        return -1;
+    }
+
+    if (dir->node->type == DIRECTORY) {
+        dir->node->cursor = 0;
+        dir->node = NULL;
+        return 0;
+    } else {
+        return -1;
+    }
+}
+
 int sys_getcwd(char *buf, size_t size) {
     if(size < strlen(current->current_dir))
         return -1;
@@ -99,7 +111,7 @@ int sys_getcwd(char *buf, size_t size) {
 }
 
 dentry* sys_readdir(DIR* dir) {
-    if(dir->cursor > 0 && dir->node->last > 2 && dir->cursor < dir->node->last) {
+    if (dir->cursor > 1 && dir->node->last > 2 && dir->cursor < dir->node->last) {
         strcpy(dir->dentry->name, dir->node->child[dir->cursor]->name);
         dir->cursor++;
         return dir->dentry;
@@ -289,7 +301,8 @@ void* syscall_tbl[NUM_SYSCALLS] = {
     sys_getcwd,
     sys_munmap,
     sys_chdir,
-    sys_readdir
+    sys_readdir,
+    sys_closedir
 };
 
 void syscall_handler(uint64_t syscall_no) {
@@ -410,3 +423,17 @@ dentry* readdir(DIR *dir) {
     return output;
 }
 
+int8_t closedir(DIR *dir) {
+    int64_t output;
+    __asm__ (
+        "movq $9, %%rax;"
+        "movq %1, %%rdi;"
+        "int $0x80;"
+        "movq %%r10, %0;"
+        : "=r" (output)
+        : "r" (dir)
+        : "%rax", "%rdi"
+    );
+
+    return (int8_t)output;
+}

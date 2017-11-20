@@ -84,8 +84,10 @@ void start(uint32_t *modulep, void *physbase, void *physfree) {
     // chdir("/../../../rootfs/bin/../etc/../");
 
     // getcwd(buf, 1024);
-    // // kprintf("\n getcwd %s", buf);
-    // DIR* dir = opendir("/rootfs/bin/");
+    // kprintf("\n getcwd %s", buf);
+
+    /* Open, read and close directory */
+    // DIR* dir = opendir("/rootfs/bin");
     // if(dir == NULL) {
     //     kprintf("NULL directory");
     // } else {
@@ -96,15 +98,9 @@ void start(uint32_t *modulep, void *physbase, void *physfree) {
     // while((curr_dentry = readdir(dir)) != NULL) {
     //     kprintf("\n name %s", curr_dentry->name);
     // }
-    // dir->cursor = 2;
-
-    // while((curr_dentry = readdir(dir)) != NULL) {
-    //     kprintf("\n name %s", curr_dentry->name);
-    // }
-
+    // closedir(dir);
 
     // kprintf("\n ret node %p", ret->node);
-
 }
 
 void boot(void) {
