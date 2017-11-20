@@ -64,13 +64,13 @@ void start(uint32_t *modulep, void *physbase, void *physfree) {
 
     /* Check sys_mmap and page fault handler */
     // p = sys_mmap(NULL, 4097, 1);
-    char *p = sys_mmap((void *)0x1000, 100, RW_FLAG);
-    strcpy(p, "Hello");
-    kprintf("Accessible after sys_mmap and page fault: %s\n", p);
+    // char *p = sys_mmap((void *)0x1000, 100, RW_FLAG);
+    // strcpy(p, "Hello");
+    // kprintf("Accessible after sys_mmap and page fault: %s\n", p);
 
-    sys_munmap(p, 100);
-    strcpy(p, "World");
-    kprintf("%s\n", p);
+    // sys_munmap(p, 100);
+    // strcpy(p, "World");
+    // kprintf("%s\n", p);
 
     /* Init tarfs and create directory structure */
     init_tarfs();

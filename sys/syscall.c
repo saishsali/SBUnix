@@ -173,12 +173,15 @@ void *sys_mmap(void *start, size_t length, uint64_t flags) {
     return start;
 }
 
+/* Sys munmap (https://linux.die.net/man/3/munmap) */
 int8_t sys_munmap(void *addr, size_t len) {
+    // Start address should be 4k aligned
     if (((uint64_t)addr & 0xFFF) != 0) {
         return -1;
     }
 
     uint64_t start_address = (uint64_t)addr;
+    // 4k align end address
     uint64_t end_address   = ROUND_UP(start_address + len, PAGE_SIZE);
     uint16_t flags;
     uint64_t vma_start, vma_end, virtual_address;
@@ -190,11 +193,17 @@ int8_t sys_munmap(void *addr, size_t len) {
     }
     vma_struct *prev = NULL;
 
+    /*
+        Traverse VMA list to find overlapping VMAs within start and end address
+        and remove any mappings for those entire pages
+    */
     while (vma != NULL) {
+        // Since VMA's track memory in sorted order
         if (end_address <= vma->start) {
             break;
         }
 
+        // Do not remove mappings for pages that are not anonymous
         if (vma->type != ANON) {
             prev = vma;
             vma  = vma->next;
@@ -202,6 +211,7 @@ int8_t sys_munmap(void *addr, size_t len) {
         }
 
         if (start_address <= vma->start && end_address >= vma->end) {
+            // Case 1: When the specified address space overlaps entire VMA address space
             for (virtual_address = vma->start; virtual_address < vma->end; virtual_address += PAGE_SIZE) {
                 add_to_free_list((void *)virtual_address);
             }
@@ -210,6 +220,10 @@ int8_t sys_munmap(void *addr, size_t len) {
             remove_vma(&vma, &current->mm, &prev);
             unmap = 1;
         } else if (start_address <= vma->start && end_address > vma->start && end_address < vma->end) {
+            /*
+                Case 2: When the specified address space overlaps partial VMA address space such that
+                some part of higher address space is not overlapped
+            */
             for (virtual_address = vma->start; virtual_address < end_address; virtual_address += PAGE_SIZE) {
                 add_to_free_list((void *)virtual_address);
             }
@@ -221,6 +235,10 @@ int8_t sys_munmap(void *addr, size_t len) {
             add_vma(current, end_address, vma_end, flags, ANON);
             unmap = 1;
         } else if (start_address > vma->start && end_address < vma->end) {
+            /*
+                Case 3: When the specified address space overlaps partial VMA address space such that some
+                part of lower and higher address space are not overlapped
+            */
             for (virtual_address = start_address; virtual_address < end_address; virtual_address += PAGE_SIZE) {
                 add_to_free_list((void *)virtual_address);
             }
@@ -234,6 +252,10 @@ int8_t sys_munmap(void *addr, size_t len) {
             add_vma(current, end_address, vma_end, flags, ANON);
             unmap = 1;
         } else if (start_address > vma->start && start_address < vma->end && end_address >= vma->end) {
+            /*
+                Case 4: When the specified address space overlaps partial VMA address space such that some
+                part of lower address space is not overlapped
+            */
             for (virtual_address = start_address; virtual_address < vma->end; virtual_address += PAGE_SIZE) {
                 add_to_free_list((void *)virtual_address);
             }
@@ -252,6 +274,7 @@ int8_t sys_munmap(void *addr, size_t len) {
     }
 
     if (unmap == 1) {
+        // If the mappings have been removed, flush TLB to inform changes made to the paging structure
         _flush_tlb();
     }
 
