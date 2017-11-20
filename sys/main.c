@@ -63,13 +63,14 @@ void start(uint32_t *modulep, void *physbase, void *physfree) {
     create_user_process("bin/ls");
 
     /* Check sys_mmap and page fault handler */
-    // char *temp = sys_mmap((void *)0x1000, 100, RW_FLAG);
-    // temp = sys_mmap(NULL, 4097, 1);
-    // temp[0] = 'a';
-    // temp[1] = '\0';
-    // strcpy(temp, "Saish");
-    // kprintf("Accessible after sys_mmap and page fault: %s\n", temp);
-    // sys_munmap((void *)0x1000, 100);
+    // p = sys_mmap(NULL, 4097, 1);
+    char *p = sys_mmap((void *)0x1000, 100, RW_FLAG);
+    strcpy(p, "Hello");
+    kprintf("Accessible after sys_mmap and page fault: %s\n", p);
+
+    sys_munmap(p, 100);
+    strcpy(p, "World");
+    kprintf("%s\n", p);
 
     /* Init tarfs and create directory structure */
     init_tarfs();

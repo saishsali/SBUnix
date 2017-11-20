@@ -15,7 +15,6 @@
         jmp isr_common_stub
 .ENDM
 
-
 .globl isr_common_stub
 isr_common_stub:
     # Clear interrupt

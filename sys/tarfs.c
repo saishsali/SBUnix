@@ -100,7 +100,7 @@ void* init_tarfs() {
         if (strcmp(phu->typeflag, "5") == 0) {
             parse(phu->name, DIRECTORY, 0, 2);
         } else {
-            parse(phu->name, FILE, (uint64_t)(phu + 1), (uint64_t)((void *)phu + 512 + size));
+            parse(phu->name, FILE, (uint64_t)(phu + 1), (uint64_t)((void *)phu + sizeof(posix_header_ustar) + size));
         }
 
         p += sizeof(posix_header_ustar);
