@@ -10,6 +10,7 @@
 #include <sys/elf64.h>
 #include <sys/syscall.h>
 #include <sys/string.h>
+#include <sys/page_descriptor.h>
 
 void _context_switch(task_struct *, task_struct *);
 void _switch_to_ring_3(uint64_t, uint64_t);
@@ -142,25 +143,35 @@ void create_threads() {
     _context_switch(pcb0, pcb1);
 }
 
+/* Create new task */
+task_struct *create_new_task() {
+    task_struct *pcb = kmalloc(sizeof(task_struct));
+
+    pcb->mm = kmalloc(sizeof(mm_struct));
+    pcb->mm->head = NULL;
+    pcb->mm->tail = NULL;
+
+    pcb->next = NULL;
+    pcb->parent = NULL;
+    pcb->child_head = NULL;
+    pcb->siblings = NULL;
+    memset(pcb->kstack, 0, STACK_SIZE);
+    memset(pcb->file_descriptor, 0, MAX_FD * sizeof(file_descriptor));
+    pcb->pid = get_process_id();
+    pcb->state = READY;
+    pcb->cr3 = (uint64_t)set_user_address_space();
+
+    return pcb;
+}
+
 /* Create new user process */
 task_struct *create_user_process(char *filename) {
     char curr_dir[30], new_curr_directory[1024];
     int i;
-    uint64_t current_cr3 = get_cr3();
-
-    task_struct *pcb = kmalloc(sizeof(task_struct));
-    pcb->pid = get_process_id();
-    pcb->state = READY;
-    pcb->cr3 = (uint64_t)set_user_address_space();
-    set_cr3(pcb->cr3);
-
-    mm_struct *mm = (mm_struct *)kmalloc(sizeof(mm_struct));
-    mm->head = mm->tail = NULL;
-    pcb->mm = mm;
+    task_struct *pcb = create_new_task();
+    strcpy(pcb->name, filename);
 
     // Adding current working directory to pcb
-
-    curr_dir[0] = '\0';
     strcpy(curr_dir, "/rootfs/");
 
     for(i = strlen(filename) - 1; i >= 0; i--) {
@@ -169,15 +180,65 @@ task_struct *create_user_process(char *filename) {
         }
     }
     strcat(curr_dir, new_curr_directory);
-
     strcpy(pcb->current_dir, curr_dir);
-
-    pcb->rsp = (uint64_t)pcb->kstack + 4096 - 8;
+    pcb->rsp = (uint64_t)pcb->kstack + STACK_SIZE - 8;
 
     load_executable(pcb, filename);
+    add_process(pcb);
 
-    set_cr3(current_cr3);
-
-    current = pcb;
     return pcb;
+}
+
+task_struct *copy_task_struct(task_struct *parent_task) {
+    task_struct *child_task = create_new_task();
+    file_descriptor *file_descriptor;
+    vma_struct * parent_task_vma = parent_task->mm->head;
+    memcpy((void *)child_task->mm, (void *)parent_task->mm, sizeof(mm_struct));
+    uint64_t physical_address, pte_flags;
+    int i;
+
+    // Copy file descriptors
+    for (i = 0; i < MAX_FD; i++) {
+        if (parent_task->file_descriptor[i] != NULL) {
+            file_descriptor = kmalloc(sizeof(file_descriptor));
+            file_descriptor->node  = parent_task->file_descriptor[i]->node;
+            file_descriptor->cursor  = parent_task->file_descriptor[i]->cursor;
+            file_descriptor->permission  = parent_task->file_descriptor[i]->permission;
+            child_task->file_descriptor[i] = file_descriptor;
+        }
+    }
+
+    child_task->parent = parent_task;
+    strcpy(child_task->name, parent_task->name);
+
+    if (parent_task->child_head) {
+        child_task->siblings = parent_task->child_head;
+    }
+    parent_task->child_head = child_task;
+
+    while (parent_task_vma) {
+        uint64_t virtual_address = parent_task_vma->start;
+        while (virtual_address < parent_task_vma->end) {
+            set_cr3(parent_task->cr3);
+            void *pte_entry = get_page_table_entry((void *)virtual_address);
+
+            if (*(uint64_t *) pte_entry & PTE_P) {
+                // Set Read only and COW bit for parent process
+                SET_READ_ONLY((uint64_t *) pte_entry);
+                SET_COPY_ON_WRITE((uint64_t *) pte_entry);
+
+                physical_address = GET_ADDRESS(*(uint64_t *) pte_entry);
+                pte_flags = GET_FLAGS(*(uint64_t *) pte_entry);
+                set_cr3(child_task->cr3);
+                // Set Read only and COW bit for child process
+                map_page(virtual_address, physical_address, pte_flags);
+                increase_page_reference_count(physical_address);
+            }
+            virtual_address += PAGE_SIZE;
+        }
+        parent_task_vma = parent_task_vma->next;
+        set_cr3(parent_task->cr3);
+    }
+
+    return child_task;
 }

@@ -298,7 +298,7 @@ int8_t sys_munmap(void *addr, size_t len) {
 }
 
 /* Sys open to open files: http://pubs.opengroup.org/onlinepubs/009695399/functions/open.html */
-int sys_open(char *path, uint8_t flags) {
+int8_t sys_open(char *path, uint8_t flags) {
     if (path == NULL) {
         return -1;
     }
@@ -350,6 +350,12 @@ int sys_open(char *path, uint8_t flags) {
     return -1;
 }
 
+pid_t sys_fork() {
+    // task_struct *child_task = copy_task_struct(current);
+    copy_task_struct(current);
+    return 100;
+}
+
 void* syscall_tbl[NUM_SYSCALLS] = {
     sys_read,
     sys_write,
@@ -363,6 +369,7 @@ void* syscall_tbl[NUM_SYSCALLS] = {
     sys_closedir,
     sys_open,
     sys_close,
+    sys_fork
 };
 
 void syscall_handler(stack_registers * registers) {
@@ -514,7 +521,7 @@ void close(int fd) {
     );
 }
 
-int open(char *path, uint8_t flags) {
+int8_t open(char *path, uint8_t flags) {
     int64_t output;
     __asm__ (
         "movq $10, %%rax;"
@@ -527,5 +534,20 @@ int open(char *path, uint8_t flags) {
         : "%rax", "%rdi", "%rsi"
     );
 
-    return (int)output;
+    return (int8_t)output;
+}
+
+pid_t fork() {
+    int64_t pid;
+
+    __asm__ (
+        "movq $12, %%rax;"
+        "int $0x80;"
+        "movq %%r10, %0"
+        : "=r" (pid)
+        :
+        : "%rax"
+    );
+
+    return pid;
 }

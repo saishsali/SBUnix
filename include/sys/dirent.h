@@ -17,7 +17,6 @@ typedef struct dirent dentry;
 file_node* root_node;
 
 struct dirent {
-    uint64_t inode_no;
     char name[30];
     uint16_t d_reclen;
 
@@ -35,7 +34,6 @@ struct file_node {
 struct file_descriptor {
     uint64_t cursor;
     uint64_t permission;
-    uint64_t inode_no;
     file_node* node;
 };
 

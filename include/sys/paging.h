@@ -22,13 +22,19 @@
 #define PTE_D       0x040   // Dirty
 #define PTE_PS      0x080   // Page Size
 #define PTE_MBZ     0x180   // Bits must be zero
-#define PTE_COW     0x100   // Copy-on-write
+#define PTE_COW     0x200   // Copy-on-write
 
 #define RX_FLAG  (PTE_P | PTE_U)
 #define RW_FLAG  (PTE_P | PTE_U | PTE_W)
 
 /* Last 12 bits are used for flags */
 #define GET_ADDRESS(x) (x & 0xFFFFFFFFFFFFF000)
+
+#define SET_READ_ONLY(x) (*x = *x & 0xFFFFFFFFFFFFFFFD)
+
+#define GET_FLAGS(x) (x & 0xFFF)
+
+#define SET_COPY_ON_WRITE(x) (*x = *x | PTE_COW)
 
 /* Video memory physical address */
 #define VIDEO_MEMORY 0xb8000

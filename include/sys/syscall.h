@@ -14,7 +14,7 @@ int getcwd(char *buf, size_t size);
 int chdir(char *path);
 dentry* readdir(DIR *dir);
 int8_t closedir(DIR *dir);
-int open(char *path, uint8_t flags);
+int8_t open(char *path, uint8_t flags);
 void close(int fd);
 
 // Delete these function prototypes

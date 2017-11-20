@@ -6,7 +6,7 @@
 #define MAX_PROCESS 10
 
 #define STACK_START 0xF0000000
-#define HEAP_START  0x08000000
+#define STACK_SIZE  0x2000
 
 #define MAX_FD 10
 
@@ -23,6 +23,8 @@ struct file {
 typedef struct file file;
 
 typedef enum vma_types {TEXT, DATA, STACK, HEAP, ANON, NOTYPE} VMA_TYPE;
+
+typedef enum vma_flag {RW, RX} VMA_FLAG;
 
 struct vm_area_struct {
     mm_struct *mm;
@@ -46,7 +48,7 @@ typedef enum { RUNNING, SLEEPING, ZOMBIE, READY } STATE;
 struct PCB {
     uint64_t rsp;
     uint64_t u_rsp;
-    char kstack[4096];
+    char kstack[STACK_SIZE];
     uint64_t pid;
     STATE state;
     int exit_status;
@@ -56,6 +58,10 @@ struct PCB {
     uint64_t cr3;
     struct file_descriptor* file_descriptor[MAX_FD];
     char current_dir[100];
+    char name[20];
+    struct PCB *parent;
+    struct PCB *siblings;
+    struct PCB *child_head;
 };
 
 typedef struct PCB task_struct;
@@ -70,5 +76,7 @@ task_struct *create_user_process(char *);
 task_struct *create_user_process();
 
 void schedule();
+
+task_struct *copy_task_struct(task_struct *parent_task);
 
 #endif

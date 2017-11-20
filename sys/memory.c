@@ -106,6 +106,7 @@ vma_struct *add_vma(
 
     if (vma == NULL) {
         task->mm->head = new_vma;
+        task->mm->tail = new_vma;
         return new_vma;
     }
 

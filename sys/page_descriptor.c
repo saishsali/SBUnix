@@ -14,6 +14,10 @@ uint64_t page_to_physical_address(Page *p) {
     return (p - pages) << PAGE_SHIFT;
 }
 
+void increase_page_reference_count(uint64_t physical_address) {
+    pages[physical_address / PAGE_SIZE].reference_count++;
+}
+
 uint64_t page_to_virtual_address(Page *p) {
     return KERNBASE + page_to_physical_address(p);
 }
