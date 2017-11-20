@@ -11,7 +11,7 @@
 #include <sys/page_descriptor.h>
 #include <sys/paging.h>
 
-#define NUM_SYSCALLS 10
+#define NUM_SYSCALLS 20
 
 extern task_struct *current;
 
@@ -163,6 +163,10 @@ int sys_chdir(char *path) {
     return 1;
 }
 
+void sys_close(int fd) {
+    current->file_descriptor[fd] = NULL;
+}
+
 void sys_yield() {
     schedule();
 }
@@ -302,7 +306,8 @@ void* syscall_tbl[NUM_SYSCALLS] = {
     sys_munmap,
     sys_chdir,
     sys_readdir,
-    sys_closedir
+    sys_closedir,
+    sys_close
 };
 
 void syscall_handler(uint64_t syscall_no) {
@@ -436,4 +441,15 @@ int8_t closedir(DIR *dir) {
     );
 
     return (int8_t)output;
+}
+
+void close(int fd) {
+    __asm__ (
+        "movq $10, %%rax;"
+        "movq %0, %%rdi;"
+        "int $0x80;"
+        :
+        : "r" ((int64_t)fd)
+        : "%rax", "%rdi"
+    );
 }
