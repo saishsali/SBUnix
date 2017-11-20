@@ -87,21 +87,26 @@ void start(uint32_t *modulep, void *physbase, void *physfree) {
     // kprintf("\n getcwd %s", buf);
 
     /* Open, read and close directory */
-    DIR* dir = opendir("/rootfs/bin");
-    if(dir == NULL) {
-        kprintf("NULL directory");
-    } else {
-        kprintf("exists,  %s", dir->node->name);
-    }
+    // DIR* dir = opendir("/rootfs/bin");
+    // if(dir == NULL) {
+    //     kprintf("NULL directory");
+    // } else {
+    //     kprintf("exists,  %s", dir->node->name);
+    // }
 
-    dentry* curr_dentry = NULL;
-    while((curr_dentry = readdir(dir)) != NULL) {
-        kprintf("\n name %s", curr_dentry->name);
-    }
-    closedir(dir);
+    // dentry* curr_dentry = NULL;
+    // while((curr_dentry = readdir(dir)) != NULL) {
+    //     kprintf("\n name %s", curr_dentry->name);
+    // }
+    // closedir(dir);
 
     // kprintf("\n ret node %p", ret->node);
     // close();
+
+    /* File open and close */
+    // int fd = open("/rootfs/bin/ls", O_RDONLY);
+    // close(fd);
+    // kprintf("%d\n", fd);
 }
 
 void boot(void) {

@@ -12,7 +12,7 @@
 #include <sys/paging.h>
 #include <sys/isr.h>
 
-#define NUM_SYSCALLS 20
+#define NUM_SYSCALLS 50
 
 extern task_struct *current;
 
@@ -297,6 +297,59 @@ int8_t sys_munmap(void *addr, size_t len) {
     return 1;
 }
 
+/* Sys open to open files: http://pubs.opengroup.org/onlinepubs/009695399/functions/open.html */
+int sys_open(char *path, uint8_t flags) {
+    if (path == NULL) {
+        return -1;
+    }
+
+    file_descriptor *fd = kmalloc(sizeof(file_descriptor));
+    file_node *node = root_node;
+    uint8_t flag = 0, i;
+    char *name = strtok(path, "/");
+    if (name == NULL) {
+        return -1;
+    }
+
+    while (name != NULL) {
+        if (strcmp(name, ".") == 0) {
+            node = node->child[0];
+        } else if (strcmp(name, "..") == 0) {
+            node = node->child[1];
+        } else {
+            flag = 0;
+            for (i = 2; i < node->last; i++) {
+                if (strcmp(name, node->child[i]->name) == 0) {
+                    node = node->child[i];
+                    flag = 1;
+                    break;
+                }
+            }
+
+            if (flag == 0) {
+                return -1;
+            }
+        }
+        name = strtok(NULL, "/");
+    }
+
+    if (node->type == DIRECTORY) {
+        return -1;
+    }
+    fd->node       = node;
+    fd->permission = flags;
+    fd->cursor     = node->cursor;
+
+    for (i = 3; i < MAX_FD; ++i) {
+        if (current->file_descriptor[i] == NULL) {
+            current->file_descriptor[i] = fd;
+            return i;
+        }
+    }
+
+    return -1;
+}
+
 void* syscall_tbl[NUM_SYSCALLS] = {
     sys_read,
     sys_write,
@@ -308,7 +361,8 @@ void* syscall_tbl[NUM_SYSCALLS] = {
     sys_chdir,
     sys_readdir,
     sys_closedir,
-    sys_close
+    sys_open,
+    sys_close,
 };
 
 void syscall_handler(stack_registers * registers) {
@@ -451,11 +505,27 @@ int8_t closedir(DIR *dir) {
 
 void close(int fd) {
     __asm__ (
-        "movq $10, %%rax;"
+        "movq $11, %%rax;"
         "movq %0, %%rdi;"
         "int $0x80;"
         :
         : "r" ((int64_t)fd)
         : "%rax", "%rdi"
     );
+}
+
+int open(char *path, uint8_t flags) {
+    int64_t output;
+    __asm__ (
+        "movq $10, %%rax;"
+        "movq %1, %%rdi;"
+        "movq %2, %%rsi;"
+        "int $0x80;"
+        "movq %%r10, %0;"
+        : "=r" (output)
+        : "r" (path), "r" ((uint64_t)flags)
+        : "%rax", "%rdi", "%rsi"
+    );
+
+    return (int)output;
 }

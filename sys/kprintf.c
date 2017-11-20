@@ -91,8 +91,10 @@ void output(const char *fmt, va_list arguments) {
 
                 case 'd':
                     num = va_arg(arguments, int);
-                    if (num < 0)
+                    if (num < 0) {
                         print_character('-');
+                        num *= -1;
+                    }
                     kprintf(decimal_conversion(num, 10));
                     break;
 
@@ -143,7 +145,7 @@ void kprintf_pos(int row, int column, const char *fmt, ...) {
     scroll_flag = 1;
 }
 
-void kprintf_backspace(char buf[1024], int curr_scan) {
+void kprintf_backspace(char buf[], int curr_scan) {
     while((curr_scan--) > 0) {
         *video_memory = DEFAULT_COLOR;
         video_memory = video_memory - 2;
