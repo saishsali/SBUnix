@@ -60,7 +60,7 @@ void start(uint32_t *modulep, void *physbase, void *physfree) {
     // init_pci();
 
     /* Create user process and load its executable*/
-    // create_user_process("bin/ls");
+    create_user_process("bin/ls");
 
     /* Check sys_mmap and page fault handler */
     // char *temp = sys_mmap((void *)0x1000, 100, RW_FLAG);
@@ -84,6 +84,20 @@ void start(uint32_t *modulep, void *physbase, void *physfree) {
 
     // getcwd(buf, 1024);
     // kprintf("\n getcwd %s", buf);
+    DIR* dir = opendir("/rootfs/bin");
+    if(dir == NULL) {
+        kprintf("NULL directory");
+    } else {
+        kprintf("exists,  %s", dir->node->name);
+    }
+
+    dentry* curr_dentry = NULL;
+    while((curr_dentry = readdir(dir)) != NULL) {
+        kprintf("\n name %s", curr_dentry->name);
+    }
+    
+
+    // kprintf("\n ret node %p", ret->node);
 
 }
 

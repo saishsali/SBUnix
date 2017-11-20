@@ -57,15 +57,22 @@ void user_thread1() {
         // kprintf("----%s-----", buf);
         // kprintf("");
 
-    kprintf("coming jere");
-    DIR* ret = opendir("/../../../rootfs/../../rootfs/bin");
-    if(ret == NULL) {
-        kprintf("NULL");
-    } else {
-        kprintf("ret node %s", ret->node->name);
-        kprintf("It exists");
-    }
-    // kprintf("\n ret node %p", ret->node);
+    // kprintf("coming jere");
+    // DIR* ret = opendir("/../../../rootfs/../../rootfs/bin");
+    // if(ret == NULL) {
+    //     kprintf("NULL");
+    // } else {
+    //     kprintf("ret node %s", ret->node->name);
+    //     kprintf("It exists");
+    // }
+
+    // DIR* dir = opendir("/rootfs/bin");
+    // if(dir == NULL) {
+    //     kprintf("NULL directory");
+    // } else {
+    //     kprintf("exists,  %p", dir);
+    // }
+
 
         while(1);
         // yield();

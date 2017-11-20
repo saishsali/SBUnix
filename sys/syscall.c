@@ -81,6 +81,8 @@ DIR* sys_opendir(char *path) {
     if (node->type == DIRECTORY) {
         ret_dir = (DIR *)kmalloc(sizeof(DIR));
         ret_dir->node = node;
+        ret_dir->dentry = (dentry*) kmalloc(sizeof(dentry));
+        ret_dir->cursor = 2;
         return ret_dir;
     } else {
         return (DIR *)NULL;
@@ -95,9 +97,14 @@ int sys_getcwd(char *buf, size_t size) {
     return 1;
 }
 
-// int sys_readdir(DIRm* dir) {
-
-// }
+dentry* sys_readdir(DIR* dir) {
+    if(dir->cursor > 0 && dir->node->last > 2 && dir->cursor < dir->node->last) {
+        strcpy(dir->dentry->name, dir->node->child[dir->cursor]->name);
+        dir->cursor++;
+        return dir->dentry;
+    }
+    return NULL;
+}
 
 int sys_chdir(char *path) {
     char curr[100];
@@ -250,6 +257,7 @@ void* syscall_tbl[NUM_SYSCALLS] = {
     sys_getcwd,
     sys_munmap,
     sys_chdir,
+    sys_readdir
 };
 
 void syscall_handler(stack_registers * registers) {
@@ -354,6 +362,21 @@ int chdir(char *path) {
         "movq %%r10, %0;"
         : "=r" (output)
         : "r" (path)
+        : "%rax", "%rdi"
+    );
+
+    return output;
+}
+
+dentry* readdir(DIR *dir) {
+    dentry* output;
+    __asm__ (
+        "movq $8, %%rax;"
+        "movq %1, %%rdi;"
+        "int $0x80;"
+        "movq %%r10, %0;"
+        : "=r" (output)
+        : "r" (dir)
         : "%rax", "%rdi"
     );
 
