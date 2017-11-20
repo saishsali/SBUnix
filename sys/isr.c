@@ -16,8 +16,11 @@ void interrupt_handler(stack_registers *registers) {
         case 33:
             keyboard_interrupt();
             break;
-        case 128:
-            syscall_handler(registers);
-            break;
     }
+}
+
+void isr_handler_128(){
+    uint64_t syscall_no;
+    __asm__ __volatile__("movq %%rax, %0;" : "=r"(syscall_no));
+    syscall_handler(syscall_no);
 }

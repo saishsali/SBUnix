@@ -34,7 +34,6 @@ isr_common_stub:
     movq %rsp, %rdi
     call interrupt_handler
 
-    movq %rax, %r10
     # End-of-interrupt command
     movb $0x20, %al
     outb %al, $0x20
@@ -56,8 +55,46 @@ isr_common_stub:
     sti
     iretq
 
+.global isr128
+isr128:
+    cli
+    pushq %rbx
+    pushq %rcx
+    pushq %rdx
+    pushq %rsi
+    pushq %rdi
+    pushq %rbp
+    pushq %r8
+    pushq %r9
+    pushq %r10
+    pushq %r11
+    pushq %r12
+    pushq %r13
+    pushq %r14
+    pushq %r15
+
+    call isr_handler_128
+
+    popq %r15
+    popq %r14
+    popq %r13
+    popq %r12
+    popq %r11
+    popq %r10
+    popq %r9
+    popq %r8
+    popq %rbp
+    popq %rdi
+    popq %rsi
+    popq %rdx
+    popq %rcx
+    popq %rbx
+    sti
+    iretq
+
+.endm
+
 INTERRUPT_HANDLER 0
 INTERRUPT_HANDLER_EXCEPTION 14
 INTERRUPT_HANDLER 32
 INTERRUPT_HANDLER 33
-INTERRUPT_HANDLER 128

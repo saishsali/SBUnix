@@ -10,7 +10,6 @@
 #include <sys/tarfs.h>
 #include <sys/page_descriptor.h>
 #include <sys/paging.h>
-#include <sys/isr.h>
 
 #define NUM_SYSCALLS 10
 
@@ -293,22 +292,17 @@ void* syscall_tbl[NUM_SYSCALLS] = {
     sys_readdir
 };
 
-void syscall_handler(stack_registers * registers) {
+void syscall_handler(uint64_t syscall_no) {
     void *func_ptr;
-
-    uint64_t syscall_no = registers->rax;
     if (syscall_no >= 0 && syscall_no < NUM_SYSCALLS) {
         func_ptr = syscall_tbl[syscall_no];
         __asm__ __volatile__(
-            "movq %0, %%rdi;"
-            "movq %1, %%rsi;"
-            "movq %2, %%rdx;"
-            "callq %3;"
+            "callq %0;"
             :
-            : "r" (registers->rdi), "r" (registers->rsi), "r" (registers->rdx), "r" (func_ptr)
-            : "%rdi", "%rsi", "%rdx"
+            : "r" (func_ptr)
         );
     }
+
 }
 
 ssize_t write(int fd, const void *buf, size_t count) {
@@ -320,7 +314,7 @@ ssize_t write(int fd, const void *buf, size_t count) {
         "movq %2, %%rsi;"
         "movq %3, %%rdx;"
         "int $0x80;"
-        "movq %%r10, %0;"
+        "movq %%rax, %0;"
         : "=r" (num_bytes)
         : "r" ((int64_t)fd), "r" (buf), "r" (count)
         : "%rax", "%rdi", "%rsi", "%rdx"
@@ -339,7 +333,7 @@ ssize_t read(int fd, void *buf, size_t count) {
         "movq %2, %%rsi;"
         "movq %3, %%rdx;"
         "int $0x80;"
-        "movq %%r10, %0;"
+        "movq %%rax, %0;"
         : "=r" (num_bytes)
         : "r" ((int64_t)fd), "r" (buf), "r" (count)
         : "%rax", "%rdi", "%rsi", "%rdx"
@@ -362,7 +356,7 @@ DIR* opendir(void *path) {
         "movq $4, %%rax;"
         "movq %1, %%rdi;"
         "int $0x80;"
-        "movq %%r10, %0;"
+        "movq %%rax, %0;"
         : "=r" (ret_directory)
         : "r" (path)
         : "%rax", "%rdi"
@@ -377,7 +371,7 @@ int getcwd(char *buf, size_t size) {
         "movq %1, %%rdi;"
         "movq %2, %%rsi;"
         "int $0x80;"
-        "movq %%r10, %0;"
+        "movq %%rax, %0;"
         : "=r" ((int64_t)output)
         : "r" (buf), "r" (size)
         : "%rax", "%rdi", "%rsi"
@@ -392,7 +386,7 @@ int chdir(char *path) {
         "movq $7, %%rax;"
         "movq %1, %%rdi;"
         "int $0x80;"
-        "movq %%r10, %0;"
+        "movq %%rax, %0;"
         : "=r" (output)
         : "r" (path)
         : "%rax", "%rdi"
@@ -407,7 +401,7 @@ dentry* readdir(DIR *dir) {
         "movq $8, %%rax;"
         "movq %1, %%rdi;"
         "int $0x80;"
-        "movq %%r10, %0;"
+        "movq %%rax, %0;"
         : "=r" (output)
         : "r" (dir)
         : "%rax", "%rdi"

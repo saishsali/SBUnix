@@ -50,7 +50,8 @@ void schedule() {
 void user_thread1() {
     // while (1) {
         // char buf[1024];
-        // write(1, "User thread: 1, ", 16);
+        int u = write(1, "User thread: 1, ", 16);
+        kprintf("\n ret value %d", u);
         // kprintf("\n write something -- ");
         // TODO - Return value comes wrong because of 51 line in isr.s
         // read(0, buf, 128);
