@@ -27,22 +27,9 @@ int sys_write(uint64_t fd, uint64_t str, int length) {
 }
 
 int sys_read(uint64_t fd, char* buff, uint64_t length) {
-    uint64_t len_read = 0;
-    uint64_t len_end = 0;
-
     if (fd == stdin) {
         length = scanf(buff, length);
         return length;
-
-    } else if ((current->file_descriptor[fd] != NULL) && (current->file_descriptor[fd]->permission != O_WRONLY)) {
-        len_read = current->file_descriptor[fd]->cursor;
-        len_end  = current->file_descriptor[fd]->node->last;
-        if (length > (len_end - len_read))
-            length = len_end - len_read;
-        current->file_descriptor[fd]->cursor += length;
-        memcpy((void *)buff, (void *)len_read, length);
-        return length;
-
     }
 
     return -1;
@@ -51,7 +38,7 @@ int sys_read(uint64_t fd, char* buff, uint64_t length) {
 DIR* sys_opendir(char *path) {
     file_node *node;
     char *name;
-    int i = 0;
+    int i = 0, flag = 0;
     DIR* ret_dir;
     char directory_path[100];
     strcpy(directory_path, path);
@@ -60,6 +47,7 @@ DIR* sys_opendir(char *path) {
     if (strcmp(directory_path, "/") != 0) {
         name = strtok(directory_path, "/");
         while (name != NULL) {
+            flag = 0;
             if (strcmp(name, ".") == 0 ) {
                 node = node->child[0];
 
@@ -70,8 +58,12 @@ DIR* sys_opendir(char *path) {
                 for (i = 2; i < node->last ; i++) {
                     if (strcmp(name, node->child[i]->name) == 0) {
                         node = node->child[i];
+                        flag = 1;
                         break;
                     }
+                }
+                if(flag == 0) {
+                    return (DIR *)NULL;
                 }
             }
             name = strtok(NULL,"/");
@@ -388,166 +380,4 @@ void syscall_handler(stack_registers * registers) {
             : "%rdi", "%rsi", "%rdx"
         );
     }
-}
-
-ssize_t write(int fd, const void *buf, size_t count) {
-    ssize_t num_bytes;
-
-    __asm__ __volatile__(
-        "movq $1, %%rax;"
-        "movq %1, %%rdi;"
-        "movq %2, %%rsi;"
-        "movq %3, %%rdx;"
-        "int $0x80;"
-        "movq %%r10, %0;"
-        : "=r" (num_bytes)
-        : "r" ((int64_t)fd), "r" (buf), "r" (count)
-        : "%rax", "%rdi", "%rsi", "%rdx"
-    );
-
-    return num_bytes;
-}
-
-
-ssize_t read(int fd, void *buf, size_t count) {
-    ssize_t num_bytes;
-
-    __asm__ (
-        "movq $0, %%rax;"
-        "movq %1, %%rdi;"
-        "movq %2, %%rsi;"
-        "movq %3, %%rdx;"
-        "int $0x80;"
-        "movq %%r10, %0;"
-        : "=r" (num_bytes)
-        : "r" ((int64_t)fd), "r" (buf), "r" (count)
-        : "%rax", "%rdi", "%rsi", "%rdx"
-    );
-
-    return num_bytes;
-}
-
-void yield() {
-    __asm__ __volatile__(
-       "movq $2, %%rax;"
-       "int $0x80;"
-       : : :
-   );
-}
-
-DIR* opendir(void *path) {
-    DIR * ret_directory = NULL;
-    __asm__ __volatile__(
-        "movq $4, %%rax;"
-        "movq %1, %%rdi;"
-        "int $0x80;"
-        "movq %%r10, %0;"
-        : "=r" (ret_directory)
-        : "r" (path)
-        : "%rax", "%rdi"
-    );
-    return ret_directory;
-}
-
-int getcwd(char *buf, size_t size) {
-    int64_t output;
-    __asm__ __volatile__(
-        "movq $5, %%rax;"
-        "movq %1, %%rdi;"
-        "movq %2, %%rsi;"
-        "int $0x80;"
-        "movq %%r10, %0;"
-        : "=r" ((int64_t)output)
-        : "r" (buf), "r" (size)
-        : "%rax", "%rdi", "%rsi"
-    );
-
-    return output;
-}
-
-int chdir(char *path) {
-    ssize_t output;
-    __asm__ (
-        "movq $7, %%rax;"
-        "movq %1, %%rdi;"
-        "int $0x80;"
-        "movq %%r10, %0;"
-        : "=r" (output)
-        : "r" (path)
-        : "%rax", "%rdi"
-    );
-
-    return output;
-}
-
-dentry* readdir(DIR *dir) {
-    dentry* output;
-    __asm__ (
-        "movq $8, %%rax;"
-        "movq %1, %%rdi;"
-        "int $0x80;"
-        "movq %%r10, %0;"
-        : "=r" (output)
-        : "r" (dir)
-        : "%rax", "%rdi"
-    );
-
-    return output;
-}
-
-int8_t closedir(DIR *dir) {
-    int64_t output;
-    __asm__ (
-        "movq $9, %%rax;"
-        "movq %1, %%rdi;"
-        "int $0x80;"
-        "movq %%r10, %0;"
-        : "=r" (output)
-        : "r" (dir)
-        : "%rax", "%rdi"
-    );
-
-    return (int8_t)output;
-}
-
-void close(int fd) {
-    __asm__ (
-        "movq $11, %%rax;"
-        "movq %0, %%rdi;"
-        "int $0x80;"
-        :
-        : "r" ((int64_t)fd)
-        : "%rax", "%rdi"
-    );
-}
-
-int8_t open(char *path, uint8_t flags) {
-    int64_t output;
-    __asm__ (
-        "movq $10, %%rax;"
-        "movq %1, %%rdi;"
-        "movq %2, %%rsi;"
-        "int $0x80;"
-        "movq %%r10, %0;"
-        : "=r" (output)
-        : "r" (path), "r" ((uint64_t)flags)
-        : "%rax", "%rdi", "%rsi"
-    );
-
-    return (int8_t)output;
-}
-
-pid_t fork() {
-    int64_t pid;
-
-    __asm__ (
-        "movq $12, %%rax;"
-        "int $0x80;"
-        "movq %%r10, %0"
-        : "=r" (pid)
-        :
-        : "%rax"
-    );
-
-    return pid;
 }

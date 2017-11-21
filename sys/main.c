@@ -61,6 +61,8 @@ void start(uint32_t *modulep, void *physbase, void *physfree) {
     /* AHCI controller */
     // init_pci();
 
+    init_tarfs();
+
     /* Create user process and load its executable*/
     // create_user_process("bin/ls");
     task_struct *pcb = create_user_process("bin/sbush");
@@ -68,6 +70,13 @@ void start(uint32_t *modulep, void *physbase, void *physfree) {
     set_cr3(pcb->cr3);
     set_tss_rsp((void *)((uint64_t)pcb->kstack + 4096 - 8));
     _switch_to_ring_3(pcb->entry, pcb->u_rsp);
+
+    //  DIR * dir = opendir("/rootfs/etc1/");
+    // if(dir == NULL) {
+    //     kprintfm("Directory does not exist");
+    // } else {
+    //     kprintfm("Directory exists");
+    // }
 
     /* Check sys_mmap and page fault handler */
     // p = sys_mmap(NULL, 4097, 1);
@@ -80,40 +89,12 @@ void start(uint32_t *modulep, void *physbase, void *physfree) {
     // kprintf("%s\n", p);
 
     /* Init tarfs and create directory structure */
-    init_tarfs();
-    create_threads();
+    
+    // create_threads();
 
-    /* get current working directory */
-    // char buf[1024];
-    // getcwd(buf, 1024);
-    // kprintf("\n getcwd %s", buf);
 
-    // chdir("/../../../rootfs/bin/../etc/../");
 
-    // getcwd(buf, 1024);
-    // kprintf("\n getcwd %s", buf);
-
-    /* Open, read and close directory */
-    // DIR* dir = opendir("/rootfs/bin");
-    // if(dir == NULL) {
-    //     kprintf("NULL directory");
-    // } else {
-    //     kprintf("exists,  %s", dir->node->name);
-    // }
-
-    // dentry* curr_dentry = NULL;
-    // while((curr_dentry = readdir(dir)) != NULL) {
-    //     kprintf("\n name %s", curr_dentry->name);
-    // }
-    // closedir(dir);
-
-    // kprintf("\n ret node %p", ret->node);
-    // close();
-
-    /* File open and close */
-    // int fd = open("/rootfs/bin/ls", O_RDONLY);
-    // close(fd);
-    // kprintf("%d\n", fd);
+    
 }
 
 void boot(void) {

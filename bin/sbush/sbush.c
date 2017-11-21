@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <fcntl.h>
+#include <sys/dirent.h>
 #define BUFSIZE 1024
 
 // Global environment variable
@@ -264,7 +265,7 @@ int execute(char **tokens, int is_bg) {
 int open_script(char *filename) {
     int fd;
 
-    fd = open(filename, 0x0000, 444);
+    fd = open(filename, 0x0000);
     if (fd < 0)
         exit(0);
 
@@ -332,7 +333,7 @@ int main(int argc, char* argv[], char *envp[]) {
     // env = envp;
     // lifetime(argc, argv);
     // while(1);
-    write(1, "Hello world", 11);
+
     while(1);
     return 0;
 }

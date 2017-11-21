@@ -45,4 +45,8 @@ struct dir {
 
 int getdents(unsigned int fd, char *dirp, unsigned int count);
 
+DIR* opendir(char *path);
+int8_t closedir(DIR *dir);
+dentry* readdir(DIR *dir);
+
 #endif

@@ -49,17 +49,17 @@ void schedule() {
 }
 
 void user_thread1() {
-    while (1) {
-        write(1, "User thread: 1, ", 16);
-        yield();
-    }
+    // while (1) {
+    //     // write(1, "User thread: 1, ", 16);
+    //     yield();
+    // }
 }
 
 void user_thread2() {
-    while (1) {
-        write(1, "User thread: 2, ", 16);
-        yield();
-    }
+    // while (1) {
+    //     // write(1, "User thread: 2, ", 16);
+    //     yield();
+    // }
 }
 
 void kernel_thread1() {

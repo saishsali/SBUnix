@@ -5,7 +5,7 @@
 #include <fcntl.h>
 #define BUFSIZE 1024
 
-void readdir(int fd)
+void readdir1(int fd)
 {
     int buffer_position, read_length, k;
     char dir_buff[BUFSIZE];
@@ -35,8 +35,8 @@ int main(int argc, char *argv[], char *envp[]) {
     int fd;
 
     if (getcwd(cwd, sizeof(cwd)) != NULL) {
-        fd = open(cwd, 0x0000, 444);
-        readdir(fd);
+        fd = open(cwd, 0x0000);
+        readdir1(fd);
         close(fd);
     }
     else
