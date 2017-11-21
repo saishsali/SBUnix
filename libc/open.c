@@ -26,7 +26,7 @@ int8_t open(char *path, int64_t flags) {
         "movq %1, %%rdi;"
         "movq %2, %%rsi;"
         "int $0x80;"
-        "movq %%r10, %0;"
+        "movq %%rax, %0;"
         : "=r" ((int64_t)output)
         : "r" (path), "r" ((int64_t)flags)
         : "%rax", "%rdi", "%rsi"

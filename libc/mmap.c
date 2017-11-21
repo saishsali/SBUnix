@@ -8,7 +8,7 @@ void *sys_mmap(void *start, size_t length, uint64_t flags) {
         "movq %2, %%rsi;"
         "movq %3, %%rdx;"
         "int $0x80;"
-        "movq %%r10, %0"
+        "movq %%rax, %0"
         : "=r" (result)
         : "r" (start), "r" (length), "r" ((int64_t)flags)
         : "%rax", "%rdi", "%rsi", "%rdx"

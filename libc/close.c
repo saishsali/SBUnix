@@ -23,7 +23,7 @@ int8_t close(int fd) {
         "movq $11, %%rax;"
         "movq %0, %%rdi;"
         "int $0x80;"
-        "movq %%r10, %0;"
+        "movq %%rax, %0;"
         : "=r" ((int64_t)result)
         : "r" ((int64_t)fd)
         : "%rax", "%rdi"

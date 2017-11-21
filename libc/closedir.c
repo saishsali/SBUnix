@@ -6,7 +6,7 @@ int8_t closedir(DIR *dir) {
         "movq $9, %%rax;"
         "movq %1, %%rdi;"
         "int $0x80;"
-        "movq %%r10, %0;"
+        "movq %%rax, %0;"
         : "=r" (output)
         : "r" (dir)
         : "%rax", "%rdi"

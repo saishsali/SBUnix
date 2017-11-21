@@ -6,7 +6,7 @@ DIR* opendir(char *path) {
         "movq $4, %%rax;"
         "movq %1, %%rdi;"
         "int $0x80;"
-        "movq %%r10, %0;"
+        "movq %%rax, %0;"
         : "=r" (ret_directory)
         : "r" (path)
         : "%rax", "%rdi"

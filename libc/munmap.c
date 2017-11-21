@@ -7,7 +7,7 @@ int8_t sys_munmap(void *addr, size_t len) {
         "movq %1, %%rdi;"
         "movq %2, %%rsi;"
         "int $0x80;"
-        "movq %%r10, %0"
+        "movq %%rax, %0"
         : "=r" (result)
         : "r" (addr), "r" (len)
         : "%rax", "%rdi", "%rsi"
