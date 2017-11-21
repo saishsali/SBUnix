@@ -58,34 +58,60 @@ void start(uint32_t *modulep, void *physbase, void *physfree) {
     /* AHCI controller */
     // init_pci();
 
-    /* Create user process and load its executable*/
-    // create_user_process("bin/ls");
-    task_struct *pcb = create_user_process("bin/sbush");
-    switch_to_user_mode(pcb);
+    /* Create user process, load its executable and switch to ring 3*/
+    // task_struct *pcb = create_user_process("bin/sbush");
+    // switch_to_user_mode(pcb);
 
-    /* Check sys_mmap and page fault handler */
-    // p = sys_mmap(NULL, 4097, 1);
-    // char *p = sys_mmap((void *)0x1000, 100, RW_FLAG);
+    /* Create user process for testing sys_mmap and tarfs */
+    create_user_process("bin/sbush");
+
+    /* Check sys_mmap, page fault and sys_munmap */
+    // Case 1:
+    // char *p = sys_mmap((void *)0x1000, 100, RW_FLAG); // 1 page
     // strcpy(p, "Hello");
-    // kprintf("Accessible after sys_mmap and page fault: %s\n", p);
-
+    // kprintf("After sys_mmap and page fault: %s\n", p);
     // sys_munmap(p, 100);
     // strcpy(p, "World");
-    // kprintf("%s\n", p);
+    // kprintf("After sys_unmap (This should not be printed): %s\n", p);
+
+    // Case 2:
+    // char *p = sys_mmap((void *)0x1000, 4097, RW_FLAG); // 2 pages
+    // strcpy(p, "Hello");
+    // kprintf("After sys_mmap and page fault: %s\n", p);
+    // sys_munmap(p, 100);
+    // p = (char *)0x2000;
+    // strcpy(p, "World");
+    // kprintf("After sys_unmap (This should be printed): %s\n", p);
+
+    // Case 3:
+    // char *p = sys_mmap((void *)0x1000, 8193, RW_FLAG); // 3 pages
+    // strcpy(p, "Hello");
+    // kprintf("After sys_mmap and page fault: %s\n", p);
+    // sys_munmap(p + 0x1000, 100);
+    // p = (char *)0x3000;
+    // strcpy(p, "World");
+    // kprintf("After sys_unmap (This should be printed): %s\n", p);
+
+    // Case 4:
+    // char *p = sys_mmap((void *)0x1000, 4097, RW_FLAG); // 3 pages
+    // strcpy(p, "Hello");
+    // kprintf("After sys_mmap and page fault: %s\n", p);
+    // sys_munmap(p + 0x1000, 100);
+    // strcpy(p, "World");
+    // kprintf("After sys_unmap (This should be printed): %s\n", p);
 
     /* Init tarfs and create directory structure */
     init_tarfs();
-    // create_threads();
 
     /* get current working directory */
     // char buf[1024];
     // getcwd(buf, 1024);
-    // kprintf("\n getcwd %s", buf);
+    // kprintf("Current working directory: %s\n", buf);
 
+    /* Change directory */
     // chdir("/../../../rootfs/bin/../etc/../");
-
     // getcwd(buf, 1024);
-    // kprintf("\n getcwd %s", buf);
+    // kprintf("Current working directory after changing directory: %s\n", buf);
 
     /* Open, read and close directory */
     // DIR* dir = opendir("/rootfs/bin");

@@ -248,7 +248,7 @@ int8_t sys_munmap(void *addr, size_t len) {
             flags = vma->flags;
             vma_end = vma->end;
             remove_vma(&vma, &current->mm, &prev);
-            add_vma(current, end_address, vma_end, flags, ANON);
+            add_vma(current, end_address, vma_end - end_address, flags, ANON);
             unmap = 1;
         } else if (start_address > vma->start && end_address < vma->end) {
             /*
@@ -264,8 +264,8 @@ int8_t sys_munmap(void *addr, size_t len) {
             vma_start = vma->start;
             vma_end = vma->end;
             remove_vma(&vma, &current->mm, &prev);
-            add_vma(current, vma_start, start_address, flags, ANON);
-            add_vma(current, end_address, vma_end, flags, ANON);
+            add_vma(current, vma_start, start_address - vma_start, flags, ANON);
+            add_vma(current, end_address, vma_end - end_address, flags, ANON);
             unmap = 1;
         } else if (start_address > vma->start && start_address < vma->end && end_address >= vma->end) {
             /*
@@ -281,7 +281,7 @@ int8_t sys_munmap(void *addr, size_t len) {
             vma_start = vma->start;
             vma_end = vma->end;
             remove_vma(&vma, &current->mm, &prev);
-            add_vma(current, vma_start, start_address, flags, ANON);
+            add_vma(current, vma_start, start_address - vma_start, flags, ANON);
             unmap = 1;
         } else {
             prev = vma;
