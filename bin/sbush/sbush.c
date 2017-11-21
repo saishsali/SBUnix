@@ -336,16 +336,6 @@ int main(int argc, char* argv[], char *envp[]) {
     // lifetime(argc, argv);
     // while(1);
 
-char *p = sys_mmap((void *)0x1000, 8193, RW_FLAG); // 3 pages
-strcpy(p, "Hello");
-puts("After sys_mmap and page fault: - ");
-puts(p);
-sys_munmap(p + 0x1000, 100);
-p = (char *)0x3000;
-strcpy(p, "World");
-puts("After sys_unmap (This should be printed): - ");
-puts(p);
-
     while(1);
     return 0;
 }
