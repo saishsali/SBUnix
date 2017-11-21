@@ -250,9 +250,9 @@ task_struct *shallow_copy_task(task_struct *parent_task) {
                 }
                 virtual_address += PAGE_SIZE;
             }
-            parent_task_vma = parent_task_vma->next;
-            set_cr3(parent_task->cr3);
         }
+        parent_task_vma = parent_task_vma->next;
+        set_cr3(parent_task->cr3);
     }
 
     return child_task;

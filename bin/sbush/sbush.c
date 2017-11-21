@@ -334,6 +334,13 @@ void lifetime(int argc, char* argv[]) {
 int main(int argc, char* argv[], char *envp[]) {
     // env = envp;
     // lifetime(argc, argv);
+    int pid = fork();
+    if (pid == 0) {
+        putchar(48);
+    } else {
+        putchar(48 + pid);
+    }
+
     while(1);
     return 0;
 }

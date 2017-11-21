@@ -341,9 +341,9 @@ int8_t sys_open(char *path, uint8_t flags) {
 }
 
 pid_t sys_fork() {
-    // task_struct *child_task = copy_task_struct(current);
-    shallow_copy_task(current);
-    return 100;
+    task_struct *child_task = shallow_copy_task(current);
+    // shallow_copy_task(current);
+    return child_task->pid;
 }
 
 void syscall_handler(stack_registers * registers) {

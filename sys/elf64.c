@@ -104,10 +104,10 @@ void load_executable(task_struct *pcb, char *filename) {
     }
 
     // Create VMA for HEAP
-    add_vma(pcb, max_address, max_address + 1, RW, HEAP);
+    add_vma(pcb, max_address, PAGE_SIZE, RW, HEAP);
 
     // Create VMA for STACK
-    add_vma(pcb, STACK_START - STACK_SIZE, STACK_START, RW, STACK);
+    add_vma(pcb, STACK_START - STACK_SIZE, PAGE_SIZE, RW, STACK);
 
     set_cr3(pcb->cr3);
     kmalloc_map(PAGE_SIZE, STACK_START - PAGE_SIZE, RW_FLAG);

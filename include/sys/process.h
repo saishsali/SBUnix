@@ -6,7 +6,8 @@
 #define MAX_PROCESS 10
 
 #define STACK_START 0xF0000000
-#define STACK_SIZE  0x2000
+#define STACK_LIMIT 0x2000
+#define STACK_SIZE  0x1000
 
 #define MAX_FD 10
 
