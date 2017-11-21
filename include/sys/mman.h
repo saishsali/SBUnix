@@ -1,5 +1,5 @@
-#ifndef _UNISTD_H
-#define _UNISTD_H
+#ifndef _MMAN_H
+#define _MMAN_H
 
 #include <sys/defs.h>
 

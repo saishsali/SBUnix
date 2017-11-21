@@ -48,3 +48,46 @@ chdir("/../../../rootfs/bin/../etc/../rootfs/etc");
 getcwd(buf, 1024);
 puts(buf);
 
+    
+/* Check sys_mmap, page fault and sys_munmap */
+Case 1:
+char *p = sys_mmap((void *)0x1000, 100, RW_FLAG); // 1 page
+strcpy(p, "Hello");
+puts("After sys_mmap and page fault: - ");
+puts(p);
+sys_munmap(p, 100);
+strcpy(p, "World");
+puts("After sys_unmap (This should not be printed): - ");
+puts(p);
+
+Case 2:
+char *p = sys_mmap((void *)0x1000, 4097, RW_FLAG); // 2 pages
+strcpy(p, "Hello");
+puts("After sys_mmap and page fault: - ");
+puts(p);
+sys_munmap(p, 100);
+p = (char *)0x2000;
+strcpy(p, "World");
+puts("After sys_unmap (This should be printed): - ");
+puts(p);
+
+Case 3:
+char *p = sys_mmap((void *)0x1000, 8193, RW_FLAG); // 3 pages
+strcpy(p, "Hello");
+puts("After sys_mmap and page fault: - ");
+puts(p);
+sys_munmap(p + 0x1000, 100);
+p = (char *)0x3000;
+strcpy(p, "World");
+puts("After sys_unmap (This should be printed): - ");
+puts(p);
+
+Case 4:
+char *p = sys_mmap((void *)0x1000, 4097, RW_FLAG); // 3 pages
+strcpy(p, "Hello");
+puts("After sys_mmap and page fault: - ");
+puts(p);
+sys_munmap(p + 0x1000, 100);
+strcpy(p, "World");
+puts("After sys_unmap (This should be printed): - ");
+puts(p);

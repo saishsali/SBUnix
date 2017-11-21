@@ -222,3 +222,10 @@ task_struct *copy_task_struct(task_struct *parent_task) {
 
     return child_task;
 }
+
+/* Set CR3, Set TSS rsp and switch to ring 3 */
+void switch_to_user_mode(task_struct *pcb) {
+    set_cr3(pcb->cr3);
+    set_tss_rsp((void *)((uint64_t)pcb->kstack + 4096 - 8));
+    _switch_to_ring_3(pcb->entry, pcb->u_rsp);
+}

@@ -20,8 +20,6 @@ uint8_t initial_stack[INITIAL_STACK_SIZE]__attribute__((aligned(16)));
 uint32_t* loader_stack;
 extern char kernmem, physbase;
 
-void _switch_to_ring_3(uint64_t, uint64_t);
-
 void start(uint32_t *modulep, void *physbase, void *physfree) {
     uint64_t last_physical_address = 0;
     clear_screen();
@@ -44,7 +42,6 @@ void start(uint32_t *modulep, void *physbase, void *physfree) {
 
     /* Setup Paging and load CR3 */
     setup_page_tables((uint64_t)physbase, (uint64_t)physfree, last_physical_address);
-    load_cr3();
 
     /* Free initial pages (0 to physbase) used by the bootloader */
     // deallocate_initial_pages((uint64_t)physbase);
@@ -65,35 +62,19 @@ void start(uint32_t *modulep, void *physbase, void *physfree) {
 
     /* Create user process and load its executable*/
     // create_user_process("bin/ls");
+    /* Create user process, load its executable and switch to ring 3*/
     task_struct *pcb = create_user_process("bin/sbush");
+    switch_to_user_mode(pcb);
 
-    set_cr3(pcb->cr3);
-    set_tss_rsp((void *)((uint64_t)pcb->kstack + 4096 - 8));
-    _switch_to_ring_3(pcb->entry, pcb->u_rsp);
+    /* Create user process for testing sys_mmap and tarfs */
+    create_user_process("bin/sbush");
 
-    //  DIR * dir = opendir("/rootfs/etc1/");
-    // if(dir == NULL) {
-    //     kprintfm("Directory does not exist");
-    // } else {
-    //     kprintfm("Directory exists");
-    // }
 
-    /* Check sys_mmap and page fault handler */
-    // p = sys_mmap(NULL, 4097, 1);
-    // char *p = sys_mmap((void *)0x1000, 100, RW_FLAG);
-    // strcpy(p, "Hello");
-    // kprintf("Accessible after sys_mmap and page fault: %s\n", p);
-
-    // sys_munmap(p, 100);
-    // strcpy(p, "World");
-    // kprintf("%s\n", p);
 
     /* Init tarfs and create directory structure */
     
     // create_threads();
-
-
-
+    init_tarfs();
     
 }
 

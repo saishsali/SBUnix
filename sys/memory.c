@@ -6,13 +6,22 @@
 #include <sys/kprintf.h>
 
 void *kmalloc(size_t size) {
-    uint64_t num_pages;
-	Page *p = NULL;
+    uint64_t start_address, virtual_address, num_pages;
+    Page *p = NULL;
 
     num_pages = (ROUND_UP(size, PAGE_SIZE)) / PAGE_SIZE;
-	p = allocate_pages(num_pages);
+    p = allocate_pages(num_pages);
+    start_address = page_to_virtual_address(p);
+    virtual_address = start_address;
 
-	return (void*) page_to_virtual_address(p);
+    while (num_pages--) {
+        map_page(virtual_address, page_to_physical_address(p), RW_FLAG);
+        memset((void *)virtual_address, 0, PAGE_SIZE);
+        p = p->next;
+        virtual_address = page_to_virtual_address(p);
+    }
+
+    return (void*) start_address;
 }
 
 void *kmalloc_user(size_t size) {
