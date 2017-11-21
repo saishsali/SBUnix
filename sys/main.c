@@ -20,6 +20,8 @@ uint8_t initial_stack[INITIAL_STACK_SIZE]__attribute__((aligned(16)));
 uint32_t* loader_stack;
 extern char kernmem, physbase;
 
+void _switch_to_ring_3(uint64_t, uint64_t);
+
 void start(uint32_t *modulep, void *physbase, void *physfree) {
     uint64_t last_physical_address = 0;
     clear_screen();
@@ -61,6 +63,11 @@ void start(uint32_t *modulep, void *physbase, void *physfree) {
 
     /* Create user process and load its executable*/
     // create_user_process("bin/ls");
+    task_struct *pcb = create_user_process("bin/sbush");
+
+    set_cr3(pcb->cr3);
+    set_tss_rsp((void *)((uint64_t)pcb->kstack + 4096 - 8));
+    _switch_to_ring_3(pcb->entry, pcb->u_rsp);
 
     /* Check sys_mmap and page fault handler */
     // p = sys_mmap(NULL, 4097, 1);

@@ -162,6 +162,11 @@ task_struct *create_user_process(char *filename) {
     return pcb;
 }
 
+/*
+    - Copy VMA's
+    - Copy File Descriptors
+    - Mark all pages as read-only and COW in page tables (use bit 9 - unused by hardware in x86)
+*/
 task_struct *copy_task_struct(task_struct *parent_task) {
     task_struct *child_task = create_new_task();
     file_descriptor *file_descriptor;
@@ -191,6 +196,8 @@ task_struct *copy_task_struct(task_struct *parent_task) {
 
     while (parent_task_vma) {
         uint64_t virtual_address = parent_task_vma->start;
+
+        // Set copy on write bit and unset write bit in page table entries to allow sharing pages
         while (virtual_address < parent_task_vma->end) {
             set_cr3(parent_task->cr3);
             void *pte_entry = get_page_table_entry((void *)virtual_address);
