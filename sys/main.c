@@ -60,7 +60,7 @@ void start(uint32_t *modulep, void *physbase, void *physfree) {
     // init_pci();
 
     /* Create user process and load its executable*/
-    create_user_process("bin/ls");
+    // create_user_process("bin/ls");
 
     /* Check sys_mmap and page fault handler */
     // p = sys_mmap(NULL, 4097, 1);
@@ -74,7 +74,7 @@ void start(uint32_t *modulep, void *physbase, void *physfree) {
 
     /* Init tarfs and create directory structure */
     init_tarfs();
-    // create_threads();
+    create_threads();
 
     /* get current working directory */
     // char buf[1024];

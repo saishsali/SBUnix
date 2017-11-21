@@ -49,42 +49,15 @@ void schedule() {
 }
 
 void user_thread1() {
-    // while (1) {
-        // char buf[1024];
-        int u = write(1, "User thread: 1, ", 16);
-        kprintf("\n ret value %d", u);
-        // kprintf("\n write something -- ");
-        // TODO - Return value comes wrong because of 51 line in isr.s
-        // read(0, buf, 128);
-        // kprintf("----%s-----", buf);
-        // kprintf("");
-
-    // kprintf("coming jere");
-    // DIR* ret = opendir("/../../../rootfs/../../rootfs/bin");
-    // if(ret == NULL) {
-    //     kprintf("NULL");
-    // } else {
-    //     kprintf("ret node %s", ret->node->name);
-    //     kprintf("It exists");
-    // }
-
-    // DIR* dir = opendir("/rootfs/bin");
-    // if(dir == NULL) {
-    //     kprintf("NULL directory");
-    // } else {
-    //     kprintf("exists,  %p", dir);
-    // }
-
-
-        while(1);
-        // yield();
-    // }
+    while (1) {
+        write(1, "User thread: 1, ", 16);
+        yield();
+    }
 }
 
 void user_thread2() {
     while (1) {
-        int ret = write(0, "User thread: 2, ", 16);
-        kprintf("Return value: %d\n", ret);
+        write(1, "User thread: 2, ", 16);
         yield();
     }
 }
