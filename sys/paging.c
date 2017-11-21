@@ -197,10 +197,11 @@ void map_available_memory(uint64_t last_physical_address) {
     map_page((uint64_t)(KERNBASE + VIDEO_MEMORY), VIDEO_MEMORY, RW_FLAG);
 }
 
-/* Setup page tables */
+/* Setup page tables and load cr3 */
 void setup_page_tables(uint64_t physbase, uint64_t physfree, uint64_t last_physical_address) {
     map_kernel_memory(physbase, physfree);
     map_available_memory(last_physical_address);
+    load_cr3();
 }
 
 void *set_user_address_space() {
