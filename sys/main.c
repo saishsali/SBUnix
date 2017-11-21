@@ -43,6 +43,9 @@ void start(uint32_t *modulep, void *physbase, void *physfree) {
     /* Setup Paging and load CR3 */
     setup_page_tables((uint64_t)physbase, (uint64_t)physfree, last_physical_address);
 
+    /* Init tarfs and create directory structure */
+    init_tarfs();
+
     /* Free initial pages (0 to physbase) used by the bootloader */
     // deallocate_initial_pages((uint64_t)physbase);
 
@@ -58,23 +61,12 @@ void start(uint32_t *modulep, void *physbase, void *physfree) {
     /* AHCI controller */
     // init_pci();
 
-    init_tarfs();
-
     /* Create user process and load its executable*/
     // create_user_process("bin/ls");
+
     /* Create user process, load its executable and switch to ring 3*/
     task_struct *pcb = create_user_process("bin/sbush");
     switch_to_user_mode(pcb);
-
-    /* Create user process for testing sys_mmap and tarfs */
-    create_user_process("bin/sbush");
-
-
-
-    /* Init tarfs and create directory structure */
-    
-    // create_threads();
-    init_tarfs();
     
 }
 
