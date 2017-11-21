@@ -344,7 +344,7 @@ int8_t sys_open(char *path, uint8_t flags) {
 
 pid_t sys_fork() {
     // task_struct *child_task = copy_task_struct(current);
-    copy_task_struct(current);
+    shallow_copy_task(current);
     return 100;
 }
 

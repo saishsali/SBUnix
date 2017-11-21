@@ -167,27 +167,30 @@ task_struct *create_user_process(char *filename) {
     - Copy File Descriptors
     - Mark all pages as read-only and COW in page tables (use bit 9 - unused by hardware in x86)
 */
-task_struct *copy_task_struct(task_struct *parent_task) {
+task_struct *shallow_copy_task(task_struct *parent_task) {
     task_struct *child_task = create_new_task();
     file_descriptor *file_descriptor;
     vma_struct * parent_task_vma = parent_task->mm->head;
-    memcpy((void *)child_task->mm, (void *)parent_task->mm, sizeof(mm_struct));
-    uint64_t physical_address, pte_flags;
+    // memcpy((void *)child_task->mm, (void *)parent_task->mm, sizeof(mm_struct));
+    uint64_t physical_address, pte_flags, virtual_address;
+    void *pte_entry;
     int i;
+
+    // Copy process name
+    strcpy(child_task->name, parent_task->name);
 
     // Copy file descriptors
     for (i = 0; i < MAX_FD; i++) {
         if (parent_task->file_descriptor[i] != NULL) {
-            file_descriptor = kmalloc(sizeof(file_descriptor));
-            file_descriptor->node  = parent_task->file_descriptor[i]->node;
-            file_descriptor->cursor  = parent_task->file_descriptor[i]->cursor;
-            file_descriptor->permission  = parent_task->file_descriptor[i]->permission;
-            child_task->file_descriptor[i] = file_descriptor;
+            file_descriptor                 = kmalloc(sizeof(file_descriptor));
+            file_descriptor->node           = parent_task->file_descriptor[i]->node;
+            file_descriptor->cursor         = parent_task->file_descriptor[i]->cursor;
+            file_descriptor->permission     = parent_task->file_descriptor[i]->permission;
+            child_task->file_descriptor[i]  = file_descriptor;
         }
     }
 
     child_task->parent = parent_task;
-    strcpy(child_task->name, parent_task->name);
 
     if (parent_task->child_head) {
         child_task->siblings = parent_task->child_head;
@@ -195,29 +198,61 @@ task_struct *copy_task_struct(task_struct *parent_task) {
     parent_task->child_head = child_task;
 
     while (parent_task_vma) {
-        uint64_t virtual_address = parent_task_vma->start;
+        add_vma(
+            child_task,
+            parent_task_vma->start,
+            parent_task_vma->end - parent_task_vma->start,
+            parent_task_vma->flags,
+            parent_task_vma->type
+        );
 
-        // Set copy on write bit and unset write bit in page table entries to allow sharing pages
-        while (virtual_address < parent_task_vma->end) {
-            set_cr3(parent_task->cr3);
-            void *pte_entry = get_page_table_entry((void *)virtual_address);
+        if (parent_task_vma->type == STACK) {
+            virtual_address = parent_task_vma->end - 0x1000;
 
-            if (*(uint64_t *) pte_entry & PTE_P) {
-                // Set Read only and COW bit for parent process
-                SET_READ_ONLY((uint64_t *) pte_entry);
-                SET_COPY_ON_WRITE((uint64_t *) pte_entry);
+            while (virtual_address >= parent_task_vma->start) {
+                set_cr3(parent_task->cr3);
+                pte_entry = get_page_table_entry((void *)virtual_address);
+                if (!(*(uint64_t *)pte_entry & PTE_P)) {
+                    break; // Since stack is a contiguous memory
+                }
 
-                physical_address = GET_ADDRESS(*(uint64_t *) pte_entry);
-                pte_flags = GET_FLAGS(*(uint64_t *) pte_entry);
+                uint64_t *new_virtual_address = kmalloc(PAGE_SIZE);
+                memcpy((void *)new_virtual_address, (void *)virtual_address, PAGE_SIZE);
+
                 set_cr3(child_task->cr3);
-                // Set Read only and COW bit for child process
-                map_page(virtual_address, physical_address, pte_flags);
-                increase_page_reference_count(physical_address);
+                map_page(virtual_address, virtual_to_physical_address(new_virtual_address), RW_FLAG);
+
+                // TODO: Add to free list
+                pte_entry = get_page_table_entry(new_virtual_address);
+                *(uint64_t *)pte_entry = 0;
+
+                virtual_address -= PAGE_SIZE;
             }
-            virtual_address += PAGE_SIZE;
+
+        } else {
+            virtual_address = parent_task_vma->start;
+            // Set copy on write bit and unset write bit in page table entries to allow sharing pages
+            while (virtual_address < parent_task_vma->end) {
+                set_cr3(parent_task->cr3);
+                pte_entry = get_page_table_entry((void *)virtual_address);
+
+                if (*(uint64_t *) pte_entry & PTE_P) {
+                    // Set Read only and COW bit for parent process
+                    SET_READ_ONLY((uint64_t *) pte_entry);
+                    SET_COPY_ON_WRITE((uint64_t *) pte_entry);
+
+                    physical_address = GET_ADDRESS(*(uint64_t *) pte_entry);
+                    pte_flags = GET_FLAGS(*(uint64_t *) pte_entry);
+                    set_cr3(child_task->cr3);
+                    // Set Read only and COW bit for child process
+                    map_page(virtual_address, physical_address, pte_flags);
+                    increase_page_reference_count(physical_address);
+                }
+                virtual_address += PAGE_SIZE;
+            }
+            parent_task_vma = parent_task_vma->next;
+            set_cr3(parent_task->cr3);
         }
-        parent_task_vma = parent_task_vma->next;
-        set_cr3(parent_task->cr3);
     }
 
     return child_task;
