@@ -14,6 +14,7 @@ char output_buf[1024];
 static volatile int scan_flag = 0;
 static volatile int scan_len = 0;
 static volatile int max_scan_len = 0;
+static volatile int prev = 0;
 
 // Scancode to ASCII mapping (src: https://gist.github.com/davazp/d2fde634503b2a5bc664)
 unsigned char scancode_ascii[SIZE] =
@@ -117,6 +118,7 @@ int control_key(int scancode) {
     return 0;
 }
 
+
 void keyboard_interrupt() {
     int scancode = inb(0x60);
     char ch1 = 0, ch2 = 0;
@@ -128,14 +130,22 @@ void keyboard_interrupt() {
         output_buf[scan_len] = scancode_ascii[scancode];
 
         if(scan_flag == 1) {
+            
             if(scancode == BACKSPACE) {
+                if(prev != BACKSPACE) {
+                    prev = BACKSPACE;
+                    kprintf_backspace();
+                }
                 if(scan_len > 0) {
-                    output_buf[scan_len - 1] = '\0';
-                    kprintf_backspace(output_buf, scan_len);
+                    output_buf[scan_len] = '\0';
+                    kprintf_backspace();
                     scan_len--;
                 }
 
             } else {
+                if(prev == BACKSPACE) {
+                    video_mem_forward();
+                }
                 kprintf("%c", output_buf[scan_len]);
                 flag = 1;
             }
@@ -166,9 +176,14 @@ void keyboard_interrupt() {
         }
 
         kprintf_pos(ROW, COLUMN, "Last pressed glyph: %c%c", ch1, ch2);
+        prev = scancode;
+        if(flag) {
+            scan_len++;
+        }
     }
-    if(flag)
-        scan_len++;
+    
+    
+    
 }
 
 int scanf(void *buff, int len) {

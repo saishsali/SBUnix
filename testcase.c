@@ -91,3 +91,10 @@ sys_munmap(p + 0x1000, 100);
 strcpy(p, "World");
 puts("After sys_unmap (This should be printed): - ");
 puts(p);
+
+
+waitpid
+exit
+execvpe
+pipe
+dup2
