@@ -23,4 +23,6 @@ void deallocate_initial_pages(uint64_t physbase);
 void add_to_free_list(void *virtual_address);
 void increase_page_reference_count(uint64_t physical_address);
 
+uint16_t get_reference_count(uint64_t physical_address);
+
 #endif

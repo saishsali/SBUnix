@@ -18,6 +18,10 @@ void increase_page_reference_count(uint64_t physical_address) {
     pages[physical_address / PAGE_SIZE].reference_count++;
 }
 
+uint16_t get_reference_count(uint64_t physical_address) {
+    return pages[physical_address / PAGE_SIZE].reference_count;
+}
+
 uint64_t page_to_virtual_address(Page *p) {
     return KERNBASE + page_to_physical_address(p);
 }
@@ -138,10 +142,10 @@ void add_to_free_list(void *virtual_address) {
         return;
 
     uint64_t physical_address = GET_ADDRESS(*(uint64_t *)pte_entry);
-    *(uint64_t *)pte_entry = 0;
+    // *(uint64_t *)pte_entry = 0;
     uint64_t free_page_index = physical_address / PAGE_SIZE;
 
     pages[free_page_index].next = page_free_list;
-    pages[free_page_index].reference_count = 0;
+    pages[free_page_index].reference_count--;
     page_free_list = &pages[free_page_index];
 }
