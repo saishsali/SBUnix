@@ -93,6 +93,14 @@ puts("After sys_unmap (This should be printed): - ");
 puts(p);
 
 
+-----------------------FILE read ---------------
+int fd = open("/rootfs/etc/test/check.c", O_RDONLY);
+char buf[1024];
+read(fd, buf, 128);
+puts("reading file");
+puts(buf);
+
+
 waitpid
 exit
 execvpe

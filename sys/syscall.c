@@ -25,9 +25,24 @@ int sys_write(uint64_t fd, uint64_t str, int length) {
 }
 
 int sys_read(uint64_t fd, char* buff, uint64_t length) {
+    uint64_t len_read = 0;
+    uint64_t len_end = 0;
+
     if (fd == stdin) {
         length = scanf(buff, length);
         return length;
+
+    } else {
+        if ((current->file_descriptor[fd] != NULL) && (current->file_descriptor[fd]->permission != O_WRONLY)) {
+            len_read = current->file_descriptor[fd]->cursor;
+            len_end  = current->file_descriptor[fd]->node->last;
+            if (length > (len_end - len_read))
+                length = len_end - len_read;
+            current->file_descriptor[fd]->cursor += length;
+            memcpy((void *)buff, (void *)len_read, length);
+
+            return length;
+        }
     }
 
     return -1;
