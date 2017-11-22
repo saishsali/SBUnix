@@ -130,7 +130,7 @@ void keyboard_interrupt() {
         output_buf[scan_len] = scancode_ascii[scancode];
 
         if(scan_flag == 1) {
-            
+
             if(scancode == BACKSPACE) {
                 if(prev != BACKSPACE) {
                     prev = BACKSPACE;
@@ -181,9 +181,6 @@ void keyboard_interrupt() {
             scan_len++;
         }
     }
-    
-    
-    
 }
 
 int scanf(void *buff, int len) {
