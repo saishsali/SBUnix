@@ -272,8 +272,19 @@ void switch_to_user_mode(task_struct *pcb) {
     _switch_to_ring_3(pcb->entry, pcb->u_rsp);
 }
 
+/*
+    - Setup child task stack as if it is called using fork() and set return value as 0 in RAX
+    - Context switching to child task should return in isr.s to the instruction after the call to interrupt_handler
+    - Populate the top of the stack with 5 entries that INT $0x80 pushes when parent calls fork()
+    - Populate the top of the stack with 5 entries that INT $0x80 pushes when parent calls fork()
+    - Set RAX = 0 as the return value of the child process
+    - Copy all other register values from parent's stack to make sure that the state after returning to userspace
+      remains unchanged
+    - Leave empty entries in child stack to accomodate for pops in context_switch.s
+    - Push child PCB as the last entry on child stack and point rsp to this entry
+*/
 void setup_child_task_stack(task_struct *parent_task, task_struct *child_task) {
-    // User data segment
+    // User data segment (SS)
     *((uint64_t *)&child_task->kstack[STACK_SIZE - 8 * 1]) = *((uint64_t *)&parent_task->kstack[STACK_SIZE - 8 * 3]);
 
     // RSP
@@ -288,11 +299,37 @@ void setup_child_task_stack(task_struct *parent_task, task_struct *child_task) {
     // RIP
     *((uint64_t *)&child_task->kstack[STACK_SIZE - 8 * 5]) = *((uint64_t *)&parent_task->kstack[STACK_SIZE - 8 * 7]);
 
-    // Leave 11 spaces on stack and mark RAX as 0
+    // RAX = 0 (Return value to the child process)
     *((uint64_t *)&child_task->kstack[STACK_SIZE - 8 * 8]) = 0UL;
+
+    // RBX
+    *((uint64_t *)&child_task->kstack[STACK_SIZE - 8 * 9]) = *((uint64_t *)&parent_task->kstack[STACK_SIZE - 8 * 11]);
+
+    // RCX
+    *((uint64_t *)&child_task->kstack[STACK_SIZE - 8 * 10]) = *((uint64_t *)&parent_task->kstack[STACK_SIZE - 8 * 12]);
+
+    // RDX
+    *((uint64_t *)&child_task->kstack[STACK_SIZE - 8 * 11]) = *((uint64_t *)&parent_task->kstack[STACK_SIZE - 8 * 13]);
+
+    // RBP
+    *((uint64_t *)&child_task->kstack[STACK_SIZE - 8 * 12]) = *((uint64_t *)&parent_task->kstack[STACK_SIZE - 8 * 14]);
+
+    // RSI
+    *((uint64_t *)&child_task->kstack[STACK_SIZE - 8 * 13]) = *((uint64_t *)&parent_task->kstack[STACK_SIZE - 8 * 15]);
+
+    // RDI
+    *((uint64_t *)&child_task->kstack[STACK_SIZE - 8 * 14]) = *((uint64_t *)&parent_task->kstack[STACK_SIZE - 8 * 16]);
+
+    // R8
+    *((uint64_t *)&child_task->kstack[STACK_SIZE - 8 * 15]) = *((uint64_t *)&parent_task->kstack[STACK_SIZE - 8 * 17]);
+
+    // R9
+    *((uint64_t *)&child_task->kstack[STACK_SIZE - 8 * 16]) = *((uint64_t *)&parent_task->kstack[STACK_SIZE - 8 * 18]);
 
     // Return to ISR popping logic
     *((uint64_t *)&child_task->kstack[STACK_SIZE - 8 * 17]) = (uint64_t)isr_common_stub + 20;
+
+    // Leave 13 entries from 18 to 30 to accomodate for pops in context_switch.s
 
     // Push PCB
     *((uint64_t *)&child_task->kstack[STACK_SIZE - 8 * 31]) = (uint64_t)child_task;

@@ -54,7 +54,7 @@ void page_fault_exception(stack_registers *registers) {
                 new_pte_entry = get_page_table_entry((void *)virtual_address);
                 physical_address = GET_ADDRESS(*(uint64_t *)new_pte_entry);
                 *(uint64_t *)pte_entry = physical_address | RW_FLAG;
-                add_to_free_list((uint64_t *)virtual_address);
+                free_user_memory((uint64_t *)virtual_address);
             } else {
                 SET_WRITABLE((uint64_t *) pte_entry);
                 UNSET_COPY_ON_WRITE((uint64_t *) pte_entry);

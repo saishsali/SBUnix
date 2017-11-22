@@ -234,7 +234,7 @@ int8_t sys_munmap(void *addr, size_t len) {
         if (start_address <= vma->start && end_address >= vma->end) {
             // Case 1: When the specified address space overlaps entire VMA address space
             for (virtual_address = vma->start; virtual_address < vma->end; virtual_address += PAGE_SIZE) {
-                add_to_free_list((void *)virtual_address);
+                free_user_memory((void *)virtual_address);
             }
 
             // Remove vma
@@ -246,7 +246,7 @@ int8_t sys_munmap(void *addr, size_t len) {
                 some part of higher address space is not overlapped
             */
             for (virtual_address = vma->start; virtual_address < end_address; virtual_address += PAGE_SIZE) {
-                add_to_free_list((void *)virtual_address);
+                free_user_memory((void *)virtual_address);
             }
 
             // Remove vma and add new vma with start as end address and end as vma->end
@@ -261,7 +261,7 @@ int8_t sys_munmap(void *addr, size_t len) {
                 part of lower and higher address space are not overlapped
             */
             for (virtual_address = start_address; virtual_address < end_address; virtual_address += PAGE_SIZE) {
-                add_to_free_list((void *)virtual_address);
+                free_user_memory((void *)virtual_address);
             }
 
             // Remove vma and create 2 new VMA's
@@ -278,7 +278,7 @@ int8_t sys_munmap(void *addr, size_t len) {
                 part of lower address space is not overlapped
             */
             for (virtual_address = start_address; virtual_address < vma->end; virtual_address += PAGE_SIZE) {
-                add_to_free_list((void *)virtual_address);
+                free_user_memory((void *)virtual_address);
             }
 
             // Remove vma and add new vma with start as vma start and end as start address

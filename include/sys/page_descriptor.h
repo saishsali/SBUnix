@@ -20,7 +20,8 @@ Page *allocate_pages(int num_pages);
 uint64_t page_to_physical_address(Page *p);
 uint64_t page_to_virtual_address(Page *p);
 void deallocate_initial_pages(uint64_t physbase);
-void add_to_free_list(void *virtual_address);
+void free_kernel_memory(void *virtual_address);
+void free_user_memory(void *virtual_address);
 void increase_page_reference_count(uint64_t physical_address);
 
 uint16_t get_reference_count(uint64_t physical_address);

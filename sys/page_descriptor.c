@@ -136,13 +136,28 @@ void deallocate_initial_pages(uint64_t physbase) {
     kprintf("\nNumber of pages: %d\n", count);
 }
 
-void add_to_free_list(void *virtual_address) {
+/* Add pages back to free list and do not update page table entry for kernel allocated memory */
+void free_kernel_memory(void *virtual_address) {
     void *pte_entry = get_page_table_entry(virtual_address);
     if (pte_entry == NULL)
         return;
 
     uint64_t physical_address = GET_ADDRESS(*(uint64_t *)pte_entry);
-    // *(uint64_t *)pte_entry = 0;
+    uint64_t free_page_index = physical_address / PAGE_SIZE;
+
+    pages[free_page_index].next = page_free_list;
+    pages[free_page_index].reference_count--;
+    page_free_list = &pages[free_page_index];
+}
+
+/* Add pages back to free list and update page table entry for user allocated memory */
+void free_user_memory(void *virtual_address) {
+    void *pte_entry = get_page_table_entry(virtual_address);
+    if (pte_entry == NULL)
+        return;
+
+    uint64_t physical_address = GET_ADDRESS(*(uint64_t *)pte_entry);
+    *(uint64_t *)pte_entry = 0;
     uint64_t free_page_index = physical_address / PAGE_SIZE;
 
     pages[free_page_index].next = page_free_list;

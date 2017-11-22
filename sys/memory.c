@@ -147,18 +147,18 @@ void remove_vma(vma_struct **vma, mm_struct **mm, vma_struct **prev) {
     if (*vma == (*mm)->head) {
         // Remove head VMA
         (*mm)->head = (*vma)->next;
-        add_to_free_list(*vma);
+        free_kernel_memory(*vma);
         *vma = (*mm)->head;
     } else if (*vma == (*mm)->tail) {
         // Remove tail VMA
         (*prev)->next = (*vma)->next;
-        add_to_free_list(*vma);
+        free_kernel_memory(*vma);
         (*mm)->tail = *prev;
         *vma = NULL;
     } else {
         // Remove VMA from the middle
         (*prev)->next = (*vma)->next;
-        add_to_free_list(*vma);
+        free_kernel_memory(*vma);
         *vma = (*prev)->next;
     }
 }
