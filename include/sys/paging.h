@@ -32,9 +32,13 @@
 
 #define SET_READ_ONLY(x) (*x = *x & 0xFFFFFFFFFFFFFFFD)
 
+#define SET_WRITABLE(x) (*x = *x | PTE_W)
+
 #define GET_FLAGS(x) (x & 0xFFF)
 
 #define SET_COPY_ON_WRITE(x) (*x = *x | PTE_COW)
+
+#define UNSET_COPY_ON_WRITE(x) (*x = *x & 0xFFFFFFFFFFFFFDFF)
 
 /* Video memory physical address */
 #define VIDEO_MEMORY 0xb8000
