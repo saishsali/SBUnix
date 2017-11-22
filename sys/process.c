@@ -34,6 +34,10 @@ int get_process_id() {
 task_struct *strawman_scheduler() {
     current = process_list_head;
     task_struct *next = process_list_head->next;
+    if (next == NULL) {
+        return current;
+    }
+
     process_list_tail->next = current;
     current->next = NULL;
     process_list_head = next;
@@ -44,10 +48,14 @@ task_struct *strawman_scheduler() {
 
 /* Schedule next task, set TSS rsp and context switch */
 void schedule() {
+    task_struct *running_pcb = current;
     task_struct *next = strawman_scheduler();
+
     set_tss_rsp((void *)((uint64_t)next->kstack + 4096 - 8));
     set_cr3(next->cr3);
-    _context_switch(current, next);
+
+    current = next;
+    _context_switch(running_pcb, next);
 }
 
 void user_thread1() {
@@ -224,14 +232,6 @@ task_struct *shallow_copy_task(task_struct *parent_task) {
 
                 set_cr3(child_task->cr3);
                 map_page(virtual_address, virtual_to_physical_address(new_virtual_address), RW_FLAG);
-
-                if (child_task->u_rsp == 0) {
-                    child_task->u_rsp = virtual_address + 0x1000 - 0x08;
-                }
-
-                // TODO: Add to free list
-                pte_entry = get_page_table_entry(new_virtual_address);
-                *(uint64_t *)pte_entry = 0;
 
                 virtual_address -= PAGE_SIZE;
             }
