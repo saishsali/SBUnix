@@ -342,7 +342,10 @@ int8_t sys_open(char *path, uint8_t flags) {
 
 pid_t sys_fork() {
     task_struct *child_task = shallow_copy_task(current);
-    // shallow_copy_task(current);
+    // Setup child task stack
+    setup_child_task_stack(current, child_task);
+    add_process(child_task);
+
     return child_task->pid;
 }
 

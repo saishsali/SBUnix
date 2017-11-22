@@ -336,9 +336,12 @@ int main(int argc, char* argv[], char *envp[]) {
     // lifetime(argc, argv);
     int pid = fork();
     if (pid == 0) {
+        write(1, "\nChild: ", 2);
         putchar(48);
     } else {
+        write(1, "\nParent: ", 2);
         putchar(48 + pid);
+        yield();
     }
 
     while(1);

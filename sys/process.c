@@ -14,6 +14,7 @@
 
 void _context_switch(task_struct *, task_struct *);
 void _switch_to_ring_3(uint64_t, uint64_t);
+void isr_common_stub();
 
 task_struct *current;
 
@@ -45,6 +46,7 @@ task_struct *strawman_scheduler() {
 void schedule() {
     task_struct *next = strawman_scheduler();
     set_tss_rsp((void *)((uint64_t)next->kstack + 4096 - 8));
+    set_cr3(next->cr3);
     _context_switch(current, next);
 }
 
@@ -128,6 +130,7 @@ task_struct *create_new_task() {
     pcb->parent = NULL;
     pcb->child_head = NULL;
     pcb->siblings = NULL;
+    pcb->u_rsp = 0;
     memset(pcb->kstack, 0, STACK_SIZE);
     memset(pcb->file_descriptor, 0, MAX_FD * sizeof(file_descriptor));
     pcb->pid = get_process_id();
@@ -222,6 +225,10 @@ task_struct *shallow_copy_task(task_struct *parent_task) {
                 set_cr3(child_task->cr3);
                 map_page(virtual_address, virtual_to_physical_address(new_virtual_address), RW_FLAG);
 
+                if (child_task->u_rsp == 0) {
+                    child_task->u_rsp = virtual_address + 0x1000 - 0x08;
+                }
+
                 // TODO: Add to free list
                 pte_entry = get_page_table_entry(new_virtual_address);
                 *(uint64_t *)pte_entry = 0;
@@ -263,4 +270,36 @@ void switch_to_user_mode(task_struct *pcb) {
     set_cr3(pcb->cr3);
     set_tss_rsp((void *)((uint64_t)pcb->kstack + 4096 - 8));
     _switch_to_ring_3(pcb->entry, pcb->u_rsp);
+}
+
+void setup_child_task_stack(task_struct *parent_task, task_struct *child_task) {
+    // User data segment
+    *((uint64_t *)&child_task->kstack[STACK_SIZE - 8 * 1]) = *((uint64_t *)&parent_task->kstack[STACK_SIZE - 8 * 3]);
+
+    // RSP
+    *((uint64_t *)&child_task->kstack[STACK_SIZE - 8 * 2]) = *((uint64_t *)&parent_task->kstack[STACK_SIZE - 8 * 4]);
+
+    // Eflags
+    *((uint64_t *)&child_task->kstack[STACK_SIZE - 8 * 3]) = *((uint64_t *)&parent_task->kstack[STACK_SIZE - 8 * 5]);
+
+    // Code segment
+    *((uint64_t *)&child_task->kstack[STACK_SIZE - 8 * 4]) = *((uint64_t *)&parent_task->kstack[STACK_SIZE - 8 * 6]);
+
+    // RIP
+    *((uint64_t *)&child_task->kstack[STACK_SIZE - 8 * 5]) = *((uint64_t *)&parent_task->kstack[STACK_SIZE - 8 * 7]);
+
+    // Leave 11 spaces on stack and mark RAX as 0
+    *((uint64_t *)&child_task->kstack[STACK_SIZE - 8 * 8]) = 0UL;
+
+    // Return to ISR popping logic
+    *((uint64_t *)&child_task->kstack[STACK_SIZE - 8 * 17]) = (uint64_t)isr_common_stub + 20;
+
+    // Push PCB
+    *((uint64_t *)&child_task->kstack[STACK_SIZE - 8 * 31]) = (uint64_t)child_task;
+
+    // Set RSP
+    child_task->rsp = (uint64_t)&child_task->kstack[STACK_SIZE - 8 * 31];
+
+    // Set entry as RIP
+    child_task->entry = *((uint64_t *)&parent_task->kstack[STACK_SIZE - 8 * 7]);
 }
