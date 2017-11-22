@@ -6,7 +6,8 @@
 #define MAX_PROCESS 10
 
 #define STACK_START 0xF0000000
-#define STACK_SIZE  0x2000
+#define STACK_LIMIT 0x2000
+#define STACK_SIZE  0x1000
 
 #define MAX_FD 10
 
@@ -77,7 +78,9 @@ task_struct *create_user_process();
 
 void schedule();
 
-task_struct *copy_task_struct(task_struct *parent_task);
+task_struct *shallow_copy_task(task_struct *parent_task);
 void switch_to_user_mode(task_struct *pcb);
+void setup_child_task_stack(task_struct *parent_task, task_struct *child_task);
+void add_process(task_struct *pcb);
 
 #endif

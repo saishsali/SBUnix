@@ -22,7 +22,7 @@ pid_t fork() {
     __asm__ (
         "movq $12, %%rax;"
         "int $0x80;"
-        "movq %%r10, %0"
+        "movq %%rax, %0"
         : "=r" (pid)
         :
         : "%rax"

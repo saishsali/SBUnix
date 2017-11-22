@@ -334,7 +334,28 @@ void lifetime(int argc, char* argv[]) {
 int main(int argc, char* argv[], char *envp[]) {
     // env = envp;
     // lifetime(argc, argv);
-    // while(1);
+
+    int pid = fork();
+    if (pid == 0) {
+        write(1, "\nChild 1", 2);
+        yield();
+    } else {
+        write(1, "\nParent 1", 2);
+        yield();
+
+        int pid2 = fork();
+        if (pid2 == 0) {
+            write(1, "\nChild 2", 2);
+            yield();
+        } else {
+            write(1, "\nParent 2", 2);
+            yield();
+        }
+    }
+
+    yield();
+    write(1, "\nDone done", 2);
+
     while(1);
     return 0;
 }

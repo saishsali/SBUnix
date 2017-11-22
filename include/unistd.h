@@ -30,4 +30,6 @@ int pipe(int pipefd[2]);
 
 int dup2(int oldfd, int newfd);
 
+void yield();
+
 #endif

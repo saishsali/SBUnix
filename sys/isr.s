@@ -35,7 +35,6 @@ isr_common_stub:
     movq %rsp, %rdi
     call interrupt_handler
 
-    movq %rax, %r10
     # End-of-interrupt command
     movb $0x20, %al
     outb %al, $0x20

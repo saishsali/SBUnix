@@ -28,7 +28,7 @@ ssize_t read(int fd, void *buf, size_t count) {
         "movq %2, %%rsi;"
         "movq %3, %%rdx;"
         "int $0x80;"
-        "movq %%r10, %0;"
+        "movq %%rax, %0;"
         : "=r" (num_bytes)
         : "r" ((int64_t)fd), "r" (buf), "r" (count)
         : "%rax", "%rdi", "%rsi", "%rdx"

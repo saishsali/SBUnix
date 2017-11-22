@@ -12,8 +12,6 @@
 #include <sys/paging.h>
 #include <sys/isr.h>
 
-#define NUM_SYSCALLS 50
-
 extern task_struct *current;
 
 void _flush_tlb();
@@ -343,41 +341,54 @@ int8_t sys_open(char *path, uint8_t flags) {
 }
 
 pid_t sys_fork() {
-    // task_struct *child_task = copy_task_struct(current);
-    copy_task_struct(current);
-    return 100;
+    task_struct *child_task = shallow_copy_task(current);
+    // Setup child task stack
+    setup_child_task_stack(current, child_task);
+    add_process(child_task);
+
+    return child_task->pid;
 }
 
-void* syscall_tbl[NUM_SYSCALLS] = {
-    sys_read,
-    sys_write,
-    sys_yield,
-    sys_mmap,
-    sys_opendir,
-    sys_getcwd,
-    sys_munmap,
-    sys_chdir,
-    sys_readdir,
-    sys_closedir,
-    sys_open,
-    sys_close,
-    sys_fork
-};
-
 void syscall_handler(stack_registers * registers) {
-    void *func_ptr;
-
-    uint64_t syscall_no = registers->rax;
-    if (syscall_no >= 0 && syscall_no < NUM_SYSCALLS) {
-        func_ptr = syscall_tbl[syscall_no];
-        __asm__ __volatile__(
-            "movq %0, %%rdi;"
-            "movq %1, %%rsi;"
-            "movq %2, %%rdx;"
-            "callq %3;"
-            :
-            : "r" (registers->rdi), "r" (registers->rsi), "r" (registers->rdx), "r" (func_ptr)
-            : "%rdi", "%rsi", "%rdx"
-        );
+    switch (registers->rax) {
+        case 0:
+            registers->rax = sys_read(registers->rdi, (char *)registers->rsi, registers->rdx);
+            break;
+        case 1:
+            registers->rax = sys_write(registers->rdi, registers->rsi, registers->rdx);
+            break;
+        case 2:
+            sys_yield();
+            break;
+        case 3:
+            registers->rax = (uint64_t)sys_mmap((void *)registers->rdi, registers->rsi, registers->rdx);
+            break;
+        case 4:
+            registers->rax = (uint64_t)sys_opendir((char *)registers->rdi);
+            break;
+        case 5:
+            registers->rax = sys_getcwd((char *)registers->rdi, registers->rsi);
+            break;
+        case 6:
+            registers->rax = sys_munmap((void *)registers->rdi, registers->rsi);
+            break;
+        case 7:
+            registers->rax = sys_chdir((char *)registers->rdi);
+            break;
+        case 8:
+            registers->rax = (uint64_t)sys_readdir((DIR *)registers->rdi);
+            break;
+        case 9:
+            registers->rax = sys_closedir((DIR *)registers->rdi);
+            break;
+        case 10:
+            registers->rax = sys_open((char *)registers->rdi, registers->rsi);
+            break;
+        case 11:
+            sys_close(registers->rdi);
+            break;
+        case 12:
+            registers->rax = (uint64_t)sys_fork();
+            break;
     }
 }
