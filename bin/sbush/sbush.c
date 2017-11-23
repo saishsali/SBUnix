@@ -345,6 +345,7 @@ int main(int argc, char* argv[], char *envp[]) {
     // puts("reading file");
     // puts(buf);
 
+    // exit(3s);
     int pid = fork();
     if (pid == 0) {
         write(1, "\nChild 1", 2);
@@ -354,7 +355,7 @@ int main(int argc, char* argv[], char *envp[]) {
         waitpid(pid, NULL, 0);
         yield();
     }
-    puts("\nDone");
+    // puts("\nDone");
 
 
 

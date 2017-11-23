@@ -240,6 +240,7 @@ void empty_page_tables(uint64_t cr3) {
                     continue;
                 }
                 pt = (PT *)physical_to_virtual_address((PT *)GET_ADDRESS(pdt_entry));
+
                 free_kernel_memory(pt);
             }
         }

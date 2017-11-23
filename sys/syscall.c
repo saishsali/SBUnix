@@ -366,7 +366,7 @@ pid_t sys_fork() {
 
 void sys_exit() {
     int parent_exist = 0;
-    // check if the parent exists for this child
+    //mcheck if the parent exists for this child
     if(current->parent) {
         // remove child from its parent and also adjust the siblings list
         remove_child_from_parent(current);
@@ -379,18 +379,17 @@ void sys_exit() {
         remove_parent_from_child(current);
     }
 
-
     // empty vma list
     empty_vma_list(current->mm->head, parent_exist);
-    // // empty page tables
+    // empty page tables
     empty_page_tables(current->cr3);
-    // // empty file descriptor
+    // empty file descriptor
     memset((void*)current->file_descriptor, 0, MAX_FD * 8);
     current->state = EXIT;
+
     // remove current task from schedule list
     remove_task_from_process_schedule_list(current);
-    // empty kernel stack
-    // memset((void*)current->kstack, 0, PAGE_SIZE);
+    memset((void*)current->kstack, 0, 4096);
 
     sys_yield();
 
