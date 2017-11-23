@@ -284,9 +284,9 @@ void remove_child_from_parent(task_struct *child_task) {
     task_struct *children = NULL, *prev_child = NULL;
 
     // if our child_task is the first child of its parent
-    if(child_task == parent_task->child_head) {
+    if (child_task == parent_task->child_head) {
         // if our child_task is the only child of its parent
-        if(parent_task->child_head->siblings == NULL) {
+        if (parent_task->child_head->siblings == NULL) {
             parent_task->child_head = NULL;
         } else {
             parent_task->child_head = parent_task->child_head->siblings;
@@ -295,9 +295,9 @@ void remove_child_from_parent(task_struct *child_task) {
     }
 
     children = parent_task->child_head;
-    if(children) {
-        while(children != NULL) {
-            if(children == child_task) {
+    if (children) {
+        while (children != NULL) {
+            if (children == child_task) {
                 break;
             }
             prev_child = children;
@@ -306,7 +306,7 @@ void remove_child_from_parent(task_struct *child_task) {
     }
 
     // child task does not exist in parent list
-    if(!children) {
+    if (!children) {
         return;
     }
 
@@ -317,15 +317,13 @@ void remove_child_from_parent(task_struct *child_task) {
         check if the parent task is in waiting state. Mark that parent task as ready after validating
         that it was waiting on the child_task
     */
-    if(parent_task->state == WAITING) {
-        if(!parent_task->wait_on_child_pid || parent_task->wait_on_child_pid == child_task->pid) {
+    if (parent_task->state == WAITING) {
+        if (!parent_task->wait_on_child_pid || parent_task->wait_on_child_pid == child_task->pid) {
             parent_task->wait_on_child_pid = child_task->pid;
             // since the parent was waiting for this task to finish. After it gets finished state should be READY
             parent_task->state = READY;
         }
     }
-    return;
-
 }
 
 void remove_task_from_process_schedule_list(task_struct *current) {
@@ -345,12 +343,11 @@ void remove_task_from_process_schedule_list(task_struct *current) {
 }
 
 void remove_parent_from_child(task_struct *parent_task) {
-
-    if(parent_task->wait_on_child_pid != 0)
+    if (parent_task->wait_on_child_pid != 0)
         return;
 
     task_struct *current = parent_task->child_head, *temp;
-    while(current) {
+    while (current) {
         current->state = ZOMBIE;
         temp = current;
         current = current->next;
