@@ -363,6 +363,12 @@ pid_t sys_fork() {
     return child_task->pid;
 }
 
+/*
+    - Create new process for the specified filename
+    - Load executable in memory
+    - Setup the stack of the new process to push specified arguments
+    - Switch to the new mode for the new process
+*/
 int8_t sys_execvpe(char *file, char *argv[], char *envp[]) {
     task_struct *task = create_user_process(file);
     setup_user_process_stack(task, argv);

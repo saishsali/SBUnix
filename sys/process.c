@@ -429,37 +429,46 @@ void setup_child_task_stack(task_struct *parent_task, task_struct *child_task) {
 
 /* Setup user process stack with argument values */
 void setup_user_process_stack(task_struct *task, char *argv[]) {
-    uint64_t u_rsp = task->u_rsp, argv_address[32];
+    uint64_t u_rsp = task->u_rsp, argv_address[16], current_cr3 = get_cr3();
     uint16_t argc = 0, argv_length;
     int16_t i;
-    uint64_t current_cr3 = get_cr3();
-    char argv1[10][100];
+    char arguments_copy[16][100];
 
-    // Get number of arguments to be pushed on stack
+    /*
+        - Copy arguments from argv to arguments_copy
+        - Calculate number of arguments
+        - Copying is done because argv is not accessible in the virtual address space of the new task
+    */
     while (argv[argc] != NULL) {
-        strcpy(argv1[argc], argv[argc]);
+        strcpy(arguments_copy[argc], argv[argc]);
         argc++;
     }
 
+    // Switch to the virtual address of the new process to push arguments on stack
     set_cr3(task->cr3);
 
+    // Start from the bottom of the stack and push the argument values on the stack
     for (i = argc - 1; i >= 0; i--) {
-        argv_length = strlen(argv1[i]) + 1;
+        argv_length = strlen(arguments_copy[i]) + 1;
         u_rsp = u_rsp - argv_length;
-        memcpy((char *)u_rsp, argv1[i], argv_length);
+        memcpy((char *)u_rsp, arguments_copy[i], argv_length);
         argv_address[i] = u_rsp;
     }
 
     u_rsp = u_rsp - sizeof(uint64_t *);
 
+    // Push the argument pointers (stored in the last loop) on the stack
     for (i = argc - 1; i >= 0; i--) {
         *(uint64_t *)u_rsp = argv_address[i];
         u_rsp = u_rsp - sizeof(uint64_t *);
     }
 
+    // Push argument count on stack
     *(uint64_t *)u_rsp = argc;
 
+    // Update u_rsp to point to the top of the stack
     task->u_rsp = u_rsp;
 
+    // Switch to the virtual address space of the current process
     set_cr3(current_cr3);
 }
