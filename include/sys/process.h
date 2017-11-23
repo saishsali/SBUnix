@@ -44,7 +44,7 @@ struct mm_struct {
     vma_struct *tail;
 };
 
-typedef enum { RUNNING, SLEEPING, ZOMBIE, READY } STATE;
+typedef enum { RUNNING, SLEEPING, ZOMBIE, READY, EXIT } STATE;
 
 struct PCB {
     uint64_t rsp;
@@ -84,5 +84,7 @@ void setup_child_task_stack(task_struct *parent_task, task_struct *child_task);
 void add_process(task_struct *pcb);
 
 void remove_child_from_parent(task_struct *current);
+void remove_parent_from_child(task_struct *parent_task);
+void remove_task_from_process_schedule_list(task_struct *current);
 
 #endif

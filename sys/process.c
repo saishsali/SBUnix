@@ -46,6 +46,18 @@ task_struct *strawman_scheduler() {
     return next;
 }
 
+int process_exist(task_struct *pcb) {
+    task_struct *temp = process_list_head;
+    while(temp != process_list_tail) {
+        if(temp == pcb) {
+            return 1;
+        }
+        temp = temp->next;
+    }
+    return 0;
+
+}
+
 /* Schedule next task, set TSS rsp and context switch */
 void schedule() {
     task_struct *running_pcb = current;
@@ -55,7 +67,12 @@ void schedule() {
     set_cr3(next->cr3);
 
     current = next;
-    _context_switch(running_pcb, next);
+    if(process_exist(running_pcb)) {
+        _context_switch(current, next);
+    } else {
+        _context_switch(running_pcb, next);
+    }
+
 }
 
 void user_thread1() {
@@ -270,6 +287,76 @@ void switch_to_user_mode(task_struct *pcb) {
     set_cr3(pcb->cr3);
     set_tss_rsp((void *)((uint64_t)pcb->kstack + 4096 - 8));
     _switch_to_ring_3(pcb->entry, pcb->u_rsp);
+}
+
+void remove_child_from_parent(task_struct *child_task) {
+    task_struct *parent_task = child_task->parent;
+    task_struct *children = NULL, *prev_child = NULL;
+
+    // if our child_task is the first child of its parent
+    if(child_task == parent_task->child_head) {
+        // if our child_task is the only child of its parent
+        if(parent_task->child_head->siblings == NULL) {
+            parent_task->child_head = NULL;
+        } else {
+            parent_task->child_head = parent_task->child_head->siblings;
+        }
+        return;
+    }
+
+    children = parent_task->child_head;
+    if(children) {
+        while(children != NULL) {
+            if(children == child_task) {
+                break;
+            }
+            prev_child = children;
+            children = children->siblings;
+        }
+    }
+
+    // child task does not exist in parent list
+    if(!children) {
+        return;
+    }
+
+    // remove child from its sibling list
+    prev_child->siblings = child_task->siblings;
+
+    /*
+        check if the parent task is in waiting state. Mark that parent task as ready after validating
+        that it was waiting on the child_task
+    */
+    // if(parent_task->state == WAITING) {
+    // }
+    return;
+
+}
+
+void remove_task_from_process_schedule_list(task_struct *current) {
+    task_struct *temp = process_list_head, *prev = NULL;
+    while (temp != process_list_tail) {
+        if (temp == current) {
+            if (prev) {
+                prev->next = current->next;
+            } else {
+                // task is at the head
+                process_list_head = process_list_head->next;
+            }
+        }
+        prev = temp;
+        temp = temp->next;
+    }
+}
+
+void remove_parent_from_child(task_struct *parent_task) {
+    task_struct *current = parent_task->child_head, *temp;
+    while(current) {
+        current->state = ZOMBIE;
+        temp = current;
+        current = current->next;
+        temp->siblings = NULL;
+    }
 }
 
 /*

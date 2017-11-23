@@ -345,13 +345,15 @@ int main(int argc, char* argv[], char *envp[]) {
     // puts("reading file");
     // puts(buf);
 
-    while(1) {
-        char buf[1024];
-        read(0, buf, 128);
-        puts(buf);
-
+    int pid = fork();
+    if (pid == 0) {
+        write(1, "\nChild 1", 2);
+        exit(3);
+    } else {
+        write(1, "\nParent 1", 2);
+        yield();
     }
-
+    puts("\nDone");
 
 
 

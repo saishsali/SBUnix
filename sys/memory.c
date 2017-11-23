@@ -163,26 +163,19 @@ void remove_vma(vma_struct **vma, mm_struct **mm, vma_struct **prev) {
     }
 }
 
-void empty_vma_list(vma_struct *vma_list)
-{
-    vma_struct *cur_vma  = vma_list;
-    vma_struct *last_vma = NULL;
+void empty_vma_list(vma_struct *vma, int parent_exist) {
+    vma_struct *curr_vma = vma;
+    vma_struct *prev_vma = NULL;
+    uint64_t virtual_address;
 
-    while (cur_vma) {
-
-        cur_vma->vm_mm    = NULL;
-        cur_vma->vm_start = NULL;
-        cur_vma->vm_end   = NULL;
-        cur_vma->vm_flags = NULL;
-        cur_vma->vm_file_descp = NULL;
-
-        last_vma = cur_vma;
-        cur_vma = cur_vma->vm_next;
-    }
-
-    // Add vma_list to vma_free_list
-    if (last_vma) {
-        last_vma->vm_next = vma_free_list;
-        vma_free_list = vma_list;
+    while (curr_vma != NULL) {
+        virtual_address = curr_vma->start;
+        while (!parent_exist && curr_vma->start < curr_vma->end) {
+            free_user_memory((uint64_t *)virtual_address);
+            virtual_address += PAGE_SIZE;
+        }
+        prev_vma = curr_vma;
+        curr_vma = curr_vma->next;
+        free_kernel_memory(prev_vma);
     }
 }
