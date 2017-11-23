@@ -104,16 +104,7 @@ puts("reading file");
 puts(buf);
 
 
-
-waitpid
-exit
-execvpe
-pipe
-dup2
-
-
-Fork:
--------------
+-----------------------FORK--------------------
 Case 1:
 
 int pid = fork();
@@ -168,8 +159,31 @@ if (pid == 0) {
     puts(p);
 }
 
-Execvpe:
-------------
+---------- EXIT-------------
+int pid = fork();
+if (pid == 0) {
+    write(1, "\nChild 1", 2);
+    exit(3);
+} else {
+    write(1, "\nParent 1", 2);
+    yield();
+}
+puts("\nDone");
+
+------------WAITPID-----------
+int pid = fork();
+if (pid == 0) {
+    write(1, "\nChild 1", 2);
+    exit(3);
+} else {
+    write(1, "\nParent 1", 2);
+    waitpid(pid, NULL, 0);
+    yield();
+}
+puts("\nDone");
+
+
+---------------EXECVPE------------------
 
 char *args[2] = {"Hello", "World"};
 
