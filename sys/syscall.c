@@ -357,11 +357,42 @@ int8_t sys_open(char *path, uint8_t flags) {
 
 pid_t sys_fork() {
     task_struct *child_task = shallow_copy_task(current);
-    // Setup child task stack
     setup_child_task_stack(current, child_task);
     add_process(child_task);
 
     return child_task->pid;
+}
+
+/*
+    - Create new process for the specified filename
+    - Load executable in memory
+    - Setup the stack of the new process to push specified arguments
+    - Switch to the new mode for the new process
+*/
+int8_t sys_execvpe(char *file, char *argv[], char *envp[]) {
+    task_struct *task = create_user_process(file);
+    setup_user_process_stack(task, argv);
+
+    if (task == NULL) {
+        return -1;
+    }
+
+    // PID of current task is the PID of new task
+    task->pid = current->pid;
+
+    // Parent of current task is the parent of new task
+    task->parent = current->parent;
+
+    // Copy file descriptors
+    memcpy(
+        (void *)task->file_descriptor,
+        (void *)current->file_descriptor,
+        sizeof(current->file_descriptor[0]) * MAX_FD
+    );
+
+    switch_to_user_mode(task);
+
+    return -1;
 }
 
 void sys_exit() {
@@ -410,7 +441,6 @@ int sys_waitpid(int pid, int *status, int options) {
     return current->wait_on_child_pid;
 }
 
-
 void syscall_handler(stack_registers * registers) {
     switch (registers->rax) {
         case 0:
@@ -451,6 +481,9 @@ void syscall_handler(stack_registers * registers) {
             break;
         case 12:
             registers->rax = (uint64_t)sys_fork();
+            break;
+        case 59:
+            registers->rax = sys_execvpe((char *)registers->rdi, (char **)registers->rsi, (char **)registers->rdx);
             break;
         case 13:
             sys_exit(registers->rdi);

@@ -84,6 +84,7 @@ void switch_to_user_mode(task_struct *pcb);
 void setup_child_task_stack(task_struct *parent_task, task_struct *child_task);
 void add_process(task_struct *pcb);
 
+void setup_user_process_stack(task_struct *task, char *argv[]);
 void remove_child_from_parent(task_struct *current);
 void remove_parent_from_child(task_struct *parent_task);
 void remove_task_from_process_schedule_list(task_struct *current);

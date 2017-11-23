@@ -167,3 +167,15 @@ if (pid == 0) {
     puts("In parent: ");
     puts(p);
 }
+
+Execvpe:
+------------
+
+char *args[2] = {"Hello", "World"};
+
+int pid = fork();
+if (pid == 0) {
+    execvpe("bin/cat", args, NULL);
+} else {
+    yield();
+}

@@ -46,6 +46,10 @@ typedef struct {
   Elf64_Xword   p_align;
 } Elf64_Phdr;
 
-void load_executable(task_struct *pcb, char *filename);
+void load_executable(task_struct *pcb, char *filename, Elf64_Ehdr *elf_header);
+
+Elf64_Ehdr *get_elf_header(char *filename);
+
+int is_elf_file(Elf64_Ehdr *elf_header);
 
 #endif
