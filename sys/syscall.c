@@ -364,6 +364,25 @@ pid_t sys_fork() {
     return child_task->pid;
 }
 
+void sys_exit() {
+    // check if the parent exists for this child
+    if(current->parent) {
+        // remove child from its parent and also adjust the siblings list
+        remove_child_from_parent(current);
+    }
+
+    // check if children exists for this parent
+    if(current->child_head) {
+        //remove parent from its child and mark all child as zombies
+        remove_parent_from_child(current);
+    }
+
+    // empty vma list
+    
+
+}
+
+
 void syscall_handler(stack_registers * registers) {
     switch (registers->rax) {
         case 0:
@@ -404,6 +423,9 @@ void syscall_handler(stack_registers * registers) {
             break;
         case 12:
             registers->rax = (uint64_t)sys_fork();
+            break;
+        case 13:
+            sys_exit();
             break;
     }
 }

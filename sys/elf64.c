@@ -81,6 +81,14 @@ uint64_t read_program_header(task_struct *pcb, Elf64_Ehdr *elf_header, Elf64_Phd
     return virtual_address;
 }
 
+// copy_arg_to_stack(task_struct* new_task, char *const argv[]) {
+//     // PML4 *current_pml4 = (PML4 *)get_cr3();
+//     // load_cr3(new_task->cr3);
+
+//     // uint64_t *user_stack = kmalloc(PAGE_SIZE);
+    
+// }
+
 void load_executable(task_struct *pcb, char *filename) {
     Elf64_Ehdr *elf_header = get_elf_header(filename);
     if (elf_header == NULL || is_elf_file(elf_header) == 0) {

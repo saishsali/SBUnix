@@ -162,3 +162,27 @@ void remove_vma(vma_struct **vma, mm_struct **mm, vma_struct **prev) {
         *vma = (*prev)->next;
     }
 }
+
+void empty_vma_list(vma_struct *vma_list)
+{
+    vma_struct *cur_vma  = vma_list;
+    vma_struct *last_vma = NULL;
+
+    while (cur_vma) {
+
+        cur_vma->vm_mm    = NULL;
+        cur_vma->vm_start = NULL;
+        cur_vma->vm_end   = NULL;
+        cur_vma->vm_flags = NULL;
+        cur_vma->vm_file_descp = NULL;
+
+        last_vma = cur_vma;
+        cur_vma = cur_vma->vm_next;
+    }
+
+    // Add vma_list to vma_free_list
+    if (last_vma) {
+        last_vma->vm_next = vma_free_list;
+        vma_free_list = vma_list;
+    }
+}
