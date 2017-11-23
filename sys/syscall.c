@@ -389,7 +389,7 @@ void sys_exit() {
 
     // remove current task from schedule list
     remove_task_from_process_schedule_list(current);
-    memset((void*)current->kstack, 0, 4096);
+    // memset((void*)current->kstack, 0, 4096);
 
     sys_yield();
 

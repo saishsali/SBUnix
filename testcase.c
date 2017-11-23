@@ -104,10 +104,27 @@ puts("reading file");
 puts(buf);
 
 
+---------- EXIT-------------
+int pid = fork();
+if (pid == 0) {
+    write(1, "\nChild 1", 2);
+    exit(3);
+} else {
+    write(1, "\nParent 1", 2);
+    yield();
+}
+puts("\nDone");
 
+------------WAITPID-----------
+int pid = fork();
+if (pid == 0) {
+    write(1, "\nChild 1", 2);
+    exit(3);
+} else {
+    write(1, "\nParent 1", 2);
+    waitpid(pid, NULL, 0);
+    yield();
+}
+puts("\nDone");
 
-waitpid
-exit
 execvpe
-pipe
-dup2

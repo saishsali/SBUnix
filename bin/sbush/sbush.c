@@ -355,7 +355,7 @@ int main(int argc, char* argv[], char *envp[]) {
         waitpid(pid, NULL, 0);
         yield();
     }
-    // puts("\nDone");
+    puts("\nDone");
 
 
 
