@@ -22,6 +22,10 @@ uint16_t get_reference_count(uint64_t physical_address) {
     return pages[physical_address / PAGE_SIZE].reference_count;
 }
 
+void decrement_reference_count(uint64_t physical_address) {
+    pages[physical_address / PAGE_SIZE].reference_count--;
+}
+
 uint64_t page_to_virtual_address(Page *p) {
     return KERNBASE + page_to_physical_address(p);
 }

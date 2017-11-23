@@ -23,7 +23,7 @@ uint64_t get_cr2() {
 
 void page_fault_exception(stack_registers *registers) {
     uint64_t page_fault_address = get_cr2(), virtual_address, physical_address;
-    void *pte_entry, *new_pte_entry;
+    void *pte_entry;
 
     // When Present bit is not set, it is caused by a non-present page
     if ((registers->error_code & PF_P) == 0) {
@@ -49,12 +49,19 @@ void page_fault_exception(stack_registers *registers) {
             physical_address = GET_ADDRESS(*(uint64_t *)pte_entry);
             if (get_reference_count(physical_address) > 1) {
                 // If the page is being referenced by multiple processes
-                virtual_address = (uint64_t)kmalloc_user(PAGE_SIZE);
+
+                // Decrement reference count of the page
+                decrement_reference_count(physical_address);
+
+                // Get a new page
+                virtual_address = (uint64_t)kmalloc(PAGE_SIZE);
+
+                // Copy contents from page fault address to the newly allocated page
                 memcpy((void *)virtual_address, (void *)page_fault_address, PAGE_SIZE);
-                new_pte_entry = get_page_table_entry((void *)virtual_address);
-                physical_address = GET_ADDRESS(*(uint64_t *)new_pte_entry);
+
+                // Update page table entry with the physical address of the newly allocated page
+                physical_address = virtual_to_physical_address((void *)virtual_address);
                 *(uint64_t *)pte_entry = physical_address | RW_FLAG;
-                free_user_memory((uint64_t *)virtual_address);
             } else {
                 SET_WRITABLE((uint64_t *) pte_entry);
                 UNSET_COPY_ON_WRITE((uint64_t *) pte_entry);
