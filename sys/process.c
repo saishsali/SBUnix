@@ -446,15 +446,15 @@ void setup_user_process_stack(task_struct *task, char *argv[]) {
     for (i = argc - 1; i >= 0; i--) {
         argv_length = strlen(argv1[i]) + 1;
         u_rsp = u_rsp - argv_length;
-        memcpy((void *)u_rsp, argv1[i], argv_length);
+        memcpy((char *)u_rsp, argv1[i], argv_length);
         argv_address[i] = u_rsp;
     }
 
-    u_rsp--;
+    u_rsp = u_rsp - sizeof(uint64_t *);
 
     for (i = argc - 1; i >= 0; i--) {
         *(uint64_t *)u_rsp = argv_address[i];
-        u_rsp--;
+        u_rsp = u_rsp - sizeof(uint64_t *);
     }
 
     *(uint64_t *)u_rsp = argc;
