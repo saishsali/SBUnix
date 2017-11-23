@@ -332,8 +332,52 @@ void lifetime(int argc, char* argv[]) {
 }
 
 int main(int argc, char* argv[], char *envp[]) {
+
     // env = envp;
     // lifetime(argc, argv);
+
+    // int fd = open("/rootfs/etc/test/check.c", O_RDONLY);
+    // char buf[1024];
+    // read(fd, buf, 10);
+    // puts("reading file");
+    // puts(buf);
+    // read(fd, buf, 10);
+    // puts("reading file");
+    // puts(buf);
+
+    // exit(3s);
+    int pid = fork();
+    if (pid == 0) {
+        write(1, "\nChild 1", 2);
+        exit(3);
+    } else {
+        write(1, "\nParent 1", 2);
+        waitpid(pid, NULL, 0);
+        yield();
+    }
+    // puts("\nDone");
+
+
+
+    // int pid = fork();
+    // if (pid == 0) {
+    //     write(1, "\nChild 1", 2);
+    //     yield();
+    // } else {
+    //     write(1, "\nParent 1", 2);
+    //     yield();
+
+    //     int pid2 = fork();
+    //     if (pid2 == 0) {
+    //         write(1, "\nChild 2", 2);
+    //         yield();
+    //     } else {
+    //         write(1, "\nParent 2", 2);
+    //         yield();
+    //     }
+    // }
+
+    // yield();
 
     while(1);
     return 0;

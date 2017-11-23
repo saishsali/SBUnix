@@ -389,6 +389,52 @@ int8_t sys_execvpe(char *file, char *argv[], char *envp[]) {
     return -1;
 }
 
+void sys_exit() {
+    int parent_exist = 0;
+    //mcheck if the parent exists for this child
+    if(current->parent) {
+        // remove child from its parent and also adjust the siblings list
+        remove_child_from_parent(current);
+        parent_exist = 1;
+    }
+
+    // check if children exists for this parent
+    if(current->child_head) {
+        //remove parent from its child and mark all child as zombies
+        remove_parent_from_child(current);
+    }
+
+    // empty vma list
+    empty_vma_list(current->mm->head, parent_exist);
+    // empty page tables
+    empty_page_tables(current->cr3);
+    // empty file descriptor
+    memset((void*)current->file_descriptor, 0, MAX_FD * 8);
+    current->state = EXIT;
+
+    // remove current task from schedule list
+    remove_task_from_process_schedule_list(current);
+    memset((void*)current->kstack, 0, 4096);
+
+    sys_yield();
+
+}
+
+int sys_waitpid(int pid, int *status, int options) {
+    // check if the parent has any child
+    if(current->child_head == NULL)
+        return -1;
+
+    if(pid > 0) {
+        current->wait_on_child_pid = pid;
+    } else {
+        current->wait_on_child_pid = 0;
+    }
+
+    current->state = WAITING;
+    return current->wait_on_child_pid;
+}
+
 void syscall_handler(stack_registers * registers) {
     switch (registers->rax) {
         case 0:
@@ -432,6 +478,12 @@ void syscall_handler(stack_registers * registers) {
             break;
         case 59:
             registers->rax = sys_execvpe((char *)registers->rdi, (char **)registers->rsi, (char **)registers->rdx);
+            break;
+        case 13:
+            sys_exit(registers->rdi);
+            break;
+        case 14:
+            sys_waitpid(registers->rdi, (int *)registers->rsi, registers->rdx);
             break;
     }
 }

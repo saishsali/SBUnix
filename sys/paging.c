@@ -211,3 +211,38 @@ void *set_user_address_space() {
 
     return (void *)new_pml4;
 }
+
+void empty_page_tables(uint64_t cr3) {
+    int pml4_index, pdpt_index, pdt_index;
+    uint64_t pml4_entry, pdpt_entry, pdt_entry;
+    PML4 *task_pml4 = (PML4 *)cr3;
+    PDPT *pdpt;
+    PDT *pdt;
+    PT* pt;
+
+    for (pml4_index = 0; pml4_index < 511; pml4_index++) {
+        pml4_entry = task_pml4->entries[pml4_index];
+        if (!pml4_entry) {
+            continue;
+        }
+        pdpt = (PDPT *)physical_to_virtual_address((PDPT *)GET_ADDRESS(pml4_entry));
+
+        for (pdpt_index = 0; pdpt_index < 512; pdpt_index++) {
+            pdpt_entry = pdpt->entries[pdpt_index];
+            if (!pdpt_entry) {
+                continue;
+            }
+            pdt = (PDT *)physical_to_virtual_address((PDT *)GET_ADDRESS(pdpt_entry));
+
+            for (pdt_index = 0; pdt_index < 512; pdt_index++) {
+                pdt_entry = pdt->entries[pdt_index];
+                if (!pdt_entry) {
+                    continue;
+                }
+                pt = (PT *)physical_to_virtual_address((PT *)GET_ADDRESS(pdt_entry));
+
+                free_kernel_memory(pt);
+            }
+        }
+    }
+}

@@ -3,7 +3,7 @@
 #include <string.h>
 #include <stdio.h>
 
-int execvpe(const char *file, char *const argv[], char *envp[]) {
+int execvpe(const char *file, char *argv[], char *envp[]) {
     int64_t status;
     int slash_check = 0, i = 0, truncated_path_len, j = 0, token_len;
     char *path_env, *token, *slash = "/";

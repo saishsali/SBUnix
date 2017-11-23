@@ -48,7 +48,7 @@ chdir("/../../../rootfs/bin/../etc/../rootfs/etc");
 getcwd(buf, 1024);
 puts(buf);
 
-
+    
 /* Check sys_mmap, page fault and sys_munmap */
 Case 1:
 char *p = sys_mmap((void *)0x1000, 100, RW_FLAG); // 1 page
@@ -105,65 +105,9 @@ puts(buf);
 
 
 
+
 waitpid
 exit
 execvpe
 pipe
 dup2
-
-
-Fork:
--------------
-Case 1:
-
-int pid = fork();
-if (pid == 0) {
-    write(1, "\nChild 1", 2);
-    yield();
-} else {
-    write(1, "\nParent 1", 2);
-    yield();
-}
-
-Case 2:
-
-int pid = fork();
-if (pid == 0) {
-    write(1, "\nChild 1", 2);
-    yield();
-} else {
-    write(1, "\nParent 1", 2);
-    yield();
-
-    int pid2 = fork();
-    if (pid2 == 0) {
-        write(1, "\nChild 2", 2);
-        yield();
-    } else {
-        write(1, "\nParent 2", 2);
-        yield();
-    }
-}
-
-yield();
-
-Case 3: Check page fault
-
-char *p = sys_mmap((void *)0x1000, 100, RW_FLAG); // 1 page
-strcpy(p, "Hello");
-puts("Before fork: ");
-puts(p);
-
-int pid = fork();
-if (pid == 0) {
-    write(1, "\nChild 1", 2);
-    p[0] = 'W';
-    puts("In child: ");
-    puts(p);
-    yield();
-} else {
-    write(1, "\nParent 1", 2);
-    yield();
-    puts("In parent: ");
-    puts(p);
-}
