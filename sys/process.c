@@ -46,18 +46,6 @@ task_struct *strawman_scheduler() {
     return next;
 }
 
-int process_exist(task_struct *pcb) {
-    task_struct *temp = process_list_head;
-    while(temp != process_list_tail) {
-        if(temp == pcb) {
-            return 1;
-        }
-        temp = temp->next;
-    }
-    return 0;
-
-}
-
 /* Schedule next task, set TSS rsp and context switch */
 void schedule() {
     task_struct *running_pcb = current;
@@ -67,11 +55,7 @@ void schedule() {
     set_cr3(next->cr3);
 
     current = next;
-    if(process_exist(running_pcb)) {
-        _context_switch(current, next);
-    } else {
-        _context_switch(running_pcb, next);
-    }
+    _context_switch(running_pcb, next);
 
 }
 
@@ -327,8 +311,13 @@ void remove_child_from_parent(task_struct *child_task) {
         check if the parent task is in waiting state. Mark that parent task as ready after validating
         that it was waiting on the child_task
     */
-    // if(parent_task->state == WAITING) {
-    // }
+    if(parent_task->state == WAITING) {
+        if(!parent_task->wait_on_child_pid || parent_task->wait_on_child_pid == child_task->pid) {
+            parent_task->wait_on_child_pid = child_task->pid;
+            // since the parent was waiting for this task to finish. After it gets finished state should be READY
+            parent_task->state = READY;
+        }
+    }
     return;
 
 }
@@ -350,6 +339,10 @@ void remove_task_from_process_schedule_list(task_struct *current) {
 }
 
 void remove_parent_from_child(task_struct *parent_task) {
+
+    if(parent_task->wait_on_child_pid != 0)
+        return;
+
     task_struct *current = parent_task->child_head, *temp;
     while(current) {
         current->state = ZOMBIE;

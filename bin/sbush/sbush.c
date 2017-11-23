@@ -351,6 +351,7 @@ int main(int argc, char* argv[], char *envp[]) {
         exit(3);
     } else {
         write(1, "\nParent 1", 2);
+        waitpid(pid, NULL, 0);
         yield();
     }
     puts("\nDone");

@@ -396,6 +396,21 @@ void sys_exit() {
 
 }
 
+int sys_waitpid(int pid, int *status, int options) {
+    // check if the parent has any child
+    if(current->child_head == NULL)
+        return -1;
+
+    if(pid > 0) {
+        current->wait_on_child_pid = pid;
+    } else {
+        current->wait_on_child_pid = 0;
+    }
+
+    current->state = WAITING;
+    return current->wait_on_child_pid;
+}
+
 
 void syscall_handler(stack_registers * registers) {
     switch (registers->rax) {
@@ -440,6 +455,9 @@ void syscall_handler(stack_registers * registers) {
             break;
         case 13:
             sys_exit(registers->rdi);
+            break;
+        case 14:
+            sys_waitpid(registers->rdi, (int *)registers->rsi, registers->rdx);
             break;
     }
 }
