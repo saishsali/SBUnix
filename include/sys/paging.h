@@ -69,12 +69,19 @@ typedef struct PDT PDT;
 typedef struct PT PT;
 
 void setup_page_tables(uint64_t physbase, uint64_t physfree, uint64_t last_physical_address);
+
 void map_page(uint64_t virtual_address, uint64_t physical_address, uint16_t flags);
+
 void load_cr3();
+
 uint64_t get_cr3();
+
 void set_cr3(uint64_t cr3);
+
 void *set_user_address_space();
+
 void *get_page_table_entry(void *virtual_address);
+
 uint64_t virtual_to_physical_address(void *virtual_address);
 
 void remove_page_tables(uint64_t cr3);
