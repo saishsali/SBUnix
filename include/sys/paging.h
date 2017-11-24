@@ -77,6 +77,6 @@ void *set_user_address_space();
 void *get_page_table_entry(void *virtual_address);
 uint64_t virtual_to_physical_address(void *virtual_address);
 
-void empty_page_tables(uint64_t cr3);
+void remove_page_tables(uint64_t cr3);
 
 #endif

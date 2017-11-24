@@ -163,14 +163,14 @@ void remove_vma(vma_struct **vma, mm_struct **mm, vma_struct **prev) {
     }
 }
 
-void empty_vma_list(vma_struct *vma, int parent_exist) {
-    vma_struct *curr_vma = vma;
+void remove_vmas(vma_struct *head, uint8_t is_child) {
+    vma_struct *curr_vma = head;
     vma_struct *prev_vma = NULL;
     uint64_t virtual_address;
 
     while (curr_vma != NULL) {
         virtual_address = curr_vma->start;
-        while (!parent_exist && curr_vma->start < curr_vma->end) {
+        while (!is_child && curr_vma->start < curr_vma->end) {
             free_user_memory((uint64_t *)virtual_address);
             virtual_address += PAGE_SIZE;
         }

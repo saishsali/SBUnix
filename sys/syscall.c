@@ -396,24 +396,24 @@ int8_t sys_execvpe(char *file, char *argv[], char *envp[]) {
 }
 
 void sys_exit() {
-    int parent_exist = 0;
-    //mcheck if the parent exists for this child
-    if(current->parent) {
+    // check if the parent exists for this child
+    if (current->parent) {
         // remove child from its parent and also adjust the siblings list
         remove_child_from_parent(current);
-        parent_exist = 1;
     }
 
     // check if children exists for this parent
-    if(current->child_head) {
+    if (current->child_head) {
         //remove parent from its child and mark all child as zombies
         remove_parent_from_child(current);
     }
 
     // empty vma list
-    empty_vma_list(current->mm->head, parent_exist);
+    remove_vmas(current->mm->head, current->parent ? 1 : 0);
+
     // empty page tables
-    empty_page_tables(current->cr3);
+    remove_page_tables(current->cr3);
+
     // empty file descriptor
     memset((void*)current->file_descriptor, 0, MAX_FD * 8);
     current->state = EXIT;

@@ -212,7 +212,7 @@ void *set_user_address_space() {
     return (void *)new_pml4;
 }
 
-void empty_page_tables(uint64_t cr3) {
+void remove_page_tables(uint64_t cr3) {
     int pml4_index, pdpt_index, pdt_index;
     uint64_t pml4_entry, pdpt_entry, pdt_entry;
     PML4 *task_pml4 = (PML4 *)cr3;
@@ -243,6 +243,9 @@ void empty_page_tables(uint64_t cr3) {
 
                 free_kernel_memory(pt);
             }
+            free_kernel_memory(pdt);
         }
+        free_kernel_memory(pdpt);
     }
+    free_kernel_memory((void *)cr3);
 }
