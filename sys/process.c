@@ -212,7 +212,7 @@ task_struct *create_user_process(char *filename) {
 task_struct *shallow_copy_task(task_struct *parent_task) {
     task_struct *child_task = create_new_task();
     file_descriptor *file_descriptor;
-    vma_struct * parent_task_vma = parent_task->mm->head;
+    vma_struct *parent_task_vma = parent_task->mm->head;
     // memcpy((void *)child_task->mm, (void *)parent_task->mm, sizeof(mm_struct));
     uint64_t physical_address, pte_flags, virtual_address;
     void *pte_entry;
@@ -281,6 +281,7 @@ task_struct *shallow_copy_task(task_struct *parent_task) {
 
                     physical_address = GET_ADDRESS(*(uint64_t *) pte_entry);
                     pte_flags = GET_FLAGS(*(uint64_t *) pte_entry);
+
                     set_cr3(child_task->cr3);
                     // Set Read only and COW bit for child process
                     map_page(virtual_address, physical_address, pte_flags);

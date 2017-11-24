@@ -163,17 +163,23 @@ void remove_vma(vma_struct **vma, mm_struct **mm, vma_struct **prev) {
     }
 }
 
-void remove_vmas(vma_struct *head, uint8_t is_child) {
+void remove_vmas(vma_struct *head) {
     vma_struct *curr_vma = head;
     vma_struct *prev_vma = NULL;
-    uint64_t virtual_address;
+    uint64_t virtual_address, physical_address;
+    void *pte_entry;
 
     while (curr_vma != NULL) {
         virtual_address = curr_vma->start;
-        while (!is_child && virtual_address < curr_vma->end) {
-            free_user_memory((uint64_t *)virtual_address);
+        while (virtual_address < curr_vma->end) {
+            pte_entry = get_page_table_entry((void *)virtual_address);
+            physical_address = GET_ADDRESS(*(uint64_t *)pte_entry);
+            if (get_reference_count(physical_address) == 1) {
+                free_user_memory((uint64_t *)virtual_address);
+            }
             virtual_address += PAGE_SIZE;
         }
+
         prev_vma = curr_vma;
         curr_vma = curr_vma->next;
         free_kernel_memory(prev_vma);

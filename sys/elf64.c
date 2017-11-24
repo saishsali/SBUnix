@@ -38,9 +38,9 @@ uint64_t read_program_header(task_struct *pcb, Elf64_Ehdr *elf_header, Elf64_Phd
     }
 
     // Flags: 1 = executable, 2 = writable, 4 = readable
-    if (program_header->p_flags == 5) {
+    if (program_header->p_flags == (PROT_READ | PROT_EXEC)) {
         vm_type = TEXT;
-    } else if (program_header->p_flags == 6) {
+    } else if (program_header->p_flags == (PROT_READ | PROT_WRITE)) {
         vm_type = DATA;
     } else {
         vm_type = NOTYPE;
@@ -58,7 +58,7 @@ uint64_t read_program_header(task_struct *pcb, Elf64_Ehdr *elf_header, Elf64_Phd
 
     set_cr3(pcb->cr3);
     while (virtual_address < (program_header->p_vaddr + program_header->p_memsz)) {
-        kmalloc_map(PAGE_SIZE, virtual_address, program_header->p_flags | PTE_P);
+        kmalloc_map(PAGE_SIZE, virtual_address, vm_type == TEXT ? RX_FLAG : RW_FLAG);
 
         page_offset = 0;
         while (page_offset < PAGE_SIZE && copy_offset <= program_header->p_filesz) {
@@ -71,7 +71,7 @@ uint64_t read_program_header(task_struct *pcb, Elf64_Ehdr *elf_header, Elf64_Phd
 
     /*
         Alternative to above code:
-        kmalloc_map(program_header->p_memsz, virtual_address, program_header->p_flags | PTE_P);
+        kmalloc_map(program_header->p_memsz, virtual_address, vm_type == TEXT ? RX_FLAG : RW_FLAG);
         memcpy((void*) virtual_address, (void*) elf_header + program_header->p_offset, program_header->p_filesz);
         memset((void *)virtual_address + program_header->p_filesz, 0, program_header->p_memsz - program_header->p_filesz);
     */
@@ -98,10 +98,10 @@ void load_executable(task_struct *pcb, char *filename, Elf64_Ehdr *elf_header) {
     }
 
     // Create VMA for HEAP
-    add_vma(pcb, max_address, PAGE_SIZE, RW, HEAP);
+    add_vma(pcb, max_address, PAGE_SIZE, PROT_READ | PROT_WRITE, HEAP);
 
     // Create VMA for STACK
-    add_vma(pcb, STACK_START - STACK_SIZE, PAGE_SIZE, RW, STACK);
+    add_vma(pcb, STACK_START - PAGE_SIZE, PAGE_SIZE, PROT_READ | PROT_WRITE, STACK);
 
     set_cr3(pcb->cr3);
     kmalloc_map(PAGE_SIZE, STACK_START - PAGE_SIZE, RW_FLAG);

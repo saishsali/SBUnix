@@ -140,11 +140,8 @@ int sys_chdir(char *path) {
 
     char *name = strtok(directory_path, "/");
     while (name != NULL) {
-
         if (strcmp(name, ".") == 0) {
-
         } else if (strcmp(name, "..") == 0) {
-
             if (strcmp(name, ".") != 0) {
                 for (i = strlen(curr) - 2; i >= 0; i--) {
                     if (curr[i] == '/') {
@@ -154,16 +151,13 @@ int sys_chdir(char *path) {
                     }
                 }
             }
-
         } else {
             strcat(curr, name);
             strcat(curr, "/");
         }
 
         strcpy(current->current_dir, curr);
-
         name = strtok(NULL, "/");
-
     }
 
     return 1;
@@ -409,7 +403,7 @@ void sys_exit() {
     }
 
     // empty vma list
-    remove_vmas(current->mm->head, current->parent ? 1 : 0);
+    remove_vmas(current->mm->head);
 
     // empty page tables
     remove_page_tables(current->cr3);
