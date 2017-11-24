@@ -414,7 +414,7 @@ void sys_exit() {
 
     // remove current task from schedule list
     remove_task_from_process_schedule_list(current);
-    // memset((void*)current->kstack, 0, PAGE_SIZE);
+    // TO DO: Free PCB for exited process in sheduling and write half context switch
 
     sys_yield();
 }
