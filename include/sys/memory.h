@@ -15,4 +15,5 @@ vma_struct *add_vma(task_struct *task, uint64_t address, uint64_t size, uint64_t
 void remove_vma(vma_struct **vma, mm_struct **mm, vma_struct **prev);
 
 void remove_vmas(vma_struct *head, uint8_t is_child);
+
 #endif

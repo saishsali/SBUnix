@@ -170,7 +170,7 @@ void remove_vmas(vma_struct *head, uint8_t is_child) {
 
     while (curr_vma != NULL) {
         virtual_address = curr_vma->start;
-        while (!is_child && curr_vma->start < curr_vma->end) {
+        while (!is_child && virtual_address < curr_vma->end) {
             free_user_memory((uint64_t *)virtual_address);
             virtual_address += PAGE_SIZE;
         }

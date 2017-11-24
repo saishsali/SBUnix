@@ -32,16 +32,16 @@ int get_process_id() {
 
 /* Pick the first task from the list and put suspended task at the end of the list */
 task_struct *strawman_scheduler() {
-    current = process_list_head;
+    task_struct *process = process_list_head;
     task_struct *next = process_list_head->next;
     if (next == NULL) {
-        return current;
+        return process;
     }
 
-    process_list_tail->next = current;
-    current->next = NULL;
+    process_list_tail->next = process;
+    process->next = NULL;
     process_list_head = next;
-    process_list_tail = current;
+    process_list_tail = process;
 
     return next;
 }
@@ -56,7 +56,6 @@ void schedule() {
 
     current = next;
     _context_switch(running_pcb, next);
-
 }
 
 void user_thread1() {
@@ -145,8 +144,33 @@ task_struct *create_new_task() {
     pcb->pid = get_process_id();
     pcb->state = READY;
     pcb->cr3 = (uint64_t)set_user_address_space();
+    pcb->rsp = (uint64_t)pcb->kstack + STACK_SIZE - 0x08;
 
     return pcb;
+}
+
+/*
+    - An idle function to schedule tasks in the list
+    - Executed when there are no processes in the list
+*/
+void idle() {
+    while (1) {
+        schedule();
+        __asm__ __volatile__("hlt");
+    }
+}
+
+/* Create a idle process and setup its stack such that the control goes to idle() function on first yield */
+void create_idle_process() {
+    task_struct *pcb = create_new_task();
+    strcpy(pcb->name, "IDLE");
+    pcb->entry = (uint64_t)idle;
+    *((uint64_t *)&pcb->kstack[STACK_SIZE - 8 * 1]) = pcb->entry; // Push Return address
+
+    /* Stack entries from 498 to 510 are reserved for 13 registers pushed/poped in context_switch.s */
+    *((uint64_t *)&pcb->kstack[STACK_SIZE - 8 * 15]) = (uint64_t)pcb;    // Push PCB
+    pcb->rsp = (uint64_t)&pcb->kstack[STACK_SIZE - 8 * 15];
+    add_process(pcb);
 }
 
 /* Create new user process */
