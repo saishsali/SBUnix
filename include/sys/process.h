@@ -3,11 +3,11 @@
 
 #include <sys/defs.h>
 #include <sys/dirent.h>
-#define MAX_PROCESS 10
+#define MAX_PROCESS 1000
 
 #define STACK_START 0xF0000000
-#define STACK_LIMIT 0x2000
-#define STACK_SIZE  0x1000
+#define STACK_LIMIT 0x1000      // 4096 bytes
+#define STACK_SIZE  0x800       // 2048 bytes
 
 #define MAX_FD 10
 

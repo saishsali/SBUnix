@@ -51,7 +51,7 @@ void schedule() {
     task_struct *running_pcb = current;
     task_struct *next = strawman_scheduler();
 
-    set_tss_rsp((void *)((uint64_t)next->kstack + 4096 - 8));
+    set_tss_rsp((void *)((uint64_t)next->kstack + 0x800 - 0x08));
     set_cr3(next->cr3);
 
     current = next;
@@ -73,8 +73,8 @@ void user_thread2() {
 }
 
 void kernel_thread1() {
-    uint64_t *stack = kmalloc_user(4096);
-    process_list_head->u_rsp = (uint64_t)stack + 4096 - 8;
+    uint64_t *stack = kmalloc_user(0x800);
+    process_list_head->u_rsp = (uint64_t)stack + 0x800 - 0x08;
 
     process_list_head->entry = (uint64_t)user_thread1;
     set_tss_rsp((void *)((uint64_t)process_list_head->rsp));
@@ -82,8 +82,8 @@ void kernel_thread1() {
 }
 
 void kernel_thread2() {
-    uint64_t *stack = kmalloc_user(4096);
-    process_list_head->u_rsp = (uint64_t)stack + 4096 - 8;
+    uint64_t *stack = kmalloc_user(0x800);
+    process_list_head->u_rsp = (uint64_t)stack + 0x800 - 0x08;
 
     process_list_head->entry = (uint64_t)user_thread2;
     set_tss_rsp((void *)((uint64_t)process_list_head->rsp));
@@ -108,10 +108,10 @@ void add_process(task_struct *pcb) {
 task_struct *create_thread(void *thread) {
     task_struct *pcb = kmalloc(sizeof(task_struct));
     pcb->pid = get_process_id();
-    *((uint64_t *)&pcb->kstack[511 * 8]) = (uint64_t)thread; // Push Return address
+    *((uint64_t *)&pcb->kstack[STACK_SIZE - 8 * 1]) = (uint64_t)thread; // Push Return address
     /* Stack entries from 498 to 510 are reserved for 13 registers pushed/poped in context_switch.s */
-    *((uint64_t *)&pcb->kstack[497 * 8]) = (uint64_t)pcb;    // Push PCB
-    pcb->rsp = (uint64_t)&pcb->kstack[497 * 8];
+    *((uint64_t *)&pcb->kstack[STACK_SIZE - 8 * 15]) = (uint64_t)pcb;    // Push PCB
+    pcb->rsp = (uint64_t)&pcb->kstack[STACK_SIZE - 8 * 15];
     pcb->next = NULL;
     add_process(pcb);
 
@@ -175,7 +175,7 @@ void create_idle_process() {
 
 /* Create new user process */
 task_struct *create_user_process(char *filename) {
-    char curr_dir[30], new_curr_directory[1024];
+    char curr_dir[30], new_curr_directory[100];
     int i;
 
     Elf64_Ehdr *elf_header = get_elf_header(filename);
@@ -189,8 +189,8 @@ task_struct *create_user_process(char *filename) {
     // Adding current working directory to pcb
     strcpy(curr_dir, "/rootfs/");
 
-    for(i = strlen(filename) - 1; i >= 0; i--) {
-        if(filename[i] == '/') {
+    for (i = strlen(filename) - 1; i >= 0; i--) {
+        if (filename[i] == '/') {
             memcpy(new_curr_directory, filename, i + 1);
         }
     }
@@ -299,7 +299,7 @@ task_struct *shallow_copy_task(task_struct *parent_task) {
 /* Set CR3, Set TSS rsp and switch to ring 3 */
 void switch_to_user_mode(task_struct *pcb) {
     set_cr3(pcb->cr3);
-    set_tss_rsp((void *)((uint64_t)pcb->kstack + 4096 - 8));
+    set_tss_rsp((void *)((uint64_t)pcb->kstack + 0x800 - 0x08));
     _switch_to_ring_3(pcb->entry, pcb->u_rsp);
 }
 
