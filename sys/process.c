@@ -284,7 +284,7 @@ task_struct *shallow_copy_task(task_struct *parent_task) {
                     set_cr3(child_task->cr3);
                     // Set Read only and COW bit for child process
                     map_page(virtual_address, physical_address, pte_flags);
-                    increase_page_reference_count(physical_address);
+                    increment_reference_count(physical_address);
                 }
                 virtual_address += PAGE_SIZE;
             }
