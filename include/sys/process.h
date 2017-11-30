@@ -3,7 +3,7 @@
 
 #include <sys/defs.h>
 #include <sys/dirent.h>
-#define MAX_PROCESS 10
+#define MAX_PROCESS 1000
 
 #define STACK_START 0xF0000000
 #define STACK_LIMIT 0x2000
