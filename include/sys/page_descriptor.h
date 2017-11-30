@@ -30,7 +30,7 @@ void free_kernel_memory(void *virtual_address);
 
 void free_user_memory(void *virtual_address);
 
-void increase_page_reference_count(uint64_t physical_address);
+void increment_reference_count(uint64_t physical_address);
 
 uint16_t get_reference_count(uint64_t physical_address);
 

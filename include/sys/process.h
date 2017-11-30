@@ -6,8 +6,9 @@
 #define MAX_PROCESS 1000
 
 #define STACK_START 0xF0000000
-#define STACK_LIMIT 0x2000
-#define STACK_SIZE  0x1000
+#define STACK_LIMIT 0x2000      // 8192 bytes
+
+#define STACK_SIZE  0x800       // 2048 bytes
 
 #define MAX_FD 10
 
@@ -73,6 +74,7 @@ task_struct *process_list_head, *process_list_tail;
 int process_ids[MAX_PROCESS];
 
 void create_threads();
+
 task_struct *create_user_process(char *);
 
 task_struct *create_user_process();
@@ -80,13 +82,21 @@ task_struct *create_user_process();
 void schedule();
 
 task_struct *shallow_copy_task(task_struct *parent_task);
+
 void switch_to_user_mode(task_struct *pcb);
+
 void setup_child_task_stack(task_struct *parent_task, task_struct *child_task);
+
 void add_process(task_struct *pcb);
 
 void setup_user_process_stack(task_struct *task, char *argv[]);
+
 void remove_child_from_parent(task_struct *current);
+
 void remove_parent_from_child(task_struct *parent_task);
+
 void remove_task_from_process_schedule_list(task_struct *current);
+
+void create_idle_process();
 
 #endif

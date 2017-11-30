@@ -66,6 +66,8 @@ void start(uint32_t *modulep, void *physbase, void *physfree) {
 
     /* Create user process, load its executable and switch to ring 3*/
     task_struct *pcb = create_user_process("bin/sbush");
+    create_idle_process();
+
     switch_to_user_mode(pcb);
 }
 
