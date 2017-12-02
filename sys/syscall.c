@@ -362,13 +362,11 @@ pid_t sys_fork() {
     - Load executable in memory
     - Setup the stack of the new process to push specified arguments
     - Switch to the new mode for the new process
+    - Consideration: Execvpe is called by a leaf node process (i.e. with no childs)
 */
 int8_t sys_execvpe(char *file, char *argv[], char *envp[]) {
 
     // Child exit, mark the parent as ready that is waiting for it
-
-    current->parent->state = READY;
-
     task_struct *task = create_user_process(file);
     setup_user_process_stack(task, argv);
 
@@ -393,6 +391,15 @@ int8_t sys_execvpe(char *file, char *argv[], char *envp[]) {
     update_siblings(current, task);
     task->child_head = current->child_head;
     current->state = ZOMBIE;
+
+    // empty vma list
+    remove_vmas(current->mm->head);
+
+    // empty page tables
+    remove_page_tables(current->cr3);
+
+    // empty file descriptor
+    memset((void*)current->file_descriptor, 0, MAX_FD * 8);
 
     switch_to_user_mode(task);
 
@@ -430,10 +437,10 @@ void sys_exit() {
 
 int sys_waitpid(int pid, int *status, int options) {
     // check if the parent has any child
-    if(current->child_head == NULL)
+    if (current->child_head == NULL)
         return -1;
 
-    if(pid > 0) {
+    if (pid > 0) {
         current->wait_on_child_pid = pid;
     } else {
         current->wait_on_child_pid = 0;
@@ -442,6 +449,21 @@ int sys_waitpid(int pid, int *status, int options) {
     current->state = WAITING;
 
     sys_yield();
+
+    return current->wait_on_child_pid;
+}
+
+int sys_wait(int *status) {
+    // check if the parent has any child
+    if (current->child_head == NULL)
+        return -1;
+
+    current->wait_on_child_pid = 0;
+
+    current->state = WAITING;
+
+    sys_yield();
+
     return current->wait_on_child_pid;
 }
 

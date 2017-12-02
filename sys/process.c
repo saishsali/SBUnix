@@ -64,7 +64,6 @@ task_struct *strawman_scheduler() {
         if (process->state == WAITING) {
             process_list_tail->next = process;
             tail = process;
-            
         } else if (process->state == ZOMBIE) {
             flag = 0;
             temp = process;
@@ -80,7 +79,7 @@ task_struct *strawman_scheduler() {
             process_list_tail = tail;
         }
 
-        
+
     } while (process->state != READY);
 
     return process;
@@ -560,5 +559,5 @@ void update_siblings(task_struct *old_task, task_struct *new_task) {
 }
 
 void remove_pcb() {
-    
+
 }

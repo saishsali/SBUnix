@@ -61,7 +61,7 @@ struct PCB {
     struct file_descriptor* file_descriptor[MAX_FD];
     char current_dir[100];
     char name[20];
-    uint64_t wait_on_child_pid;
+    uint16_t wait_on_child_pid;
     struct PCB *parent;
     struct PCB *siblings;
     struct PCB *child_head;
