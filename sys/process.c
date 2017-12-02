@@ -32,29 +32,32 @@ int get_process_id() {
 
 /* Pick the first task from the list and put suspended task at the end of the list */
 task_struct *strawman_scheduler() {
-    task_struct *process = process_list_head;
-    task_struct *next = process_list_head->next;
-    if (next == NULL) {
-        return process;
-    }
+    task_struct *process = process_list_head, *tail;
 
-    process_list_tail->next = process;
-    process->next = NULL;
-    process_list_head = next;
-    process_list_tail = process;
+    do {
+        tail = process;
+        process = process->next;
 
-    return next;
+        process_list_tail->next = tail;
+        tail->next = NULL;
+        process_list_head = process;
+        process_list_tail = tail;
+    } while (process->state != READY);
+
+    return process;
 }
 
 /* Schedule next task, set TSS rsp and context switch */
 void schedule() {
     task_struct *running_pcb = current;
-    task_struct *next = strawman_scheduler();
+    running_pcb->state = READY;
 
-    set_tss_rsp((void *)((uint64_t)next->kstack + 0x800 - 0x08));
+    task_struct *next   = strawman_scheduler();
+    next->state         = RUNNING;
+    current             = next;
+
     set_cr3(next->cr3);
-
-    current = next;
+    set_tss_rsp((void *)((uint64_t)next->kstack + 0x800 - 0x08));
     _context_switch(running_pcb, next);
 }
 
@@ -299,6 +302,7 @@ task_struct *shallow_copy_task(task_struct *parent_task) {
 
 /* Set CR3, Set TSS rsp and switch to ring 3 */
 void switch_to_user_mode(task_struct *pcb) {
+    pcb->state = RUNNING;
     set_cr3(pcb->cr3);
     set_tss_rsp((void *)((uint64_t)pcb->kstack + 0x800 - 0x08));
     _switch_to_ring_3(pcb->entry, pcb->u_rsp);
