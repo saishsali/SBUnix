@@ -335,16 +335,28 @@ int main(int argc, char* argv[], char *envp[]) {
 
     // env = envp;
     // lifetime(argc, argv);
-    char *args[2] = {"Hello", "World"};
+
+    // while(1);
 
     int pid = fork();
     if (pid == 0) {
-        execvpe("bin/cat", args, NULL);
-    } else {
+        write(1, "\nChild 1", 2);
         yield();
-    }
-    puts("\nDone");
+    } else {
+        write(1, "\nParent 1", 2);
+        yield();
 
-    while(1);
+        int pid2 = fork();
+        if (pid2 == 0) {
+            write(1, "\nChild 2", 2);
+            yield();
+        } else {
+            write(1, "\nParent 2", 2);
+            yield();
+        }
+    }
+
+    yield();
+
     return 0;
 }

@@ -30,6 +30,28 @@ int get_process_id() {
     return -1;
 }
 
+/* Set current task and make it the head of the process linked list */
+void set_current_task(task_struct *pcb) {
+    if (current == pcb) {
+        return;
+    }
+    if (process_list_head == pcb) {
+        current = pcb;
+    }
+    task_struct *process = process_list_head, *tail;
+
+    while (process != pcb) {
+        tail = process;
+        process = process->next;
+
+        process_list_tail->next = tail;
+        tail->next = NULL;
+        process_list_head = process;
+        process_list_tail = tail;
+    }
+    current = pcb;
+}
+
 /* Pick the first task from the list and put suspended task at the end of the list */
 task_struct *strawman_scheduler() {
     task_struct *process = process_list_head, *tail;
@@ -63,14 +85,14 @@ void schedule() {
 
 void user_thread1() {
     // while (1) {
-    //     // write(1, "User thread: 1, ", 16);
+    //     write(1, "User thread: 1, ", 16);
     //     yield();
     // }
 }
 
 void user_thread2() {
     // while (1) {
-    //     // write(1, "User thread: 2, ", 16);
+    //     write(1, "User thread: 2, ", 16);
     //     yield();
     // }
 }
@@ -302,6 +324,7 @@ task_struct *shallow_copy_task(task_struct *parent_task) {
 
 /* Set CR3, Set TSS rsp and switch to ring 3 */
 void switch_to_user_mode(task_struct *pcb) {
+    set_current_task(pcb);
     pcb->state = RUNNING;
     set_cr3(pcb->cr3);
     set_tss_rsp((void *)((uint64_t)pcb->kstack + 0x800 - 0x08));
