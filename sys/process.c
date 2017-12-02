@@ -521,3 +521,24 @@ void setup_user_process_stack(task_struct *task, char *argv[]) {
     // Switch to the virtual address space of the current process
     set_cr3(current_cr3);
 }
+
+/* Update siblings list to replace old task with new task */
+void update_siblings(task_struct *old_task, task_struct *new_task) {
+    task_struct *parent = old_task->parent;
+
+    if (parent->child_head == old_task) {
+        new_task->siblings = old_task->siblings;
+        parent->child_head = new_task;
+        return;
+    }
+
+    task_struct *process = parent->child_head, *prev;
+
+    while (process != old_task) {
+        prev = process;
+        process = process->siblings;
+    }
+
+    prev->siblings = new_task;
+    new_task->siblings = process->siblings;
+}

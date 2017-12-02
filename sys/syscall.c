@@ -384,6 +384,11 @@ int8_t sys_execvpe(char *file, char *argv[], char *envp[]) {
         sizeof(current->file_descriptor[0]) * MAX_FD
     );
 
+    // Update sibling list of the current task to add new task in place of old task
+    update_siblings(current, task);
+    task->child_head = current->child_head;
+    current->state = ZOMBIE;
+
     switch_to_user_mode(task);
 
     return -1;
@@ -410,7 +415,7 @@ void sys_exit() {
 
     // empty file descriptor
     memset((void*)current->file_descriptor, 0, MAX_FD * 8);
-    current->state = EXIT;
+    current->state = ZOMBIE;
 
     // remove current task from schedule list
     remove_task_from_process_schedule_list(current);
