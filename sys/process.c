@@ -55,32 +55,23 @@ void set_current_task(task_struct *pcb) {
 /* Pick the first task from the list and put suspended task at the end of the list */
 task_struct *strawman_scheduler() {
     task_struct *process = process_list_head, *tail, *temp;
-    int flag = 1;
 
-    do {
+    while (process->state != READY && process->next != NULL) {
         tail = process;
         process = process->next;
 
-        if (process->state == WAITING) {
-            process_list_tail->next = process;
-            tail = process;
-        } else if (process->state == ZOMBIE) {
-            flag = 0;
+        process_list_tail->next = tail;
+        tail->next = NULL;
+        process_list_tail = tail;
+
+        if (process->state == ZOMBIE) {
             temp = process;
             process = process->next;
             // free PCB for exited process
             remove_pcb(temp);
         }
-
-        if (flag == 1) {
-            process_list_tail->next = tail;
-            tail->next = NULL;
-            process_list_head = process;
-            process_list_tail = tail;
-        }
-
-
-    } while (process->state != READY);
+        process_list_head = process;
+    }
 
     return process;
 }
@@ -88,11 +79,14 @@ task_struct *strawman_scheduler() {
 /* Schedule next task, set TSS rsp and context switch */
 void schedule() {
     task_struct *running_pcb = current;
-    running_pcb->state = READY;
 
     task_struct *next   = strawman_scheduler();
     next->state         = RUNNING;
     current             = next;
+
+    if (running_pcb->state == RUNNING) {
+        running_pcb->state = READY;
+    }
 
     set_cr3(next->cr3);
     set_tss_rsp((void *)((uint64_t)next->kstack + 0x800 - 0x08));
