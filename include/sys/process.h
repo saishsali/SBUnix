@@ -45,7 +45,7 @@ struct mm_struct {
     vma_struct *tail;
 };
 
-typedef enum { RUNNING, SLEEPING, ZOMBIE, READY, EXIT, WAITING } STATE;
+typedef enum { EXIT, READY, WAITING } STATE;
 
 struct PCB {
     uint64_t rsp;

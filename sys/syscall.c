@@ -364,6 +364,11 @@ pid_t sys_fork() {
     - Switch to the new mode for the new process
 */
 int8_t sys_execvpe(char *file, char *argv[], char *envp[]) {
+
+    // Child exit, mark the parent as ready that is waiting for it
+
+    current->parent->state = READY;
+
     task_struct *task = create_user_process(file);
     setup_user_process_stack(task, argv);
 
@@ -398,7 +403,7 @@ void sys_exit() {
 
     // check if children exists for this parent
     if (current->child_head) {
-        //remove parent from its child and mark all child as zombies
+        //remove parent from its child
         remove_parent_from_child(current);
     }
 
@@ -410,10 +415,11 @@ void sys_exit() {
 
     // empty file descriptor
     memset((void*)current->file_descriptor, 0, MAX_FD * 8);
+
     current->state = EXIT;
 
     // remove current task from schedule list
-    remove_task_from_process_schedule_list(current);
+    // remove_task_from_process_schedule_list(current);
     // TO DO: Free PCB for exited process in sheduling and write half context switch
 
     sys_yield();
@@ -431,6 +437,8 @@ int sys_waitpid(int pid, int *status, int options) {
     }
 
     current->state = WAITING;
+
+    sys_yield();
     return current->wait_on_child_pid;
 }
 

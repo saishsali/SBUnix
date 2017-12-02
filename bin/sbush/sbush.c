@@ -335,13 +335,17 @@ int main(int argc, char* argv[], char *envp[]) {
 
     // env = envp;
     // lifetime(argc, argv);
-    char *args[2] = {"Hello", "World"};
+    // char *args[2] = {"Hello", "World"};
 
     int pid = fork();
     if (pid == 0) {
-        execvpe("bin/cat", args, NULL);
+        exit(1);
+        puts("i m  here");
+
+        // execvpe("bin/cat", args, NULL);
     } else {
-        yield();
+        waitpid(pid, NULL, 0);
+        // yield();
     }
     puts("\nDone");
 

@@ -34,8 +34,26 @@ int get_process_id() {
 task_struct *strawman_scheduler() {
     task_struct *process = process_list_head;
     task_struct *next = process_list_head->next;
+    task_struct *temp;
     if (next == NULL) {
         return process;
+    }
+
+    if(next->state == WAITING) {
+        while (next->state == WAITING) {
+            process_list_tail->next = next;
+            process_list_tail = next;
+            next = process_list_head->next;   
+        }
+        
+    } else if(next->state == EXIT) {
+        while (next->state == EXIT) {
+            temp = next;
+            next = process_list_head->next;
+            // free PCB for exited process
+            memset(temp->kstack, 0, STACK_SIZE);
+            temp = NULL;
+        }
     }
 
     process_list_tail->next = process;
@@ -316,27 +334,27 @@ void remove_child_from_parent(task_struct *child_task) {
         } else {
             parent_task->child_head = parent_task->child_head->siblings;
         }
-        return;
-    }
 
-    children = parent_task->child_head;
-    if (children) {
-        while (children != NULL) {
-            if (children == child_task) {
-                break;
+    } else {
+        children = parent_task->child_head;
+        if (children) {
+            while (children != NULL) {
+                if (children == child_task) {
+                    break;
+                }
+                prev_child = children;
+                children = children->siblings;
             }
-            prev_child = children;
-            children = children->siblings;
         }
-    }
 
-    // child task does not exist in parent list
-    if (!children) {
-        return;
-    }
+        // child task does not exist in parent list
+        if (!children) {
+            return;
+        }
 
-    // remove child from its sibling list
-    prev_child->siblings = child_task->siblings;
+        // remove child from its sibling list
+        prev_child->siblings = child_task->siblings;
+    }
 
     /*
         check if the parent task is in waiting state. Mark that parent task as ready after validating
@@ -373,7 +391,6 @@ void remove_parent_from_child(task_struct *parent_task) {
 
     task_struct *current = parent_task->child_head, *temp;
     while (current) {
-        current->state = ZOMBIE;
         temp = current;
         current = current->next;
         temp->siblings = NULL;
