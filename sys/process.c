@@ -54,7 +54,7 @@ void set_current_task(task_struct *pcb) {
 
 /* Pick the first task from the list and put suspended task at the end of the list */
 task_struct *strawman_scheduler() {
-    task_struct *process = process_list_head, *tail;
+    task_struct *process = process_list_head, *tail, *temp;
     int flag = 1;
 
     do {
@@ -65,7 +65,7 @@ task_struct *strawman_scheduler() {
             process_list_tail->next = process;
             tail = process;
             
-        } else if (process->state == EXIT) {
+        } else if (process->state == ZOMBIE) {
             flag = 0;
             temp = process;
             process = process->next;
@@ -557,4 +557,8 @@ void update_siblings(task_struct *old_task, task_struct *new_task) {
 
     prev->siblings = new_task;
     new_task->siblings = process->siblings;
+}
+
+void remove_pcb() {
+    
 }

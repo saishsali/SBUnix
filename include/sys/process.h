@@ -99,6 +99,8 @@ void remove_task_from_process_schedule_list(task_struct *current);
 
 void create_idle_process();
 
+void remove_pcb();
+
 void update_siblings(task_struct *old_task, task_struct *new_task);
 
 #endif
