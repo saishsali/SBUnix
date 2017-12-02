@@ -33,6 +33,8 @@ int main(int argc, char *argv[], char *envp[]) {
     puts(argv[1]);
     puts("Hello man");
 
+    exit(1);
+
     // sys_exit();
     while(1);
 

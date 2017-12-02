@@ -205,7 +205,16 @@ void create_idle_process() {
     /* Stack entries from 498 to 510 are reserved for 13 registers pushed/poped in context_switch.s */
     *((uint64_t *)&pcb->kstack[STACK_SIZE - 8 * 15]) = (uint64_t)pcb;    // Push PCB
     pcb->rsp = (uint64_t)&pcb->kstack[STACK_SIZE - 8 * 15];
+    idle_process = pcb;
     add_process(pcb);
+}
+
+void add_child_to_parent(task_struct* child_task, task_struct* parent_task) {
+    child_task->parent = parent_task;
+    if (parent_task->child_head) {
+        child_task->siblings = parent_task->child_head;
+    }
+    parent_task->child_head = child_task;
 }
 
 /* Create new user process */
@@ -388,32 +397,16 @@ void remove_child_from_parent(task_struct *child_task) {
     }
 }
 
-void remove_task_from_process_schedule_list(task_struct *current) {
-    task_struct *temp = process_list_head, *prev = NULL;
-    while (temp != process_list_tail) {
-        if (temp == current) {
-            if (prev) {
-                prev->next = current->next;
-            } else {
-                // task is at the head
-                process_list_head = process_list_head->next;
-            }
-        }
-        prev = temp;
-        temp = temp->next;
-    }
-}
-
 void remove_parent_from_child(task_struct *parent_task) {
-    if (parent_task->wait_on_child_pid != 0)
-        return;
+    task_struct *current = parent_task->child_head;
 
-    task_struct *current = parent_task->child_head, *temp;
-    while (current) {
-        temp = current;
-        current = current->next;
-        temp->siblings = NULL;
+    while(current->siblings) {
+        current->parent = idle_process;
+        current = current->siblings;
     }
+    current->parent = idle_process;
+    current->siblings = idle_process->child_head;
+    idle_process->child_head = parent_task->child_head;
 }
 
 /*
@@ -552,6 +545,6 @@ void update_siblings(task_struct *old_task, task_struct *new_task) {
     new_task->siblings = process->siblings;
 }
 
-void remove_pcb() {
-
+void remove_pcb(task_struct *pcb) {
+    free_kernel_memory(pcb);
 }
