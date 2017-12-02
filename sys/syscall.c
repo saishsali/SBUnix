@@ -365,7 +365,6 @@ pid_t sys_fork() {
     - Consideration: Execvpe is called by a leaf node process (i.e. with no childs)
 */
 int8_t sys_execvpe(char *file, char *argv[], char *envp[]) {
-
     // Child exit, mark the parent as ready that is waiting for it
     task_struct *task = create_user_process(file);
     setup_user_process_stack(task, argv);
@@ -429,17 +428,18 @@ void sys_exit() {
     // empty file descriptor
     memset((void*)current->file_descriptor, 0, MAX_FD * 8);
     current->state = ZOMBIE;
+
     // remove current task from schedule list
     // remove_task_from_process_schedule_list(current);
-    // TO DO: Free PCB for exited process in sheduling and write half context switch
 
     sys_yield();
 }
 
 int sys_waitpid(int pid, int *status, int options) {
     // check if the parent has any child
-    if (current->child_head == NULL)
+    if (current->child_head == NULL) {
         return -1;
+    }
 
     if (pid > 0) {
         current->wait_on_child_pid = pid;
@@ -456,11 +456,11 @@ int sys_waitpid(int pid, int *status, int options) {
 
 int sys_wait(int *status) {
     // check if the parent has any child
-    if (current->child_head == NULL)
+    if (current->child_head == NULL) {
         return -1;
+    }
 
     current->wait_on_child_pid = 0;
-
     current->state = WAITING;
 
     sys_yield();
