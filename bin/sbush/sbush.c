@@ -345,10 +345,30 @@ int main(int argc, char* argv[], char *envp[]) {
         // execvpe("bin/cat", args, NULL);
     } else {
         waitpid(pid, NULL, 0);
-        // yield();
     }
-    puts("\nDone");
+    puts("Done");
 
-    while(1);
+    // while(1);
+
+    // int pid = fork();
+    // if (pid == 0) {
+    //     write(1, "\nChild 1", 2);
+    //     yield();
+    // } else {
+    //     write(1, "\nParent 1", 2);
+    //     yield();
+
+    //     int pid2 = fork();
+    //     if (pid2 == 0) {
+    //         write(1, "\nChild 2", 2);
+    //         yield();
+    //     } else {
+    //         write(1, "\nParent 2", 2);
+    //         yield();
+    //     }
+    // }
+
+    // yield();
+
     return 0;
 }

@@ -30,62 +30,86 @@ int get_process_id() {
     return -1;
 }
 
+/* Set current task and make it the head of the process linked list */
+void set_current_task(task_struct *pcb) {
+    if (current == pcb) {
+        return;
+    }
+    if (process_list_head == pcb) {
+        current = pcb;
+    }
+    task_struct *process = process_list_head, *tail;
+
+    while (process != pcb) {
+        tail = process;
+        process = process->next;
+
+        process_list_tail->next = tail;
+        tail->next = NULL;
+        process_list_head = process;
+        process_list_tail = tail;
+    }
+    current = pcb;
+}
+
 /* Pick the first task from the list and put suspended task at the end of the list */
 task_struct *strawman_scheduler() {
-    task_struct *process = process_list_head;
-    task_struct *next = process_list_head->next;
-    task_struct *temp;
-    if (next == NULL) {
-        return process;
-    }
+    task_struct *process = process_list_head, *tail;
+    int flag = 1;
 
-    if(next->state == WAITING) {
-        while (next->state == WAITING) {
-            process_list_tail->next = next;
-            process_list_tail = next;
-            next = process_list_head->next;   
-        }
-        
-    } else if(next->state == EXIT) {
-        while (next->state == EXIT) {
-            temp = next;
-            next = process_list_head->next;
+    do {
+        tail = process;
+        process = process->next;
+
+        if (process->state == WAITING) {
+            process_list_tail->next = process;
+            tail = process;
+            
+        } else if (process->state == EXIT) {
+            flag = 0;
+            temp = process;
+            process = process->next;
             // free PCB for exited process
-            memset(temp->kstack, 0, STACK_SIZE);
-            temp = NULL;
+            remove_pcb(temp);
         }
-    }
 
-    process_list_tail->next = process;
-    process->next = NULL;
-    process_list_head = next;
-    process_list_tail = process;
+        if (flag == 1) {
+            process_list_tail->next = tail;
+            tail->next = NULL;
+            process_list_head = process;
+            process_list_tail = tail;
+        }
 
-    return next;
+        
+    } while (process->state != READY);
+
+    return process;
 }
 
 /* Schedule next task, set TSS rsp and context switch */
 void schedule() {
     task_struct *running_pcb = current;
-    task_struct *next = strawman_scheduler();
+    running_pcb->state = READY;
 
-    set_tss_rsp((void *)((uint64_t)next->kstack + 0x800 - 0x08));
+    task_struct *next   = strawman_scheduler();
+    next->state         = RUNNING;
+    current             = next;
+
     set_cr3(next->cr3);
-
-    current = next;
+    set_tss_rsp((void *)((uint64_t)next->kstack + 0x800 - 0x08));
     _context_switch(running_pcb, next);
 }
 
 void user_thread1() {
     // while (1) {
-    //     // write(1, "User thread: 1, ", 16);
+    //     write(1, "User thread: 1, ", 16);
     //     yield();
     // }
 }
 
 void user_thread2() {
     // while (1) {
-    //     // write(1, "User thread: 2, ", 16);
+    //     write(1, "User thread: 2, ", 16);
     //     yield();
     // }
 }
@@ -317,6 +341,8 @@ task_struct *shallow_copy_task(task_struct *parent_task) {
 
 /* Set CR3, Set TSS rsp and switch to ring 3 */
 void switch_to_user_mode(task_struct *pcb) {
+    set_current_task(pcb);
+    pcb->state = RUNNING;
     set_cr3(pcb->cr3);
     set_tss_rsp((void *)((uint64_t)pcb->kstack + 0x800 - 0x08));
     _switch_to_ring_3(pcb->entry, pcb->u_rsp);
@@ -510,4 +536,25 @@ void setup_user_process_stack(task_struct *task, char *argv[]) {
 
     // Switch to the virtual address space of the current process
     set_cr3(current_cr3);
+}
+
+/* Update siblings list to replace old task with new task */
+void update_siblings(task_struct *old_task, task_struct *new_task) {
+    task_struct *parent = old_task->parent;
+
+    if (parent->child_head == old_task) {
+        new_task->siblings = old_task->siblings;
+        parent->child_head = new_task;
+        return;
+    }
+
+    task_struct *process = parent->child_head, *prev;
+
+    while (process != old_task) {
+        prev = process;
+        process = process->siblings;
+    }
+
+    prev->siblings = new_task;
+    new_task->siblings = process->siblings;
 }
