@@ -32,7 +32,7 @@ void page_fault_exception(stack_registers *registers) {
             if (page_fault_address >= vma->start && page_fault_address < vma->end) {
                 if (vma->type == STACK) {
                     // Auto growing stack
-                    kmalloc_map(PAGE_SIZE, ROUND_DOWN(page_fault_address, PAGE_SIZE), RW_FLAG);
+                    kmalloc_map(page_fault_address - vma->start, ROUND_DOWN(page_fault_address, PAGE_SIZE), RW_FLAG);
                     break;
                 } else {
                     kmalloc_map(vma->end - vma->start, vma->start, RW_FLAG);
