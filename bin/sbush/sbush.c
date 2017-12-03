@@ -253,8 +253,9 @@ int execute(char **tokens, int is_bg) {
         } else if (pid < 0) {
             puts("Fork error");
         } else {
-            if (is_bg == 0)
+            if (is_bg == 0) {
                 waitpid(pid, NULL, 0);
+            }
         }
     }
 
