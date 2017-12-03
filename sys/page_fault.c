@@ -9,6 +9,7 @@
 #include <sys/string.h>
 
 extern task_struct *current;
+void _flush_tlb();
 
 /* Get CR2 register value */
 uint64_t get_cr2() {
@@ -74,4 +75,5 @@ void page_fault_exception(stack_registers *registers) {
             }
         }
     }
+    _flush_tlb();
 }
