@@ -214,3 +214,26 @@ if (pid == 0) {
 } else {
     yield();
 }
+
+
+----------------WAIT-------------------
+
+int pid = fork();
+if (pid == 0) {
+    write(1, "\nChild 1", 2);
+    execvpe("bin/cat", NULL, NULL);
+} else {
+    write(1, "\nParent 1", 2);
+    pid = wait(NULL);
+    putchar(pid + 48);
+
+    int pid2 = fork();
+    if (pid2 == 0) {
+        write(1, "\nChild 2", 2);
+        execvpe("bin/cat", NULL, NULL);
+    } else {
+        write(1, "\nParent 2", 2);
+        pid2 = wait(NULL);
+        putchar(pid2 + 48);
+    }
+}
