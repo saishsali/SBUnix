@@ -141,13 +141,11 @@ int sys_chdir(char *path) {
     while (name != NULL) {
         if (strcmp(name, ".") == 0) {
         } else if (strcmp(name, "..") == 0) {
-            if (strcmp(name, ".") != 0) {
-                for (i = strlen(curr) - 2; i >= 0; i--) {
-                    if (curr[i] == '/') {
-                        memcpy(curr, curr, i + 1);
-                        curr[i+1] = '\0';
-                        break;
-                    }
+            for (i = strlen(curr) - 2; i >= 0; i--) {
+                if (curr[i] == '/') {
+                    memcpy(curr, curr, i + 1);
+                    curr[i+1] = '\0';
+                    break;
                 }
             }
         } else {
@@ -159,7 +157,7 @@ int sys_chdir(char *path) {
         name = strtok(NULL, "/");
     }
 
-    return 1;
+    return 0;
 }
 
 void sys_close(int fd) {

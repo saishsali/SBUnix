@@ -127,7 +127,22 @@ void keyboard_interrupt() {
     // If a key is pressed
     if (scancode < SIZE) {
 
-        output_buf[scan_len] = scancode_ascii[scancode];
+        if (shift_key(scancode)) { // If a shift key is pressed
+            return;
+        } else if (control_key(scancode)) { // If a control key is pressed
+            return;
+        } else if (shift == 1) { // If a shift key was pressed
+            ch1 = scancode_ascii_shift[scancode];
+            shift = 0;
+        } else if (control == 1) { // If a control key was pressed
+            ch1 = '^';
+            ch2 = scancode_ascii_shift[scancode];
+            control = 0;
+        } else {
+            ch1 = scancode_ascii[scancode];
+        }
+
+        output_buf[scan_len] = ch1;
 
         if(scan_flag == 1) {
 
@@ -158,21 +173,6 @@ void keyboard_interrupt() {
                     max_scan_len = scan_len + 1;
                 }
             }
-        }
-
-        if (shift_key(scancode)) { // If a shift key is pressed
-            return;
-        } else if (control_key(scancode)) { // If a control key is pressed
-            return;
-        } else if (shift == 1) { // If a shift key was pressed
-            ch1 = scancode_ascii_shift[scancode];
-            shift = 0;
-        } else if (control == 1) { // If a control key was pressed
-            ch1 = '^';
-            ch2 = scancode_ascii_shift[scancode];
-            control = 0;
-        } else {
-            ch1 = scancode_ascii[scancode];
         }
 
         kprintf_pos(ROW, COLUMN, "Last pressed glyph: %c%c", ch1, ch2);

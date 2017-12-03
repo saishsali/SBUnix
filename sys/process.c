@@ -236,8 +236,10 @@ task_struct *create_user_process(char *filename) {
     for (i = strlen(filename) - 1; i >= 0; i--) {
         if (filename[i] == '/') {
             memcpy(new_curr_directory, filename, i + 1);
+            break;
         }
     }
+    new_curr_directory[i+1] = '\0';
     strcat(curr_dir, new_curr_directory);
     strcpy(pcb->current_dir, curr_dir);
     pcb->rsp = (uint64_t)pcb->kstack + STACK_SIZE - 8;
