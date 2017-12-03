@@ -69,15 +69,13 @@ struct PCB {
 
 typedef struct PCB task_struct;
 
-task_struct *process_list_head, *process_list_tail;
+task_struct *process_list_head, *process_list_tail, *idle_process;
 
 int process_ids[MAX_PROCESS];
 
 void create_threads();
 
 task_struct *create_user_process(char *);
-
-task_struct *create_user_process();
 
 void schedule();
 
@@ -95,11 +93,11 @@ void remove_child_from_parent(task_struct *current);
 
 void remove_parent_from_child(task_struct *parent_task);
 
-void remove_task_from_process_schedule_list(task_struct *current);
-
 void create_idle_process();
 
-void remove_pcb();
+void remove_pcb(task_struct *pcb);
+
+void add_child_to_parent(task_struct* child_task, task_struct* parent_task);
 
 void update_siblings(task_struct *old_task, task_struct *new_task);
 

@@ -14,6 +14,7 @@
 #include <sys/elf64.h>
 #include <sys/syscall.h>
 #include <sys/string.h>
+#include <sys/paging.h>
 
 #define INITIAL_STACK_SIZE 4096
 uint8_t initial_stack[INITIAL_STACK_SIZE]__attribute__((aligned(16)));
@@ -67,6 +68,7 @@ void start(uint32_t *modulep, void *physbase, void *physfree) {
 
     /* Create user process, load its executable and switch to ring 3 */
     task_struct *pcb = create_user_process("bin/sbush");
+    add_child_to_parent(pcb, idle_process);
 
     switch_to_user_mode(pcb);
 }
