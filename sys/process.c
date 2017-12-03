@@ -395,6 +395,8 @@ void remove_child_from_parent(task_struct *child_task) {
             parent_task->state = READY;
         }
     }
+    child_task->parent = NULL;
+
 }
 
 void remove_parent_from_child(task_struct *parent_task) {
