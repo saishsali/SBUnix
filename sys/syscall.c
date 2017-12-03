@@ -35,6 +35,9 @@ int sys_read(uint64_t fd, char* buff, uint64_t length) {
         if ((current->file_descriptor[fd] != NULL) && (current->file_descriptor[fd]->permission != O_WRONLY)) {
             len_read = current->file_descriptor[fd]->cursor;
             len_end  = current->file_descriptor[fd]->node->last;
+            if (len_read > len_end) {
+                return 0;
+            }
             if (length > (len_end - len_read))
                 length = len_end - len_read;
             current->file_descriptor[fd]->cursor += length;
