@@ -30,8 +30,14 @@ void page_fault_exception(stack_registers *registers) {
         vma_struct *vma = current->mm->head;
         while (vma != NULL) {
             if (page_fault_address >= vma->start && page_fault_address < vma->end) {
-                kmalloc_map(vma->end - vma->start, vma->start, RW_FLAG);
-                break;
+                if (vma->type == STACK) {
+                    // Auto growing stack
+                    kmalloc_map(PAGE_SIZE, ROUND_DOWN(page_fault_address, PAGE_SIZE), RW_FLAG);
+                    break;
+                } else {
+                    kmalloc_map(vma->end - vma->start, vma->start, RW_FLAG);
+                    break;
+                }
             }
             vma = vma->next;
         }

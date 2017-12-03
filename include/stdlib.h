@@ -10,5 +10,5 @@ void *malloc(size_t size);
 void free(void *ptr);
 
 char* getenv(const char *name);
-int setenv(const char *name, const char *value, int overwrite);
+void setenv(const char *name, const char *value);
 #endif

@@ -101,7 +101,7 @@ void load_executable(task_struct *pcb, char *filename, Elf64_Ehdr *elf_header) {
     add_vma(pcb, max_address, PAGE_SIZE, PROT_READ | PROT_WRITE, HEAP);
 
     // Create VMA for STACK
-    add_vma(pcb, STACK_START - PAGE_SIZE, PAGE_SIZE, PROT_READ | PROT_WRITE, STACK);
+    add_vma(pcb, STACK_START - STACK_LIMIT, STACK_LIMIT, PROT_READ | PROT_WRITE, STACK);
 
     set_cr3(pcb->cr3);
     kmalloc_map(PAGE_SIZE, STACK_START - PAGE_SIZE, RW_FLAG);
