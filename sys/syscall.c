@@ -21,7 +21,6 @@ int sys_write(uint64_t fd, uint64_t str, int length) {
         kprintf("%s", str);
     }
     return length;
-
 }
 
 int sys_read(uint64_t fd, char* buff, uint64_t length) {
@@ -515,7 +514,10 @@ void syscall_handler(stack_registers * registers) {
             sys_exit(registers->rdi);
             break;
         case 14:
-            sys_waitpid(registers->rdi, (int *)registers->rsi, registers->rdx);
+            registers->rax = sys_waitpid(registers->rdi, (int *)registers->rsi, registers->rdx);
+            break;
+        case 61:
+            registers->rax = sys_wait((int *)registers->rdi);
             break;
     }
 }

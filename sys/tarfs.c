@@ -57,8 +57,8 @@ void parse(char *dir_path, int type, uint64_t first, uint64_t last) {
         aux_node = currnode;
 
         // iterate through all childrens of currnode
-        for(i = 2; i < currnode->last; i++){
-            if(strcmp(temp, currnode->child[i]->name) == 0) {
+        for (i = 2; i < currnode->last; i++){
+            if (strcmp(temp, currnode->child[i]->name) == 0) {
                 currnode = (file_node *)currnode->child[i];
                 break;
             }
@@ -75,7 +75,6 @@ void parse(char *dir_path, int type, uint64_t first, uint64_t last) {
         }
 
         temp = strtok(NULL, "/");
-
     }
 }
 

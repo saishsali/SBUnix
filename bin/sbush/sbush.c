@@ -8,13 +8,11 @@
 #include <sys/dirent.h>
 #include <sys/mman.h>
 #include <sys/paging.h>
-#define BUFSIZE 1024
+#define BUFSIZE 512
 
-// Global environment variable
+char PS1[50], PATH[100];
+
 char **env;
-
-// Global ps1 variable
-char *ps1;
 
 // Removes leading and trailing quotes from a string
 char *trim_quotes(char *str) {
@@ -65,10 +63,10 @@ int set_environment_variable(char *token) {
     char decoded_var[BUFSIZE];
     char *name = strtok(token, "=");
     decode_environment_variable(trim_quotes(strtok(NULL, "=")), decoded_var);
-    setenv(name, decoded_var, 1);
+    setenv(name, decoded_var);
 
     if (strcmp(name, "PS1") == 0)
-        strcpy(ps1, decoded_var);
+        strcpy(PS1, decoded_var);
 
     return 1;
 }
@@ -309,8 +307,7 @@ void lifetime(int argc, char* argv[]) {
     int flag = 0, fd, is_bg = 0;
     ssize_t n;
 
-    setenv("PS1", "sbush> ", 1);
-    ps1 = getenv("PS1");
+    setenv("PS1", "sbush> ");
 
     if (argc >= 2) { // If a script is to be executed
         fd = open_script(argv[1]);
@@ -318,57 +315,21 @@ void lifetime(int argc, char* argv[]) {
         close_script(fd);
     } else {
         do {
-            n = write(1, ps1, strlen(ps1));
-            if (n == -1)
+            n = write(1, PS1, strlen(PS1));
+            if (n == -1) {
                 puts("Command failed");
+            }
 
             get_command(command, sizeof(command));
             parse(command, &is_bg, tokens);
             flag = execute(tokens, is_bg);
             is_bg = 0;
-
         } while (flag);
     }
 }
 
 int main(int argc, char* argv[], char *envp[]) {
-
-    // env = envp;
-    // lifetime(argc, argv);
-    // char *args[2] = {"Hello", "World"};
-
-    int pid = fork();
-    if (pid == 0) {
-        exit(1);
-        puts("i m  here");
-
-        // execvpe("bin/cat", args, NULL);
-    } else {
-        waitpid(pid, NULL, 0);
-    }
-    puts("Done");
-
-    // while(1);
-
-    // int pid = fork();
-    // if (pid == 0) {
-    //     write(1, "\nChild 1", 2);
-    //     yield();
-    // } else {
-    //     write(1, "\nParent 1", 2);
-    //     yield();
-
-    //     int pid2 = fork();
-    //     if (pid2 == 0) {
-    //         write(1, "\nChild 2", 2);
-    //         yield();
-    //     } else {
-    //         write(1, "\nParent 2", 2);
-    //         yield();
-    //     }
-    // }
-
-    // yield();
+    lifetime(argc, argv);
 
     return 0;
 }
