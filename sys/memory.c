@@ -176,6 +176,8 @@ void remove_vmas(vma_struct *head) {
             physical_address = GET_ADDRESS(*(uint64_t *)pte_entry);
             if (get_reference_count(physical_address) == 1) {
                 free_user_memory((uint64_t *)virtual_address);
+            } else {
+                decrement_reference_count(physical_address);
             }
             virtual_address += PAGE_SIZE;
         }
