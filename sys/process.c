@@ -489,6 +489,10 @@ void setup_user_process_stack(task_struct *task, char *argv[]) {
     int16_t i;
     char arguments_copy[16][100];
 
+    if (argv == NULL) {
+        return;
+    }
+
     /*
         - Copy arguments from argv to arguments_copy
         - Calculate number of arguments
