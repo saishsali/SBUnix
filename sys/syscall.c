@@ -464,7 +464,7 @@ int8_t sys_open(char *path, uint8_t flags) {
     temp[c-1] = '\0';
 
     if (strcmp(temp, "rootfs") == 0){
-        
+
     } else {
         // maybe it was a relative path
         // Validate path
@@ -599,7 +599,7 @@ int8_t sys_execvpe(char *file, char *argv[], char *envp[]) {
     current->state = ZOMBIE;
 
     // empty vma list
-    remove_vmas(current->mm->head);
+    remove_vmas(current->mm);
 
     // empty page tables
     remove_page_tables(current->cr3);
@@ -626,7 +626,7 @@ void sys_exit() {
     }
 
     // empty vma list
-    remove_vmas(current->mm->head);
+    remove_vmas(current->mm);
 
     // empty page tables
     remove_page_tables(current->cr3);

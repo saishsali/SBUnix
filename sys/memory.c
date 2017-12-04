@@ -168,8 +168,8 @@ void remove_vma(vma_struct **vma, mm_struct **mm, vma_struct **prev) {
 }
 
 /* Free memory allocated for a list of VMAs */
-void remove_vmas(vma_struct *head) {
-    vma_struct *curr_vma = head;
+void remove_vmas(mm_struct *mm) {
+    vma_struct *curr_vma = mm->head;
     vma_struct *prev_vma = NULL;
     uint64_t virtual_address, physical_address;
     void *pte_entry;
@@ -194,4 +194,5 @@ void remove_vmas(vma_struct *head) {
         curr_vma = curr_vma->next;
         free_kernel_memory(prev_vma);
     }
+    free_kernel_memory(mm);
 }
