@@ -26,13 +26,13 @@ void page_fault_exception(stack_registers *registers) {
     uint64_t page_fault_address = get_cr2(), virtual_address, physical_address;
     void *pte_entry;
 
-    // When Present bit is not set, it is caused by a non-present page
+    /* When Present bit is not set, it is caused by a non-present page */
     if ((registers->error_code & PF_P) == 0) {
         vma_struct *vma = current->mm->head;
         while (vma != NULL) {
             if (page_fault_address >= vma->start && page_fault_address < vma->end) {
                 if (vma->type == STACK) {
-                    // Auto growing stack
+                    /* Auto growing stack */
                     kmalloc_map(PAGE_SIZE, ROUND_DOWN(page_fault_address, PAGE_SIZE), RW_FLAG);
                     break;
                 } else {
@@ -48,30 +48,30 @@ void page_fault_exception(stack_registers *registers) {
             while(1);
         }
     } else if (registers->error_code & 0x01) {
-        // the fault is caused by a protection violation
+        /* the fault is caused by a protection violation */
         pte_entry = get_page_table_entry((void *)page_fault_address);
 
-        // If write bit is not set and cow bit is set in the page table entry
+        /* If write bit is not set and cow bit is set in the page table entry */
         if (!(*(uint64_t *)pte_entry & PTE_W) && (*(uint64_t *)pte_entry & PTE_COW)) {
             physical_address = GET_ADDRESS(*(uint64_t *)pte_entry);
             if (get_reference_count(physical_address) > 1) {
-                // If the page is being referenced by multiple processes
+                /* If the page is being referenced by multiple processes */
 
-                // Decrement reference count of the page
+                /* Decrement reference count of the page */
                 decrement_reference_count(physical_address);
 
-                // Get a new page
+                /* Get a new page */
                 virtual_address = (uint64_t)kmalloc(PAGE_SIZE);
 
-                // Copy contents from page fault address to the newly allocated page
+                /* Copy contents from page fault address to the newly allocated page */
                 if (page_fault_address < STACK_START && page_fault_address >= STACK_START - STACK_LIMIT) {
-                    // If the page fault address lies in stack address space
+                    /* If the page fault address lies in stack address space */
                     memcpy((void *)virtual_address, (void *)ROUND_DOWN(page_fault_address, PAGE_SIZE), PAGE_SIZE);
                 } else {
                     memcpy((void *)virtual_address, (void *)page_fault_address, PAGE_SIZE);
                 }
 
-                // Update page table entry with the physical address of the newly allocated page
+                /* Update page table entry with the physical address of the newly allocated page */
                 physical_address = virtual_to_physical_address((void *)virtual_address);
                 *(uint64_t *)pte_entry = physical_address | RW_FLAG;
             } else {

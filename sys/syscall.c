@@ -372,7 +372,7 @@ int8_t sys_execvpe(char *file, char *argv[], char *envp[]) {
         return -1;
     }
 
-    setup_user_process_stack(task, argv);
+    setup_user_process_stack(task, argv, envp);
 
     // PID of current task is the PID of new task
     task->pid = current->pid;
