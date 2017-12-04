@@ -6,6 +6,7 @@
 #include <sys/dirent.h>
 #include <sys/memory.h>
 
+/* Get TARFS header for the filename */
 posix_header_ustar *get_file(char *filename) {
     char *p = &_binary_tarfs_start;
     int size;
@@ -26,8 +27,6 @@ posix_header_ustar *get_file(char *filename) {
         // 512 byte aligned address
         p += ROUND_UP(size, BLOCK_SIZE);
     }
-
-    kprintf("No such file exists!\n");
 
     return NULL;
 }
@@ -78,6 +77,7 @@ void parse(char *dir_path, int type, uint64_t first, uint64_t last) {
     }
 }
 
+/* Create a hierarchical directory structure */
 void* init_tarfs() {
     char *p = &_binary_tarfs_start;
     posix_header_ustar *phu;

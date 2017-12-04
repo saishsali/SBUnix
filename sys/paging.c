@@ -212,6 +212,7 @@ void *set_user_address_space() {
     return (void *)new_pml4;
 }
 
+/* Free memory allocated for the page tables */
 void remove_page_tables(uint64_t cr3) {
     int pml4_index, pdpt_index, pdt_index;
     uint64_t pml4_entry, pdpt_entry, pdt_entry;

@@ -5,6 +5,7 @@
 #include <sys/process.h>
 #include <sys/kprintf.h>
 
+/* Allocate size bytes of page aligned memory memory in kernel space */
 void *kmalloc(size_t size) {
     uint64_t start_address, virtual_address, num_pages;
     Page *p = NULL;
@@ -24,6 +25,7 @@ void *kmalloc(size_t size) {
     return (void*) start_address;
 }
 
+/* Allocate size bytes of page aligned memory memory in user space */
 void *kmalloc_user(size_t size) {
     static uint64_t virtual_address = VIRTUAL_BASE;
     uint64_t num_pages, start_address;
@@ -42,6 +44,7 @@ void *kmalloc_user(size_t size) {
     return (void*) start_address;
 }
 
+/* Allocate size bytes of page aligned memory memory and map it to the specified virtual address in page tables */
 void *kmalloc_map(size_t size, uint64_t virtual_address, uint16_t flags) {
     uint64_t num_pages, start_address;
     Page *p = NULL;
@@ -143,6 +146,7 @@ vma_struct *add_vma(
     return new_vma;
 }
 
+/* Free memory allocated for a VMA */
 void remove_vma(vma_struct **vma, mm_struct **mm, vma_struct **prev) {
     if (*vma == (*mm)->head) {
         // Remove head VMA
@@ -163,6 +167,7 @@ void remove_vma(vma_struct **vma, mm_struct **mm, vma_struct **prev) {
     }
 }
 
+/* Free memory allocated for a list of VMAs */
 void remove_vmas(vma_struct *head) {
     vma_struct *curr_vma = head;
     vma_struct *prev_vma = NULL;

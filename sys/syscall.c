@@ -367,11 +367,12 @@ pid_t sys_fork() {
 int8_t sys_execvpe(char *file, char *argv[], char *envp[]) {
     // Child exit, mark the parent as ready that is waiting for it
     task_struct *task = create_user_process(file);
-    setup_user_process_stack(task, argv);
 
     if (task == NULL) {
         return -1;
     }
+
+    setup_user_process_stack(task, argv);
 
     // PID of current task is the PID of new task
     task->pid = current->pid;
