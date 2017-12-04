@@ -50,39 +50,97 @@ int sys_read(uint64_t fd, char* buff, uint64_t length) {
     return -1;
 }
 
+void add_slash_at_end(char *path) {
+    int i = strlen(path) - 1;
+    if (path[i] != '/') {
+        path[++i] = '/';
+        path[++i] = '\0';
+    }
+}
+
+void remove_slash_from_start(char *path) {
+    char copy_path[100];
+    int i;
+    for(i = 1; i < strlen(path); i++) {
+        copy_path[i-1] = path[i];
+    }
+    copy_path[i-1] = '\0';
+
+    strcpy(path, copy_path);
+}
+
 DIR* sys_opendir(char *path) {
     file_node *node;
     char *name;
-    int i = 0, flag = 0;
+    int i = 0, flag = 0, c = 0;
     DIR* ret_dir;
     char directory_path[100];
     strcpy(directory_path, path);
 
+
+
     node = root_node;
-    if (strcmp(directory_path, "/") != 0) {
-        name = strtok(directory_path, "/");
-        while (name != NULL) {
-            flag = 0;
-            if (strcmp(name, ".") == 0 ) {
-                node = node->child[0];
+    if (strcmp(path, "/") != 0) {
 
-            } else if (strcmp(name, "..") == 0) {
-                node = node->child[1];
+        add_slash_at_end(path);
+        char temp[100];
 
-            } else {
-                for (i = 2; i < node->last ; i++) {
-                    if (strcmp(name, node->child[i]->name) == 0) {
-                        node = node->child[i];
-                        flag = 1;
-                        break;
+        if(path[0] == '/') {
+            i = 1;
+        }
+        for (; i < strlen(path); i++) {
+            temp[c] = path[i];
+            c++;
+            if(path[i] == '/') {
+                break;
+            }
+        }
+        temp[c-1] = '\0';
+
+        if(strcmp(temp, "rootfs") == 0) {
+            // It is a absolute path
+            name = strtok(directory_path, "/");
+
+            while (name != NULL) {
+                flag = 0;
+                if (strcmp(name, ".") == 0 ) {
+                    node = node->child[0];
+
+                } else if (strcmp(name, "..") == 0) {
+                    node = node->child[1];
+
+                } else {
+                    for (i = 2; i < node->last ; i++) {
+                        if (strcmp(name, node->child[i]->name) == 0) {
+                            node = node->child[i];
+                            flag = 1;
+                            break;
+                        }
+                    }
+                    if(flag == 0) {
+                        return (DIR *)NULL;
                     }
                 }
-                if(flag == 0) {
-                    return (DIR *)NULL;
-                }
+                name = strtok(NULL,"/");
             }
-            name = strtok(NULL,"/");
+
+        } else {
+            // It is a relative path
+            strcpy(directory_path, current->current_dir);
+            
+            if (path[0] == '/')
+                remove_slash_from_start(path);
+
+            strcat(directory_path, path);
+            directory_path[strlen(current->current_dir) + strlen(path)] = '\0';
+            
+            DIR *new_directory = sys_opendir(directory_path);
+            if(new_directory == NULL) {
+                return (DIR *)NULL;
+            }
+            node = new_directory->node;     
         }
+
     }
     if (node->type == DIRECTORY) {
         ret_dir = (DIR *)kmalloc(sizeof(DIR));
@@ -95,7 +153,6 @@ DIR* sys_opendir(char *path) {
     }
 
 }
-
 /* close the directory stream referred to by the argument dir */
 int8_t sys_closedir(DIR *dir) {
     if (dir->cursor <= 1) {
@@ -132,7 +189,7 @@ int sys_chdir(char *path) {
     strcpy(curr, current->current_dir);
     char directory_path[100];
     strcpy(directory_path, path);
-    int i;
+    int i = 0, c=0;
 
     DIR* current_dir = sys_opendir(path);
     if (current_dir == NULL) {
@@ -140,24 +197,87 @@ int sys_chdir(char *path) {
         return -1;
     }
 
-    char *name = strtok(directory_path, "/");
-    while (name != NULL) {
-        if (strcmp(name, ".") == 0) {
-        } else if (strcmp(name, "..") == 0) {
-            for (i = strlen(curr) - 2; i >= 0; i--) {
-                if (curr[i] == '/') {
-                    memcpy(curr, curr, i + 1);
-                    curr[i+1] = '\0';
-                    break;
+
+    add_slash_at_end(path);
+    char temp[100];
+
+    if(path[0] == '/') {
+        i = 1;
+    }
+    for (; i < strlen(path); i++) {
+        temp[c] = path[i];
+        c++;
+        if(path[i] == '/') {
+            break;
+        }
+    }
+    temp[c-1] = '\0';
+
+    strcpy(directory_path, current->current_dir);
+
+    if (path[0] == '/')
+        remove_slash_from_start(path);
+
+    strcat(directory_path, path);
+    directory_path[strlen(current->current_dir) + strlen(path)] = '\0';
+    
+    DIR *new_directory = sys_opendir(directory_path);
+
+    if(new_directory == NULL) {
+        kprintf("\n%s: It is not a directory", path);
+        return -1;
+    }
+
+    if (strcmp(temp, "rootfs") == 0) {
+
+        char *name = strtok(directory_path, "/");
+        while (name != NULL) {
+            if (strcmp(name, ".") == 0) {
+            } else if (strcmp(name, "..") == 0) {
+                for (i = strlen(curr) - 2; i >= 0; i--) {
+                    if (curr[i] == '/') {
+                        memcpy(curr, curr, i + 1);
+                        curr[i+1] = '\0';
+                        break;
+                    }
                 }
+            } else {
+                strcat(curr, name);
+                strcat(curr, "/");
             }
-        } else {
-            strcat(curr, name);
-            strcat(curr, "/");
+
+            strcpy(current->current_dir, curr);
+            name = strtok(NULL, "/");
         }
 
-        strcpy(current->current_dir, curr);
-        name = strtok(NULL, "/");
+
+    } else {
+        // It is a relative path
+        file_node *node = new_directory->node;
+        char new_curr_directory[100];
+        int index = 0;
+        new_curr_directory[index++] = '/';
+        while (node && strcmp(node->name, "/") != 0) {
+            for(i = strlen(node->name) - 1; i>=0; i--) {
+                new_curr_directory[index++] = node->name[i];
+            }
+            new_curr_directory[index++] = '/';
+            // moving to parent node
+            node = node->child[1];
+        }
+
+        new_curr_directory[index] = '\0';
+
+        // Path reverse
+        char more_curr_directory[100];
+        int c = 0;
+        for(i = index-1; i >= 0; i--) {
+            more_curr_directory[c++] = new_curr_directory[i];
+        }
+        more_curr_directory[c] = '\0';
+
+        memset(current->current_dir, 0, 100);
+        strcpy(current->current_dir, more_curr_directory);
     }
 
     return 0;
@@ -296,15 +416,98 @@ int8_t sys_munmap(void *addr, size_t len) {
     return 1;
 }
 
+int remove_file_name_from_path(char *directory_path, char *file_name) {
+    int i, index = 0;
+    for (i = strlen(directory_path) - 2; i >= 0; i--) {
+        file_name[index++] = directory_path[i];
+        if (directory_path[i] == '/') {
+            directory_path[i+1] = '\0';
+            break;
+        }
+    }
+    file_name[index] = '\0';
+    return index;
+}
+
 /* Sys open to open files: http://pubs.opengroup.org/onlinepubs/009695399/functions/open.html */
 int8_t sys_open(char *path, uint8_t flags) {
+    char directory_path[100];
+    char file_name[20];
+    int i = 0, c = 0;
     if (path == NULL) {
         return -1;
     }
 
-    file_descriptor *fd = kmalloc(sizeof(file_descriptor));
+    strcpy(directory_path, path);
+    int index = remove_file_name_from_path(directory_path, file_name);
+
+    DIR *current_dir = sys_opendir(directory_path);
+
+    if(current_dir == NULL) {
+        kprintf("\n%s: It is not a valid path", path);
+        return -1;
+    }
+
+    add_slash_at_end(path);
+    char temp[100];
+
+    if(path[0] == '/') {
+        i = 1;
+    }
+    for (; i < strlen(path); i++) {
+        temp[c] = path[i];
+        c++;
+        if(path[i] == '/') {
+            break;
+        }
+    }
+    temp[c-1] = '\0';
+
+    if (strcmp(temp, "rootfs") == 0){
+        
+    } else {
+        // maybe it was a relative path
+        // Validate path
+        add_slash_at_end(path);
+
+        if(path[0] == '/') {
+            i = 1;
+        }
+        
+        strcpy(directory_path, current->current_dir);
+
+        if (path[0] == '/')
+            remove_slash_from_start(path);
+
+        strcat(directory_path, path);
+        directory_path[strlen(current->current_dir) + strlen(path)] = '\0';
+
+        // remove file name
+        index = remove_file_name_from_path(directory_path, file_name);
+
+        DIR *new_directory = sys_opendir(directory_path);
+
+        if (new_directory == NULL) {
+            kprintf("\n%s: It is not a valid path", path);
+            return -1;
+        }
+
+        char new_file_name[100];
+        int c = 0;
+        for(i = index-1; i >= 0; i--) {
+            new_file_name[c++] = file_name[i];
+        }
+        new_file_name[c] = '\0';
+
+        strcpy(path, directory_path);
+        strcat(path, new_file_name);
+
+    }
+    
     file_node *node = root_node;
-    uint8_t flag = 0, i;
+    file_descriptor *fd = kmalloc(sizeof(file_descriptor));
+    
+    uint8_t flag = 0;
     char *name = strtok(path, "/");
     if (name == NULL) {
         return -1;
