@@ -218,7 +218,7 @@ void add_child_to_parent(task_struct* child_task, task_struct* parent_task) {
 }
 
 /* Create new user process */
-task_struct *create_user_process(char *filename) {
+task_struct *create_user_process(char *filename, char *argv[], char *envp[]) {
     char curr_dir[30], new_curr_directory[100];
     int i;
 
@@ -246,6 +246,7 @@ task_struct *create_user_process(char *filename) {
 
     load_executable(pcb, filename, elf_header);
     add_process(pcb);
+    setup_user_process_stack(pcb, argv, envp);
 
     return pcb;
 }
@@ -526,23 +527,19 @@ void setup_user_process_stack(task_struct *task, char *argv[], char *envp[]) {
         set_cr3(current_cr3);
     }
 
+    set_cr3(task->cr3);
     if (envp) {
-        set_cr3(task->cr3);
-
         // Push the argument pointers (stored in the last loop) on the stack
         for (i = envc - 1; i >= 0; i--) {
             *(uint64_t *)u_rsp = envp_address[i];
             u_rsp = u_rsp - sizeof(uint64_t *);
         }
-
-        set_cr3(current_cr3);
     } else {
         *(uint64_t *)u_rsp = 0;
         u_rsp = u_rsp - sizeof(uint64_t *);
     }
 
     if (argv) {
-        set_cr3(task->cr3);
 
         // Push the argument pointers (stored in the last loop) on the stack
         for (i = argc - 1; i >= 0; i--) {
@@ -555,12 +552,11 @@ void setup_user_process_stack(task_struct *task, char *argv[], char *envp[]) {
 
         // Update u_rsp to point to the top of the stack
         task->u_rsp = u_rsp;
-
-        set_cr3(current_cr3);
     } else {
         *(uint64_t *)u_rsp = 0;
         task->u_rsp = u_rsp;
     }
+    set_cr3(current_cr3);
 }
 
 /* Update siblings list to replace old task with new task */

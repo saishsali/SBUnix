@@ -77,7 +77,7 @@ int process_ids[MAX_PROCESS];
 
 void create_threads();
 
-task_struct *create_user_process(char *);
+task_struct *create_user_process(char *, char **, char **);
 
 void schedule();
 
