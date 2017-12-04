@@ -151,6 +151,9 @@ int builtin_command(char **tokens) {
         return change_directory(tokens);
     } else if (strcmp(tokens[0], "exit") == 0) {
         return 0;
+    } else if (strcmp(tokens[0], "ps") == 0) {
+        ps();
+        return 1;
     }
 
     return -1;

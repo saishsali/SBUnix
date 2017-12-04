@@ -12,7 +12,7 @@
 #include <sys/paging.h>
 #include <sys/isr.h>
 
-extern task_struct *current;
+extern task_struct *current, *process_list_head, *process_list_tail;
 
 void _flush_tlb();
 
@@ -419,11 +419,11 @@ int8_t sys_munmap(void *addr, size_t len) {
 int remove_file_name_from_path(char *directory_path, char *file_name) {
     int i, index = 0;
     for (i = strlen(directory_path) - 2; i >= 0; i--) {
-        file_name[index++] = directory_path[i];
         if (directory_path[i] == '/') {
             directory_path[i+1] = '\0';
             break;
         }
+        file_name[index++] = directory_path[i];
     }
     file_name[index] = '\0';
     return index;
@@ -433,19 +433,27 @@ int remove_file_name_from_path(char *directory_path, char *file_name) {
 int8_t sys_open(char *path, uint8_t flags) {
     char directory_path[100];
     char file_name[20];
-    int i = 0, c = 0;
+    int i = 0, c = 0, flag = 0, index = 0;
     if (path == NULL) {
         return -1;
     }
 
-    strcpy(directory_path, path);
-    int index = remove_file_name_from_path(directory_path, file_name);
+    //Check if it is just a file name
+    for(i = 0; i < strlen(path); i++) {
+        if(path[i] == '/')
+            flag = 1;
+    }
 
-    DIR *current_dir = sys_opendir(directory_path);
+    if(flag == 1) {
+        strcpy(directory_path, path);
+        index = remove_file_name_from_path(directory_path, file_name);
 
-    if(current_dir == NULL) {
-        kprintf("\n%s: It is not a valid path", path);
-        return -1;
+        DIR *current_dir = sys_opendir(directory_path);
+
+        if(current_dir == NULL) {
+            kprintf("\n%s: It is not a valid path", path);
+            return -1;
+        }
     }
 
     add_slash_at_end(path);
@@ -464,7 +472,7 @@ int8_t sys_open(char *path, uint8_t flags) {
     temp[c-1] = '\0';
 
     if (strcmp(temp, "rootfs") == 0){
-
+        strcpy(directory_path, path);
     } else {
         // maybe it was a relative path
         // Validate path
@@ -498,17 +506,14 @@ int8_t sys_open(char *path, uint8_t flags) {
             new_file_name[c++] = file_name[i];
         }
         new_file_name[c] = '\0';
-
-        strcpy(path, directory_path);
-        strcat(path, new_file_name);
+        strcat(directory_path, new_file_name);
 
     }
     
     file_node *node = root_node;
     file_descriptor *fd = kmalloc(sizeof(file_descriptor));
     
-    uint8_t flag = 0;
-    char *name = strtok(path, "/");
+    char *name = strtok(directory_path, "/");
     if (name == NULL) {
         return -1;
     }
@@ -674,6 +679,15 @@ int sys_wait(int *status) {
     return current->wait_on_child_pid;
 }
 
+void sys_ps() {
+    task_struct * pcb = process_list_head;
+    while(pcb != process_list_tail) {
+        kprintf("\n pid %d name %s", pcb->pid, pcb->name);
+        pcb = pcb->next;
+    }
+    kprintf("\n");
+}
+
 void syscall_handler(stack_registers * registers) {
     switch (registers->rax) {
         case 0:
@@ -726,6 +740,9 @@ void syscall_handler(stack_registers * registers) {
             break;
         case 61:
             registers->rax = sys_wait((int *)registers->rdi);
+            break;
+        case 15:
+            sys_ps();
             break;
     }
 }
