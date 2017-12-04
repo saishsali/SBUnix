@@ -127,18 +127,18 @@ DIR* sys_opendir(char *path) {
         } else {
             // It is a relative path
             strcpy(directory_path, current->current_dir);
-            
+
             if (path[0] == '/')
                 remove_slash_from_start(path);
 
             strcat(directory_path, path);
             directory_path[strlen(current->current_dir) + strlen(path)] = '\0';
-            
+
             DIR *new_directory = sys_opendir(directory_path);
             if(new_directory == NULL) {
                 return (DIR *)NULL;
             }
-            node = new_directory->node;     
+            node = new_directory->node;
         }
 
     }
@@ -220,7 +220,7 @@ int sys_chdir(char *path) {
 
     strcat(directory_path, path);
     directory_path[strlen(current->current_dir) + strlen(path)] = '\0';
-    
+
     DIR *new_directory = sys_opendir(directory_path);
 
     if(new_directory == NULL) {
@@ -481,7 +481,7 @@ int8_t sys_open(char *path, uint8_t flags) {
         if(path[0] == '/') {
             i = 1;
         }
-        
+
         strcpy(directory_path, current->current_dir);
 
         if (path[0] == '/')
@@ -509,7 +509,7 @@ int8_t sys_open(char *path, uint8_t flags) {
         strcat(directory_path, new_file_name);
 
     }
-    
+
     file_node *node = root_node;
     file_descriptor *fd = kmalloc(sizeof(file_descriptor));
     
@@ -574,13 +574,11 @@ pid_t sys_fork() {
 */
 int8_t sys_execvpe(char *file, char *argv[], char *envp[]) {
     // Child exit, mark the parent as ready that is waiting for it
-    task_struct *task = create_user_process(file);
+    task_struct *task = create_user_process(file, argv, envp);
 
     if (task == NULL) {
         return -1;
     }
-
-    setup_user_process_stack(task, argv);
 
     // PID of current task is the PID of new task
     task->pid = current->pid;

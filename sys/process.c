@@ -218,7 +218,7 @@ void add_child_to_parent(task_struct* child_task, task_struct* parent_task) {
 }
 
 /* Create new user process */
-task_struct *create_user_process(char *filename) {
+task_struct *create_user_process(char *filename, char *argv[], char *envp[]) {
     char curr_dir[30], new_curr_directory[100];
     int i;
 
@@ -246,6 +246,7 @@ task_struct *create_user_process(char *filename) {
 
     load_executable(pcb, filename, elf_header);
     add_process(pcb);
+    setup_user_process_stack(pcb, argv, envp);
 
     return pcb;
 }
@@ -464,52 +465,97 @@ void setup_child_task_stack(task_struct *parent_task, task_struct *child_task) {
 }
 
 /* Setup user process stack with argument values */
-void setup_user_process_stack(task_struct *task, char *argv[]) {
-    uint64_t u_rsp = task->u_rsp, argv_address[16], current_cr3 = get_cr3();
-    uint16_t argc = 0, argv_length;
+void setup_user_process_stack(task_struct *task, char *argv[], char *envp[]) {
+    uint64_t u_rsp = task->u_rsp, argv_address[16], current_cr3 = get_cr3(), envp_address[16];
+    uint16_t argc = 0, argv_length, envc = 0, envp_length;
     int16_t i;
-    char arguments_copy[16][100];
+    char arguments_copy[16][100], envp_copy[16][100];
 
-    if (argv == NULL) {
-        return;
+    if (envp) {
+        /*
+            - Copy arguments from argv to arguments_copy
+            - Calculate number of arguments
+            - Copying is done because argv is not accessible in the virtual address space of the new task
+        */
+        while (envp[envc] != NULL) {
+            strcpy(envp_copy[envc], envp[envc]);
+            envc++;
+        }
+
+        // Switch to the virtual address of the new process to push arguments on stack
+        set_cr3(task->cr3);
+
+        // Start from the bottom of the stack and push the argument values on the stack
+        for (i = envc - 1; i >= 0; i--) {
+            envp_length = strlen(envp_copy[i]) + 1;
+            u_rsp = u_rsp - envp_length;
+            memcpy((char *)u_rsp, envp_copy[i], envp_length);
+            envp_address[i] = u_rsp;
+        }
+
+        u_rsp = u_rsp - sizeof(uint64_t *);
+
+        // Switch to the virtual address space of the current process
+        set_cr3(current_cr3);
     }
 
-    /*
-        - Copy arguments from argv to arguments_copy
-        - Calculate number of arguments
-        - Copying is done because argv is not accessible in the virtual address space of the new task
-    */
-    while (argv[argc] != NULL) {
-        strcpy(arguments_copy[argc], argv[argc]);
-        argc++;
+    if (argv) {
+        /*
+            - Copy arguments from argv to arguments_copy
+            - Calculate number of arguments
+            - Copying is done because argv is not accessible in the virtual address space of the new task
+        */
+        while (argv[argc] != NULL) {
+            strcpy(arguments_copy[argc], argv[argc]);
+            argc++;
+        }
+
+        // Switch to the virtual address of the new process to push arguments on stack
+        set_cr3(task->cr3);
+
+        // Start from the bottom of the stack and push the argument values on the stack
+        for (i = argc - 1; i >= 0; i--) {
+            argv_length = strlen(arguments_copy[i]) + 1;
+            u_rsp = u_rsp - argv_length;
+            memcpy((char *)u_rsp, arguments_copy[i], argv_length);
+            argv_address[i] = u_rsp;
+        }
+
+        u_rsp = u_rsp - sizeof(uint64_t *);
+
+        // Switch to the virtual address space of the current process
+        set_cr3(current_cr3);
     }
 
-    // Switch to the virtual address of the new process to push arguments on stack
     set_cr3(task->cr3);
-
-    // Start from the bottom of the stack and push the argument values on the stack
-    for (i = argc - 1; i >= 0; i--) {
-        argv_length = strlen(arguments_copy[i]) + 1;
-        u_rsp = u_rsp - argv_length;
-        memcpy((char *)u_rsp, arguments_copy[i], argv_length);
-        argv_address[i] = u_rsp;
-    }
-
-    u_rsp = u_rsp - sizeof(uint64_t *);
-
-    // Push the argument pointers (stored in the last loop) on the stack
-    for (i = argc - 1; i >= 0; i--) {
-        *(uint64_t *)u_rsp = argv_address[i];
+    if (envp) {
+        // Push the argument pointers (stored in the last loop) on the stack
+        for (i = envc - 1; i >= 0; i--) {
+            *(uint64_t *)u_rsp = envp_address[i];
+            u_rsp = u_rsp - sizeof(uint64_t *);
+        }
+    } else {
+        *(uint64_t *)u_rsp = 0;
         u_rsp = u_rsp - sizeof(uint64_t *);
     }
 
-    // Push argument count on stack
-    *(uint64_t *)u_rsp = argc;
+    if (argv) {
 
-    // Update u_rsp to point to the top of the stack
-    task->u_rsp = u_rsp;
+        // Push the argument pointers (stored in the last loop) on the stack
+        for (i = argc - 1; i >= 0; i--) {
+            *(uint64_t *)u_rsp = argv_address[i];
+            u_rsp = u_rsp - sizeof(uint64_t *);
+        }
 
-    // Switch to the virtual address space of the current process
+        // Push argument count on stack
+        *(uint64_t *)u_rsp = argc;
+
+        // Update u_rsp to point to the top of the stack
+        task->u_rsp = u_rsp;
+    } else {
+        *(uint64_t *)u_rsp = 0;
+        task->u_rsp = u_rsp;
+    }
     set_cr3(current_cr3);
 }
 

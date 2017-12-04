@@ -77,7 +77,7 @@ int process_ids[MAX_PROCESS];
 
 void create_threads();
 
-task_struct *create_user_process(char *);
+task_struct *create_user_process(char *, char **, char **);
 
 void schedule();
 
@@ -89,7 +89,7 @@ void setup_child_task_stack(task_struct *parent_task, task_struct *child_task);
 
 void add_process(task_struct *pcb);
 
-void setup_user_process_stack(task_struct *task, char *argv[]);
+void setup_user_process_stack(task_struct *task, char *argv[], char *envp[]);
 
 void remove_child_from_parent(task_struct *current);
 
