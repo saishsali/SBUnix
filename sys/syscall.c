@@ -380,6 +380,8 @@ int8_t sys_execvpe(char *file, char *argv[], char *envp[]) {
     // Parent of current task is the parent of new task
     task->parent = current->parent;
 
+    strcpy(task->current_dir, current->current_dir);
+
 
     // Copy file descriptors
     memcpy(

@@ -12,6 +12,8 @@
 
 #define MAX_FD 10
 
+#define ROOT "/rootfs/"
+
 typedef struct vm_area_struct vma_struct;
 typedef struct mm_struct mm_struct;
 

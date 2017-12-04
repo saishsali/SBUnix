@@ -231,11 +231,11 @@ task_struct *create_user_process(char *filename) {
     strcpy(pcb->name, filename);
 
     // Adding current working directory to pcb
-    strcpy(curr_dir, "/rootfs/");
+    strcpy(curr_dir, ROOT);
 
     for (i = strlen(filename) - 1; i >= 0; i--) {
         if (filename[i] == '/') {
-            memcpy(new_curr_directory, filename, i + 1);
+            memcpy(new_curr_directory, filename, i+1);
             break;
         }
     }
@@ -284,6 +284,8 @@ task_struct *shallow_copy_task(task_struct *parent_task) {
         child_task->siblings = parent_task->child_head;
     }
     parent_task->child_head = child_task;
+
+    strcpy(child_task->current_dir, parent_task->current_dir);
 
     while (parent_task_vma) {
         add_vma(
