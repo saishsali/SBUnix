@@ -25,5 +25,5 @@ int main(int argc, char *argv[], char *envp[]) {
     putchar('\n');
     closedir(dir);
 
-    exit(0);
+    exit(1);
 }
