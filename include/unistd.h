@@ -32,5 +32,6 @@ int dup2(int oldfd, int newfd);
 
 void yield();
 void ps();
+void kill(int pid);
 
 #endif

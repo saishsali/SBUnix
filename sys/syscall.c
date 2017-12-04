@@ -615,8 +615,7 @@ int8_t sys_execvpe(char *file, char *argv[], char *envp[]) {
     return -1;
 }
 
-void sys_exit() {
-    // check if the parent exists for this child
+void cleanup(task_struct *current) {
     if (current->parent) {
         // remove child from its parent and also adjust the siblings list
         remove_child_from_parent(current);
@@ -642,6 +641,21 @@ void sys_exit() {
     // remove_task_from_process_schedule_list(current);
 
     sys_yield();
+}
+
+void sys_exit() {
+    cleanup(current);
+}
+
+void sys_kill(int pid) {
+    task_struct * pcb = process_list_head;
+    while(pcb != process_list_tail) {
+        if(pcb->pid == pid) {
+            cleanup(pcb);
+            break;
+        }
+        pcb = pcb->next;
+    }
 }
 
 int sys_waitpid(int pid, int *status, int options) {
@@ -679,12 +693,27 @@ int sys_wait(int *status) {
 
 void sys_ps() {
     task_struct * pcb = process_list_head;
+    char process_states[4][10] = {
+        "ZOMBIE",
+        "READY",
+        "WAITING",
+        "RUNNING"
+    };
+
+    int i = 0;
+    kprintf("\n ===== LIST OF CURRENT PROCESSES ====== "
+            "\n  #  |  PID  | State    |  Process Name "
+            "\n ----| ----- |--------- | --------------- ");
+
+
     while(pcb != process_list_tail) {
-        kprintf("\n pid %d name %s", pcb->pid, pcb->name);
+        kprintf("\n  %d  |   %d   |  %s  |  %s  ", i, pcb->pid, process_states[pcb->state], pcb->name);
+        i++;
         pcb = pcb->next;
     }
     kprintf("\n");
 }
+
 
 void syscall_handler(stack_registers * registers) {
     switch (registers->rax) {
@@ -741,6 +770,9 @@ void syscall_handler(stack_registers * registers) {
             break;
         case 15:
             sys_ps();
+            break;
+        case 16:
+            sys_kill(registers->rdi);
             break;
     }
 }
