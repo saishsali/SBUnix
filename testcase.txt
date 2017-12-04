@@ -237,3 +237,6 @@ if (pid == 0) {
         putchar(pid2 + 48);
     }
 }
+
+--------------Execute scripts (files that start with #!sbush)------------------
+bin/sbush /rootfs/etc/test/script.sh
