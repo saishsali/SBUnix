@@ -473,9 +473,9 @@ void setup_user_process_stack(task_struct *task, char *argv[], char *envp[]) {
 
     if (envp) {
         /*
-            - Copy arguments from argv to arguments_copy
-            - Calculate number of arguments
-            - Copying is done because argv is not accessible in the virtual address space of the new task
+            - Copy arguments from envp to envp_copy
+            - Calculate number of environment variables
+            - Copying is done because envp is not accessible in the virtual address space of the new task
         */
         while (envp[envc] != NULL) {
             strcpy(envp_copy[envc], envp[envc]);
@@ -528,16 +528,20 @@ void setup_user_process_stack(task_struct *task, char *argv[], char *envp[]) {
     }
 
     set_cr3(task->cr3);
+
+    *(uint64_t *)u_rsp = 0;
+    u_rsp = u_rsp - sizeof(uint64_t *);
+
     if (envp) {
         // Push the argument pointers (stored in the last loop) on the stack
         for (i = envc - 1; i >= 0; i--) {
             *(uint64_t *)u_rsp = envp_address[i];
             u_rsp = u_rsp - sizeof(uint64_t *);
         }
-    } else {
-        *(uint64_t *)u_rsp = 0;
-        u_rsp = u_rsp - sizeof(uint64_t *);
     }
+
+    *(uint64_t *)u_rsp = 0;
+    u_rsp = u_rsp - sizeof(uint64_t *);
 
     if (argv) {
 
