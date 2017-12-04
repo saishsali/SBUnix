@@ -248,8 +248,8 @@ int execute(char **tokens, int is_bg) {
         if (pid == 0) {
             if (execvpe(tokens[0], tokens, env) < 0) {
                 puts("-sbush: command not found");
+                exit(1);
             }
-            exit(0);
         } else if (pid < 0) {
             puts("Fork error");
         } else {
