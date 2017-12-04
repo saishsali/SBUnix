@@ -31,5 +31,7 @@ int pipe(int pipefd[2]);
 int dup2(int oldfd, int newfd);
 
 void yield();
+void ps();
+void kill(int pid);
 
 #endif
