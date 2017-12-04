@@ -174,10 +174,13 @@ void remove_vmas(vma_struct *head) {
         while (virtual_address < curr_vma->end) {
             pte_entry = get_page_table_entry((void *)virtual_address);
             physical_address = GET_ADDRESS(*(uint64_t *)pte_entry);
-            if (get_reference_count(physical_address) == 1) {
-                free_user_memory((uint64_t *)virtual_address);
-            } else {
-                decrement_reference_count(physical_address);
+
+            if (physical_address) {
+                if (get_reference_count(physical_address) == 1) {
+                    free_user_memory((uint64_t *)virtual_address);
+                } else {
+                    decrement_reference_count(physical_address);
+                }
             }
             virtual_address += PAGE_SIZE;
         }
