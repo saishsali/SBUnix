@@ -8,6 +8,7 @@
 #include <sys/dirent.h>
 #include <sys/mman.h>
 #include <sys/paging.h>
+#include <sys/process.h>
 #define BUFSIZE 512
 
 char **env;
@@ -90,10 +91,16 @@ int get_environment_variable(char *name) {
 
 // Change directory
 int change_directory(char **tokens) {
-    if (chdir(tokens[1]) != 0) {
-        puts("Error changing directory");
-    }
+    char path[100];
 
+    if(tokens[1] == NULL) {
+        strcpy(path, "/");
+    } else {
+        strcpy(path, tokens[1]);
+    }
+    if (chdir(path) != 0) {
+        puts("\nError changing directory");
+    }
     return 1;
 }
 

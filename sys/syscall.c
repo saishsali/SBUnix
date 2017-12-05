@@ -77,8 +77,6 @@ DIR* sys_opendir(char *path) {
     char directory_path[100];
     strcpy(directory_path, path);
 
-
-
     node = root_node;
     if (strcmp(path, "/") != 0) {
 
@@ -126,6 +124,7 @@ DIR* sys_opendir(char *path) {
 
         } else {
             // It is a relative path
+
             strcpy(directory_path, current->current_dir);
 
             if (path[0] == '/')
@@ -185,18 +184,37 @@ dentry* sys_readdir(DIR* dir) {
 }
 
 int sys_chdir(char *path) {
+
     char curr[100];
     strcpy(curr, current->current_dir);
     char directory_path[100];
     strcpy(directory_path, path);
     int i = 0, c=0;
 
+    if(strcmp(path, "/") == 0) {
+        strcpy(current->current_dir, "/");
+        return 0;
+    }
+
+    // if current working directory is / and path is not rootfs, then return
+    if(strcmp(current->current_dir, "/") == 0) {
+        if(strcmp(path, "rootfs") == 0) {
+            strcpy(current->current_dir, "/rootfs/");
+            return 0;
+        } else if(strcmp(path, ".") == 0 || strcmp(path, "..") == 0) {
+            strcpy(current->current_dir, "/");
+            return 0;
+        } else {
+            kprintf("\n%s: It is not a directory", path);
+            return -1;
+        }
+    }
+
     DIR* current_dir = sys_opendir(path);
     if (current_dir == NULL) {
         kprintf("\n%s: It is not a directory", path);
         return -1;
     }
-
 
     add_slash_at_end(path);
     char temp[100];
@@ -219,6 +237,7 @@ int sys_chdir(char *path) {
         remove_slash_from_start(path);
 
     strcat(directory_path, path);
+
     directory_path[strlen(current->current_dir) + strlen(path)] = '\0';
 
     DIR *new_directory = sys_opendir(directory_path);
@@ -443,11 +462,18 @@ int8_t sys_open(char *path, uint8_t flags) {
             flag = 1;
     }
 
+    //Check if path is a directory
+    DIR *current_dir = sys_opendir(path);
+    if(current_dir != NULL) {
+        kprintf("\n%s: Is a directory \n", path);
+    }
+
+
     if(flag == 1) {
         strcpy(directory_path, path);
         index = remove_file_name_from_path(directory_path, file_name);
 
-        DIR *current_dir = sys_opendir(directory_path);
+        current_dir = sys_opendir(directory_path);
 
         if(current_dir == NULL) {
             kprintf("\n%s: It is not a valid path", path);
