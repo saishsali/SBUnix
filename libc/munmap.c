@@ -1,6 +1,6 @@
 #include <sys/defs.h>
 
-int8_t sys_munmap(void *addr, size_t len) {
+int8_t munmap(void *addr, size_t len) {
     int64_t result;
     __asm__ (
         "movq $6, %%rax;"

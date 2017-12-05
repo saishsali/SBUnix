@@ -1,6 +1,6 @@
 #include <sys/defs.h>
 
-void *sys_mmap(void *start, size_t length, uint64_t flags) {
+void *mmap(void *start, size_t length, uint64_t flags) {
     void* result;
     __asm__ (
         "movq $3, %%rax;"
