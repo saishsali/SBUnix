@@ -67,7 +67,7 @@ void start(uint32_t *modulep, void *physbase, void *physfree) {
     create_idle_process();
 
     /* Create user process, load its executable and switch to ring 3 */
-    char *envp[] = {"PATH=/rootfs/bin"};
+    char *envp[] = {"PATH=/rootfs/bin", "PS1=sbush> "};
     task_struct *pcb = create_user_process("bin/sbush", NULL, envp);
     add_child_to_parent(pcb, idle_process);
 
