@@ -58,12 +58,7 @@ void page_fault_exception(stack_registers *registers) {
                 virtual_address = (uint64_t)kmalloc(PAGE_SIZE);
 
                 /* Copy contents from page fault address to the newly allocated page */
-                if (page_fault_address < STACK_START && page_fault_address >= STACK_START - STACK_LIMIT) {
-                    /* If the page fault address lies in stack address space */
-                    memcpy((void *)virtual_address, (void *)ROUND_DOWN(page_fault_address, PAGE_SIZE), PAGE_SIZE);
-                } else {
-                    memcpy((void *)virtual_address, (void *)page_fault_address, PAGE_SIZE);
-                }
+                memcpy((void *)virtual_address, (void *)ROUND_DOWN(page_fault_address, PAGE_SIZE), PAGE_SIZE);
 
                 /* Update page table entry with the physical address of the newly allocated page */
                 physical_address = virtual_to_physical_address((void *)virtual_address);
