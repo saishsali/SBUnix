@@ -16,4 +16,6 @@ void remove_vma(vma_struct **vma, mm_struct **mm, vma_struct **prev);
 
 void remove_vmas(mm_struct *mm);
 
+void *get_heap_address(task_struct *task, uint64_t size);
+
 #endif

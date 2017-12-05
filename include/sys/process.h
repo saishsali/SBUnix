@@ -26,7 +26,7 @@ struct file {
 
 typedef struct file file;
 
-typedef enum vma_types {TEXT, DATA, STACK, HEAP, ANON, NOTYPE} VMA_TYPE;
+typedef enum vma_types {TEXT, DATA, STACK, HEAP, NOTYPE} VMA_TYPE;
 
 typedef enum vma_flag {RW, RX} VMA_FLAG;
 

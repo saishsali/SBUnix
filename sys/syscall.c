@@ -311,18 +311,17 @@ void sys_yield() {
 }
 
 void *sys_mmap(void *start, size_t length, uint64_t flags) {
-    if ((uint64_t)start < 0) {
-        // Not a valid address
+    if ((uint64_t)start < 0) {              /* Not a valid address */
         return NULL;
-    } else if ((uint64_t)start == 0) {
-        // Address not specified, use address after vma tail->end
-        start = (uint64_t *)current->mm->tail->end;
-    } else if (validate_address(current, (uint64_t)start, length) == 0) {
-        // Address already in use
+    } else if ((uint64_t)start == 0) {      /* Address not specified, find available address in the heap */
+        start = (uint64_t *)get_heap_address(current, length);
+        if (start == 0) {
+            return NULL;
+        }
+    } else if (validate_address(current, (uint64_t)start, length) == 0) { /* Address already in use */
         return NULL;
     }
-
-    add_vma(current, (uint64_t)start, length, flags, ANON);
+    add_vma(current, (uint64_t)start, length, flags, HEAP);
 
     return start;
 }
@@ -358,7 +357,7 @@ int8_t sys_munmap(void *addr, size_t len) {
         }
 
         // Do not remove mappings for pages that are not anonymous
-        if (vma->type != ANON) {
+        if (vma->type != HEAP) {
             prev = vma;
             vma  = vma->next;
             continue;
@@ -386,7 +385,7 @@ int8_t sys_munmap(void *addr, size_t len) {
             flags = vma->flags;
             vma_end = vma->end;
             remove_vma(&vma, &current->mm, &prev);
-            add_vma(current, end_address, vma_end - end_address, flags, ANON);
+            add_vma(current, end_address, vma_end - end_address, flags, HEAP);
             unmap = 1;
         } else if (start_address > vma->start && end_address < vma->end) {
             /*
@@ -402,8 +401,8 @@ int8_t sys_munmap(void *addr, size_t len) {
             vma_start = vma->start;
             vma_end = vma->end;
             remove_vma(&vma, &current->mm, &prev);
-            add_vma(current, vma_start, start_address - vma_start, flags, ANON);
-            add_vma(current, end_address, vma_end - end_address, flags, ANON);
+            add_vma(current, vma_start, start_address - vma_start, flags, HEAP);
+            add_vma(current, end_address, vma_end - end_address, flags, HEAP);
             unmap = 1;
         } else if (start_address > vma->start && start_address < vma->end && end_address >= vma->end) {
             /*
@@ -419,7 +418,7 @@ int8_t sys_munmap(void *addr, size_t len) {
             vma_start = vma->start;
             vma_end = vma->end;
             remove_vma(&vma, &current->mm, &prev);
-            add_vma(current, vma_start, start_address - vma_start, flags, ANON);
+            add_vma(current, vma_start, start_address - vma_start, flags, HEAP);
             unmap = 1;
         } else {
             prev = vma;
@@ -538,7 +537,7 @@ int8_t sys_open(char *path, uint8_t flags) {
 
     file_node *node = root_node;
     file_descriptor *fd = kmalloc(sizeof(file_descriptor));
-    
+
     char *name = strtok(directory_path, "/");
     if (name == NULL) {
         return -1;
@@ -672,7 +671,7 @@ void cleanup(task_struct *current) {
 
 void sys_exit() {
     cleanup(current);
-    
+
 }
 
 void sys_kill(int pid) {
@@ -752,7 +751,7 @@ void sys_shutdown() {
     kprintf("\n==========================================================================");
     kprintf("\n============ SBUnix is now shutting down.  Thank You !!! ===============");
     kprintf("\n==========================================================================");
-    while(1); 
+    while(1);
 }
 
 
