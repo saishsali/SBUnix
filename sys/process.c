@@ -445,16 +445,34 @@ void setup_child_task_stack(task_struct *parent_task, task_struct *child_task) {
     // R9
     *((uint64_t *)&child_task->kstack[STACK_SIZE - 8 * 16]) = *((uint64_t *)&parent_task->kstack[STACK_SIZE - 8 * 18]);
 
+    // R10
+    *((uint64_t *)&child_task->kstack[STACK_SIZE - 8 * 17]) = *((uint64_t *)&parent_task->kstack[STACK_SIZE - 8 * 19]);
+
+    // R11
+    *((uint64_t *)&child_task->kstack[STACK_SIZE - 8 * 18]) = *((uint64_t *)&parent_task->kstack[STACK_SIZE - 8 * 20]);
+
+    // R12
+    *((uint64_t *)&child_task->kstack[STACK_SIZE - 8 * 19]) = *((uint64_t *)&parent_task->kstack[STACK_SIZE - 8 * 21]);
+
+    // R13
+    *((uint64_t *)&child_task->kstack[STACK_SIZE - 8 * 20]) = *((uint64_t *)&parent_task->kstack[STACK_SIZE - 8 * 22]);
+
+    // R14
+    *((uint64_t *)&child_task->kstack[STACK_SIZE - 8 * 21]) = *((uint64_t *)&parent_task->kstack[STACK_SIZE - 8 * 23]);
+
+    // R15
+    *((uint64_t *)&child_task->kstack[STACK_SIZE - 8 * 22]) = *((uint64_t *)&parent_task->kstack[STACK_SIZE - 8 * 24]);
+
     // Return to ISR popping logic
-    *((uint64_t *)&child_task->kstack[STACK_SIZE - 8 * 17]) = (uint64_t)isr_common_stub + 20;
+    *((uint64_t *)&child_task->kstack[STACK_SIZE - 8 * 23]) = (uint64_t)isr_common_stub + 32;
 
     // Leave 13 entries from 18 to 30 to accomodate for pops in context_switch.s
 
     // Push PCB
-    *((uint64_t *)&child_task->kstack[STACK_SIZE - 8 * 31]) = (uint64_t)child_task;
+    *((uint64_t *)&child_task->kstack[STACK_SIZE - 8 * 37]) = (uint64_t)child_task;
 
     // Set RSP
-    child_task->rsp = (uint64_t)&child_task->kstack[STACK_SIZE - 8 * 31];
+    child_task->rsp = (uint64_t)&child_task->kstack[STACK_SIZE - 8 * 37];
 
     // Set entry as RIP
     child_task->entry = *((uint64_t *)&parent_task->kstack[STACK_SIZE - 8 * 7]);
