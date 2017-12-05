@@ -197,7 +197,10 @@ void remove_vmas(mm_struct *mm) {
     free_kernel_memory(mm);
 }
 
-/* Get next available address in heap */
+/*
+    - Get next available address in heap
+    - First vma of heap is used to track the beginning of heap region and is not backed by a page
+*/
 uint64_t get_heap_address(task_struct *task, uint64_t size) {
      vma_struct *vma = task->mm->head;
 
