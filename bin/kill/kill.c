@@ -1,6 +1,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 int char_to_int(char *s) {
     int pid = 0, i;
@@ -11,6 +12,11 @@ int char_to_int(char *s) {
 }
 
 int main(int argc, char *argv[], char *envp[]) {
-	kill(char_to_int(argv[1]));
+	int pid = char_to_int(argv[2]);
+	if(pid > 1) {
+		kill(pid);
+	} else {
+		puts("\n Cant kill this process");
+	}
     exit(1);
 }

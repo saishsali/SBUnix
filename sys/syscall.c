@@ -12,7 +12,7 @@
 #include <sys/paging.h>
 #include <sys/isr.h>
 
-extern task_struct *current, *process_list_head, *process_list_tail;
+extern task_struct *current, *process_list_head;
 
 void _flush_tlb();
 
@@ -662,22 +662,19 @@ void cleanup(task_struct *current) {
     memset((void*)current->file_descriptor, 0, MAX_FD * 8);
     current->state = ZOMBIE;
 
-
     // remove current task from schedule list
     // remove_task_from_process_schedule_list(current);
-    sys_yield();
 
 }
 
 void sys_exit() {
     cleanup(current);
-
+    sys_yield();
 }
 
 void sys_kill(int pid) {
     task_struct * pcb = process_list_head;
-    kprintf("\n pid %s", pid);
-    while(pcb != process_list_tail) {
+    while(pcb != NULL) {
         if(pcb->pid == pid) {
             cleanup(pcb);
             break;
@@ -729,28 +726,32 @@ void sys_ps() {
     };
 
     int i = 0;
-    kprintf("\n ===== LIST OF CURRENT PROCESSES ====== "
+    kprintf("\n ----- LIST OF CURRENT PROCESSES --------- "
             "\n  #  |  PID  | State    |  Process Name "
             "\n ----| ----- |--------- | --------------- ");
 
 
-    while(pcb != process_list_tail) {
+    while(pcb != NULL) {
         if(pcb->state != 0) {
             kprintf("\n  %d  |   %d   |  %s  |  %s  ", i, pcb->pid, process_states[pcb->state], pcb->name);
             i++;
         }
         pcb = pcb->next;
     }
-    kprintf("\n i m done");
     kprintf("\n");
 }
 
 void sys_shutdown() {
+    task_struct * pcb = process_list_head;
+    while(pcb != NULL) {
+        sys_kill(pcb->pid);
+        pcb = pcb->next;
+    }
+
     clear_screen();
-    kprintf("\n\n\n\n\n\n\n\n\n\n\n\n");
-    kprintf("\n==========================================================================");
-    kprintf("\n============ SBUnix is now shutting down.  Thank You !!! ===============");
-    kprintf("\n==========================================================================");
+    kprintf("\n\n\n\n*****************************************************************************");
+    kprintf("\n********************* SBUnix is now shutting down ***************************");
+    kprintf("\n*****************************************************************************");
     while(1);
 }
 
