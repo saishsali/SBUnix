@@ -8,6 +8,7 @@
 #include <sys/dirent.h>
 #include <sys/mman.h>
 #include <sys/paging.h>
+#include <sys/process.h>
 #define BUFSIZE 512
 
 char PS1[50], PATH[100];
@@ -91,10 +92,16 @@ int get_environment_variable(char *name) {
 
 // Change directory
 int change_directory(char **tokens) {
-    if (chdir(tokens[1]) != 0) {
-        puts("Error changing directory");
-    }
+    char path[100];
 
+    if(tokens[1] == NULL) {
+        strcpy(path, "/");
+    } else {
+        strcpy(path, tokens[1]);
+    }
+    if (chdir(path) != 0) {
+        puts("\nError changing directory");
+    }
     return 1;
 }
 
@@ -323,7 +330,7 @@ void lifetime(int argc, char* argv[]) {
             get_command(command, sizeof(command));
             parse(command, &is_bg, tokens);
             flag = execute(tokens, is_bg);
-            puts("\n end execute");
+            // puts("\n end execute");
             is_bg = 0;
         } while (flag);
     }
