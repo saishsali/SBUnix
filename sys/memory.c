@@ -196,3 +196,24 @@ void remove_vmas(mm_struct *mm) {
     }
     free_kernel_memory(mm);
 }
+
+/* Get next available address in heap */
+uint64_t get_heap_address(task_struct *task, uint64_t size) {
+     vma_struct *vma = task->mm->head;
+
+    while (vma != NULL) {
+        if (vma->type == HEAP) {
+            break;
+        }
+        vma = vma->next;
+    }
+
+    while (vma->type != STACK) {
+        if ((vma->next->start - vma->end) >= size) {
+            return vma->end;
+        }
+        vma = vma->next;
+    }
+
+    return 0;
+}
