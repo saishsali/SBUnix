@@ -10,9 +10,8 @@
 #include <sys/paging.h>
 #define BUFSIZE 512
 
-char PS1[50], PATH[100];
-
 char **env;
+char *ps1;
 
 // Removes leading and trailing quotes from a string
 char *trim_quotes(char *str) {
@@ -63,10 +62,10 @@ int set_environment_variable(char *token) {
     char decoded_var[BUFSIZE];
     char *name = strtok(token, "=");
     decode_environment_variable(trim_quotes(strtok(NULL, "=")), decoded_var);
-    setenv(name, decoded_var);
+    setenv(name, decoded_var, 1);
 
     if (strcmp(name, "PS1") == 0)
-        strcpy(PS1, decoded_var);
+        strcpy(ps1, decoded_var);
 
     return 1;
 }
@@ -307,7 +306,8 @@ void lifetime(int argc, char* argv[]) {
     int flag = 0, fd, is_bg = 0;
     ssize_t n;
 
-    setenv("PS1", "sbush> ");
+    setenv("PS1", "sbush> ", 1);
+    ps1 = getenv("PS1");
 
     if (argc >= 2) { // If a script is to be executed
         fd = open_script(argv[1]);
@@ -315,7 +315,7 @@ void lifetime(int argc, char* argv[]) {
         close_script(fd);
     } else {
         do {
-            n = write(1, PS1, strlen(PS1));
+            n = write(1, ps1, strlen(ps1));
             if (n == -1) {
                 puts("Command failed");
             }
@@ -323,13 +323,26 @@ void lifetime(int argc, char* argv[]) {
             get_command(command, sizeof(command));
             parse(command, &is_bg, tokens);
             flag = execute(tokens, is_bg);
-            puts("\n end execute");
             is_bg = 0;
         } while (flag);
     }
 }
 
+/* Setup environment variables by making a copy of envp */
+void setup_environment_variables(char *envp[]) {
+    int i = 0;
+    env = (char **)malloc(16 * sizeof(char *));
+
+    while (envp[i] != NULL) {
+        env[i] = (char *)malloc(256 * sizeof(int));
+        strcpy(env[i], envp[i]);
+        i++;
+    }
+    env[i] = 0;
+}
+
 int main(int argc, char* argv[], char *envp[]) {
+    setup_environment_variables(envp);
     lifetime(argc, argv);
 
     return 0;
