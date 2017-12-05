@@ -179,7 +179,7 @@ void remove_vmas(mm_struct *mm) {
         while (virtual_address < curr_vma->end) {
             pte_entry = get_page_table_entry((void *)virtual_address);
 
-            if(pte_entry != NULL) {
+            if (pte_entry != NULL) {
                 physical_address = GET_ADDRESS(*(uint64_t *)pte_entry);
 
                 if (physical_address) {
