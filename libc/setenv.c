@@ -46,8 +46,9 @@ void set_envp(const char *name, const char *value) {
     strcat(new_env, value);
 
     for (i = 0; env[i] != NULL; i++);
-    env[i] = new_env;
-    env[i+1] = NULL;
+    env[i] = (char *)malloc(256 * sizeof(int));
+    strcpy(env[i], new_env);
+    env[i + 1] = NULL;
 }
 
 

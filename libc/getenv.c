@@ -5,8 +5,7 @@
 
 extern char **env;
 
-char *getenv(const char *name)
-{
+char *getenv(const char *name) {
     int key_length = strlen(name);
     char initial_envp[BUFSIZE], *result = NULL;
     int i, j;
@@ -24,7 +23,7 @@ char *getenv(const char *name)
         if (strcmp(name, initial_envp) == 0) {
             for (j=0; env[i][j] != '\0'; j++) {
                 if(env[i][j] == '=') {
-                    result = env[i]+j+1;
+                    result = env[i] + j + 1;
                 }
             }
             break;

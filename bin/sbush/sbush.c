@@ -345,7 +345,7 @@ void setup_environment_variables(char *envp[]) {
         strcpy(env[i], envp[i]);
         i++;
     }
-    env[i] = 0;
+    env[i] = NULL;
 }
 
 int main(int argc, char* argv[], char *envp[]) {
