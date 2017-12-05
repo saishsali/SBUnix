@@ -47,7 +47,7 @@ struct mm_struct {
     vma_struct *tail;
 };
 
-typedef enum { ZOMBIE, READY, WAITING, RUNNING} STATE;
+typedef enum { ZOMBIE, READY, WAITING, RUNNING, SLEEPING} STATE;
 
 struct PCB {
     uint64_t rsp;
@@ -67,6 +67,7 @@ struct PCB {
     struct PCB *parent;
     struct PCB *siblings;
     struct PCB *child_head;
+    uint32_t sleep_time;
 };
 
 typedef struct PCB task_struct;

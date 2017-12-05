@@ -725,11 +725,12 @@ int sys_wait(int *status) {
 
 void sys_ps() {
     task_struct * pcb = process_list_head;
-    char process_states[4][10] = {
+    char process_states[5][10] = {
         "ZOMBIE",
         "READY",
         "WAITING",
-        "RUNNING"
+        "RUNNING",
+        "SLEEPING"
     };
 
     int i = 0;
@@ -738,8 +739,8 @@ void sys_ps() {
             "\n ----| ----- |--------- | --------------- ");
 
 
-    while(pcb != NULL) {
-        if(pcb->state != 0) {
+    while (pcb != NULL) {
+        if (pcb->state != 0) {
             kprintf("\n  %d  |   %d   |  %s  |  %s  ", i, pcb->pid, process_states[pcb->state], pcb->name);
             i++;
         }
@@ -750,7 +751,7 @@ void sys_ps() {
 
 void sys_shutdown() {
     task_struct * pcb = process_list_head;
-    while(pcb != NULL) {
+    while (pcb != NULL) {
         sys_kill(pcb->pid);
         pcb = pcb->next;
     }
@@ -759,7 +760,13 @@ void sys_shutdown() {
     kprintf("\n\n\n\n*****************************************************************************");
     kprintf("\n********************* SBUnix is now shutting down ***************************");
     kprintf("\n*****************************************************************************");
-    while(1);
+    while (1);
+}
+
+uint32_t sys_sleep(uint32_t seconds) {
+    current->parent->sleep_time = seconds;
+    current->parent->state = SLEEPING;
+    return seconds;
 }
 
 
@@ -824,6 +831,9 @@ void syscall_handler(stack_registers * registers) {
             break;
         case 17:
             sys_shutdown();
+            break;
+        case 18:
+            registers->rax = sys_sleep(registers->rdi);
             break;
     }
 }

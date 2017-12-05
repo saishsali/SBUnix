@@ -229,6 +229,7 @@ task_struct *create_user_process(char *filename, char *argv[], char *envp[]) {
 
     task_struct *pcb = create_new_task();
     strcpy(pcb->name, filename);
+    pcb->sleep_time = 0;
 
     for (i = strlen(filename) - 1; i >= 0; i--) {
         if (filename[i] == '/') {
