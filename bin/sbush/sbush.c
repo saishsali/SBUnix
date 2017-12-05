@@ -71,24 +71,6 @@ int set_environment_variable(char *token) {
     return 1;
 }
 
-// Get and print environment variable
-int get_environment_variable(char *name) {
-    char *value;
-    if(name[0] == '$') {
-        name++;
-        value = getenv(name);
-        if(value)
-            puts(value);
-        else
-            putchar('\n');
-
-    } else {
-        puts(name);
-    }
-
-    return 1;
-}
-
 // Change directory
 int change_directory(char **tokens) {
     char path[100];
@@ -122,11 +104,16 @@ void parse(char *command, int *is_bg, char *tokens[]) {
         tokens[i++] = token;
         // Special case when export statement has extra spaces in it
         if (strcmp(token, "export") == 0) {
-            tokens[i++] = strtok(NULL, "");
+            token = strtok(NULL, "");
+            if(token == NULL) {
+                break;
+            }
+            tokens[i++] = token;
             break;
         }
         command = NULL;
     }
+
     tokens[i] = NULL;
 
     if (i > 0 && strcmp(tokens[i-1], "&") == 0) {
@@ -148,9 +135,21 @@ int check_pipes(char **tokens) {
     return -1;
 }
 
+void print_path_variables() {
+    int i;
+    for (i = 0; env[i] != NULL; i++) {
+        puts(env[i]);
+    }
+}
+
 // Check for builtin commands
 int builtin_command(char **tokens) {
     if (strcmp(tokens[0], "export") == 0) {
+        if (tokens[1] == NULL) {
+            print_path_variables();
+            return 1;
+        } else {
+        }
         return set_environment_variable(tokens[1]);
     } else if (strcmp(tokens[0], "cd") == 0) {
         return change_directory(tokens);
