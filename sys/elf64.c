@@ -80,7 +80,7 @@ uint64_t read_program_header(task_struct *pcb, Elf64_Ehdr *elf_header, Elf64_Phd
     return virtual_address;
 }
 
-void load_executable(task_struct *pcb, char *filename, Elf64_Ehdr *elf_header) {
+void load_executable(task_struct *pcb, Elf64_Ehdr *elf_header) {
     Elf64_Phdr *program_header = (Elf64_Phdr *)((uint64_t)elf_header + elf_header->e_phoff);
     int i;
     uint64_t current_cr3 = get_cr3(), load_section_end_address, max_address = 0;
