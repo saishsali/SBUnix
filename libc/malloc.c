@@ -1,6 +1,8 @@
+/* Refer User space storage allocater in The C Programming Language by K & R */
 #include <sys/defs.h>
 #include <sys/mman.h>
-#define NALLOC 4096
+#include <stdio.h>
+#define NALLOC 1024
 
 typedef long Align;                      /* for alignment to long boundary */
 
@@ -51,8 +53,9 @@ static Header *morecore(size_t nunits) {
     char *cp;
     Header *up;
 
-    if (nunits < NALLOC)
+    if (nunits < NALLOC) {
         nunits = NALLOC;
+    }
     cp = mmap(0, nunits * sizeof(Header), 0x007);
 
     if (cp == NULL) {
@@ -66,7 +69,7 @@ static Header *morecore(size_t nunits) {
 }
 
 /* Malloc: general-purpose storage allocator */
-void *malloc (size_t nbytes) {
+void *malloc(size_t nbytes) {
     Header*  p;
     Header*  prevptr;
     size_t   nunits;
