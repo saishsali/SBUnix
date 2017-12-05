@@ -8,13 +8,20 @@
 
 /* Get TARFS header for the filename */
 posix_header_ustar *get_file(char *filename) {
-    char *p = &_binary_tarfs_start;
-    int size;
+    char *p = &_binary_tarfs_start, relative_path[100];
+    int size, i;
     posix_header_ustar *phu;
+
+    /* Remove root directory from file path */
+    if (filename[0] == '/') {
+        i = 1;
+        while (filename[i++] != '/');
+        strcpy(relative_path, filename + i);
+    }
 
     while (p < &_binary_tarfs_end) {
         phu = (posix_header_ustar*)p;
-        if (strcmp(phu->name, filename) == 0) {
+        if (strcmp(phu->name, relative_path) == 0) {
             return phu;
         }
 

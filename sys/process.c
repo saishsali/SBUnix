@@ -219,7 +219,7 @@ void add_child_to_parent(task_struct* child_task, task_struct* parent_task) {
 
 /* Create new user process */
 task_struct *create_user_process(char *filename, char *argv[], char *envp[]) {
-    char curr_dir[30], new_curr_directory[100];
+    char current_directory[100];
     int i;
 
     Elf64_Ehdr *elf_header = get_elf_header(filename);
@@ -230,21 +230,17 @@ task_struct *create_user_process(char *filename, char *argv[], char *envp[]) {
     task_struct *pcb = create_new_task();
     strcpy(pcb->name, filename);
 
-    // Adding current working directory to pcb
-    strcpy(curr_dir, ROOT);
-
     for (i = strlen(filename) - 1; i >= 0; i--) {
         if (filename[i] == '/') {
-            memcpy(new_curr_directory, filename, i+1);
+            memcpy(current_directory, filename, i + 1);
             break;
         }
     }
-    new_curr_directory[i+1] = '\0';
-    strcat(curr_dir, new_curr_directory);
-    strcpy(pcb->current_dir, curr_dir);
+    current_directory[i + 1] = '\0';
+    strcpy(pcb->current_dir, current_directory);
     pcb->rsp = (uint64_t)pcb->kstack + STACK_SIZE - 8;
 
-    load_executable(pcb, filename, elf_header);
+    load_executable(pcb, elf_header);
     add_process(pcb);
     setup_user_process_stack(pcb, argv, envp);
 

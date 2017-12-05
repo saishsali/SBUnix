@@ -62,16 +62,16 @@ void start(uint32_t *modulep, void *physbase, void *physfree) {
     /* AHCI controller */
     // init_pci();
 
-    /* Create user process and load its executable*/
-    // create_user_process("bin/ls");
+    /* Create Idle process */
     create_idle_process();
 
     /* Create user process, load its executable and switch to ring 3 */
-    char *envp[] = {"PATH=/rootfs/bin", "PS1=sbush> "};
-    task_struct *pcb = create_user_process("bin/sbush", NULL, envp);
-    add_child_to_parent(pcb, idle_process);
-
-    switch_to_user_mode(pcb);
+    char *envp[] = {"PATH=/rootfs/bin:/bin:/random", "PS1=sbush> "};
+    task_struct *pcb = create_user_process("/rootfs/bin/sbush", NULL, envp);
+    if (pcb) {
+        add_child_to_parent(pcb, idle_process);
+        switch_to_user_mode(pcb);
+    }
 }
 
 void boot(void) {
