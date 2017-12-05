@@ -613,7 +613,6 @@ int8_t sys_execvpe(char *file, char *argv[], char *envp[]) {
 
     strcpy(task->current_dir, current->current_dir);
 
-
     // Copy file descriptors
     memcpy(
         (void *)task->file_descriptor,
@@ -624,6 +623,14 @@ int8_t sys_execvpe(char *file, char *argv[], char *envp[]) {
     // Update sibling list of the current task to add new task in place of old task
     update_siblings(current, task);
     task->child_head = current->child_head;
+
+    /* Update parent of all child processes */
+    task_struct *process = task->child_head;
+    while (process != NULL) {
+        process->parent = task;
+        process = process->siblings;
+    }
+
     current->state = ZOMBIE;
 
     // empty vma list

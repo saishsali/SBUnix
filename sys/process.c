@@ -382,7 +382,7 @@ void remove_child_from_parent(task_struct *child_task) {
 void remove_parent_from_child(task_struct *parent_task) {
     task_struct *current = parent_task->child_head;
 
-    while(current->siblings) {
+    while (current->siblings) {
         current->parent = idle_process;
         current = current->siblings;
     }
