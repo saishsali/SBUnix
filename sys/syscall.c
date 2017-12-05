@@ -637,18 +637,21 @@ void cleanup(task_struct *current) {
     memset((void*)current->file_descriptor, 0, MAX_FD * 8);
     current->state = ZOMBIE;
 
+
     // remove current task from schedule list
     // remove_task_from_process_schedule_list(current);
-
     sys_yield();
+
 }
 
 void sys_exit() {
     cleanup(current);
+    
 }
 
 void sys_kill(int pid) {
     task_struct * pcb = process_list_head;
+    kprintf("\n pid %s", pid);
     while(pcb != process_list_tail) {
         if(pcb->pid == pid) {
             cleanup(pcb);
@@ -707,11 +710,23 @@ void sys_ps() {
 
 
     while(pcb != process_list_tail) {
-        kprintf("\n  %d  |   %d   |  %s  |  %s  ", i, pcb->pid, process_states[pcb->state], pcb->name);
-        i++;
+        if(pcb->state != 0) {
+            kprintf("\n  %d  |   %d   |  %s  |  %s  ", i, pcb->pid, process_states[pcb->state], pcb->name);
+            i++;
+        }
         pcb = pcb->next;
     }
+    kprintf("\n i m done");
     kprintf("\n");
+}
+
+void sys_shutdown() {
+    clear_screen();
+    kprintf("\n\n\n\n\n\n\n\n\n\n\n\n");
+    kprintf("\n==========================================================================");
+    kprintf("\n============ SBUnix is now shutting down.  Thank You !!! ===============");
+    kprintf("\n==========================================================================");
+    while(1); 
 }
 
 
@@ -773,6 +788,9 @@ void syscall_handler(stack_registers * registers) {
             break;
         case 16:
             sys_kill(registers->rdi);
+            break;
+        case 17:
+            sys_shutdown();
             break;
     }
 }

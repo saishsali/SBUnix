@@ -124,6 +124,7 @@ void parse(char *command, int *is_bg, char *tokens[]) {
     tokens[i] = NULL;
 
     if (i > 0 && strcmp(tokens[i-1], "&") == 0) {
+        puts("Background proces");
         *is_bg = 1;
         tokens[i-1] = NULL;
     }
@@ -141,30 +142,14 @@ int check_pipes(char **tokens) {
     return -1;
 }
 
-int char_to_int(char *s) {
-    int pid = 0, i;
-    for(i = 0; i < strlen(s); i++) {
-        pid = pid * 10 + s[i] - '0';
-    }
-    return pid;
-}
-
 // Check for builtin commands
 int builtin_command(char **tokens) {
     if (strcmp(tokens[0], "export") == 0) {
         return set_environment_variable(tokens[1]);
-    } else if (strcmp(tokens[0], "echo") == 0) {
-        return get_environment_variable(tokens[1]);
     } else if (strcmp(tokens[0], "cd") == 0) {
         return change_directory(tokens);
     } else if (strcmp(tokens[0], "exit") == 0) {
-        return 0;
-    } else if (strcmp(tokens[0], "ps") == 0) {
-        ps();
-        return 1;
-    } else if (strcmp(tokens[0], "kill") == 0) {
-        kill(char_to_int(tokens[0]));
-        return 1;
+        shutdown();
     }
 
     return -1;
@@ -338,6 +323,7 @@ void lifetime(int argc, char* argv[]) {
             get_command(command, sizeof(command));
             parse(command, &is_bg, tokens);
             flag = execute(tokens, is_bg);
+            puts("\n end execute");
             is_bg = 0;
         } while (flag);
     }
