@@ -52,9 +52,29 @@ void set_current_task(task_struct *pcb) {
     current = pcb;
 }
 
+/* Free memory allocated for PCB */
+void remove_pcb(uint16_t pid) {
+    task_struct *pcb = process_list_head, *previous = NULL;
+    while (pcb != NULL) {
+        if (pcb->pid == pid) {
+            if (pcb->next == NULL) {
+                process_list_tail = previous;
+            } else if (previous == NULL) {
+                process_list_head = pcb->next;
+            } else {
+                previous->next = pcb->next;
+            }
+            free_kernel_memory(pcb);
+            return;
+        }
+        previous = pcb;
+        pcb = pcb->next;
+    }
+}
+
 /* Pick the first task from the list and put suspended task at the end of the list */
 task_struct *strawman_scheduler() {
-    task_struct *process = process_list_head, *tail, *temp;
+    task_struct *process = process_list_head, *tail;
 
     while (process->state != READY && process->next != NULL) {
         tail = process;
@@ -63,13 +83,6 @@ task_struct *strawman_scheduler() {
         process_list_tail->next = tail;
         tail->next = NULL;
         process_list_tail = tail;
-
-        if (process->state == ZOMBIE) {
-            temp = process;
-            process = process->next;
-            // free PCB for exited process
-            remove_pcb(temp);
-        }
         process_list_head = process;
     }
 
@@ -190,10 +203,8 @@ task_struct *create_new_task() {
 */
 void idle() {
     while (1) {
-        __asm__ __volatile__("sti");
-        __asm__ __volatile__("hlt");
-        __asm__ __volatile__("cli");
         schedule();
+        // __asm__ __volatile__("hlt");
     }
 }
 
@@ -601,8 +612,4 @@ void update_siblings(task_struct *old_task, task_struct *new_task) {
 
     prev->siblings = new_task;
     new_task->siblings = process->siblings;
-}
-
-void remove_pcb(task_struct *pcb) {
-    free_kernel_memory(pcb);
 }
