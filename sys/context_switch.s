@@ -39,5 +39,5 @@ _context_switch:
     popq %rbx
     popq %rax
 
-    sti
+    # sti
     retq

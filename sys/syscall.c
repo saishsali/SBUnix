@@ -764,8 +764,10 @@ void sys_shutdown() {
 }
 
 uint32_t sys_sleep(uint32_t seconds) {
-    current->parent->sleep_time = seconds;
-    current->parent->state = SLEEPING;
+    current->sleep_time = seconds;
+    current->state = SLEEPING;
+    sys_yield();
+    kprintf(" sleep done");
     return seconds;
 }
 
