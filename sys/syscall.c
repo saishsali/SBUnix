@@ -693,10 +693,6 @@ void cleanup(task_struct *current) {
     // empty file descriptor
     memset((void*)current->file_descriptor, 0, MAX_FD * 8);
     current->state = ZOMBIE;
-
-    // remove current task from schedule list
-    // remove_task_from_process_schedule_list(current);
-
 }
 
 void sys_exit() {
@@ -706,8 +702,8 @@ void sys_exit() {
 
 void sys_kill(int pid) {
     task_struct * pcb = process_list_head;
-    while(pcb != NULL) {
-        if(pcb->pid == pid) {
+    while (pcb != NULL) {
+        if (pcb->pid == pid) {
             cleanup(pcb);
             break;
         }
@@ -779,12 +775,14 @@ void sys_ps() {
 }
 
 void sys_shutdown() {
-    task_struct * pcb = process_list_head, *temp = NULL;
+    task_struct *pcb = process_list_head, *temp;
     while (pcb != NULL) {
-        sys_kill(pcb->pid);
+        if (pcb->state != ZOMBIE) {
+            cleanup(pcb);
+        }
         temp = pcb;
         pcb = pcb->next;
-        free_kernel_memory(temp);
+        remove_pcb(temp->pid);
     }
 
     clear_screen();
