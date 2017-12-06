@@ -13,6 +13,7 @@
 
 char **env;
 char *ps1;
+int num_env = 16;
 
 // Removes leading and trailing quotes from a string
 char *trim_quotes(char *str) {
@@ -337,10 +338,10 @@ void lifetime(int argc, char* argv[]) {
 /* Setup environment variables by making a copy of envp */
 void setup_environment_variables(char *envp[]) {
     int i = 0;
-    env = (char **)malloc(16 * sizeof(char *));
+    env = (char **)malloc((num_env + 1) * sizeof(char *));
 
-    while (envp[i] != NULL) {
-        env[i] = (char *)malloc(256 * sizeof(int));
+    while (envp[i] != NULL && i < num_env) {
+        env[i] = (char *)malloc(256 * sizeof(char));
         strcpy(env[i], envp[i]);
         i++;
     }

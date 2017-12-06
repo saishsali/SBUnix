@@ -239,4 +239,4 @@ if (pid == 0) {
 }
 
 --------------Execute scripts (files that start with #!sbush)------------------
-bin/sbush /rootfs/etc/test/script.sh
+sbush /rootfs/etc/test/script.sh
