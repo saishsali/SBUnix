@@ -16,6 +16,7 @@ int main(int argc, char *argv[], char *envp[]) {
 	if(pid > 1) {
 		kill(pid);
 	} else {
+		// Idle process cant be killed
 		puts("\n Cant kill this process");
 	}
     exit(1);

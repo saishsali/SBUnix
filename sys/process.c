@@ -21,7 +21,7 @@ task_struct *current;
 /* Get next free process id */
 int get_process_id() {
     int i;
-    for (i = 0; i < MAX_PROCESS; i++) {
+    for (i = 1; i < MAX_PROCESS; i++) {
         if (process_ids[i] == 0) {
             process_ids[i] = 1;
             return i;
