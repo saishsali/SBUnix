@@ -704,7 +704,7 @@ void sys_exit() {
     sys_yield();
 }
 
-void sys_kill(int pid) {
+int sys_kill(pid_t pid) {
     task_struct * pcb = process_list_head;
     while(pcb != NULL) {
         if(pcb->pid == pid && pcb->state != ZOMBIE) {
@@ -713,6 +713,7 @@ void sys_kill(int pid) {
         }
         pcb = pcb->next;
     }
+    return 0;
 }
 
 int sys_waitpid(int pid, int *status, int options) {
@@ -797,6 +798,14 @@ uint32_t sys_sleep(uint32_t seconds) {
     return seconds;
 }
 
+pid_t sys_getpid() {
+    return current->pid;
+}
+
+pid_t sys_getppid() {
+    return current->parent->pid;
+}
+
 
 void syscall_handler(stack_registers * registers) {
     switch (registers->rax) {
@@ -855,13 +864,19 @@ void syscall_handler(stack_registers * registers) {
             sys_ps();
             break;
         case 16:
-            sys_kill(registers->rdi);
+            registers->rax = sys_kill(registers->rdi);
             break;
         case 17:
             sys_shutdown();
             break;
         case 18:
             registers->rax = sys_sleep(registers->rdi);
+            break;
+        case 19:
+            registers->rax = sys_getpid();
+            break;
+        case 20:
+            registers->rax = sys_getppid();
             break;
     }
 }

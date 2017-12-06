@@ -32,7 +32,7 @@ int dup2(int oldfd, int newfd);
 
 void yield();
 void ps();
-void kill(int pid);
+int kill(pid_t pid, int sig);
 void shutdown();
 
 #endif

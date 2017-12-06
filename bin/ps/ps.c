@@ -4,5 +4,5 @@
 int main(int argc, char *argv[], char *envp[]) {
     ps();
 
-    exit(1);
+    exit(0);
 }
