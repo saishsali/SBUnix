@@ -21,7 +21,6 @@ int get_environment_variable(char *name) {
     char *value;
     if (name[0] == '$') {
         name++;
-        puts(name);
         value = getenv(name);
 
         if(value)
