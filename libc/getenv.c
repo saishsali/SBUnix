@@ -21,7 +21,7 @@ char *getenv(const char *name) {
         }
         initial_envp[key_length] = '\0';
         if (strcmp(name, initial_envp) == 0) {
-            for (j=0; env[i][j] != '\0'; j++) {
+            for (j = 0; env[i][j] != '\0'; j++) {
                 if(env[i][j] == '=') {
                     result = env[i] + j + 1;
                 }
@@ -29,6 +29,6 @@ char *getenv(const char *name) {
             break;
         }
     }
-
     return result;
+
 }

@@ -60,8 +60,8 @@ void add_slash_at_end(char *path) {
 
 void remove_slash_from_start(char *path) {
     char copy_path[100];
-    int i;
-    for(i = 1; i < strlen(path); i++) {
+    int i, len = strlen(path);
+    for(i = 1; i < len; i++) {
         copy_path[i-1] = path[i];
     }
     copy_path[i-1] = '\0';
@@ -72,7 +72,7 @@ void remove_slash_from_start(char *path) {
 DIR* sys_opendir(char *path) {
     file_node *node;
     char *name;
-    int i = 0, flag = 0, c = 0;
+    int i = 0, flag = 0, c = 0, len;
     DIR* ret_dir;
     char directory_path[100];
     strcpy(directory_path, path);
@@ -86,7 +86,8 @@ DIR* sys_opendir(char *path) {
         if(path[0] == '/') {
             i = 1;
         }
-        for (; i < strlen(path); i++) {
+        len = strlen(path);
+        for (; i < len; i++) {
             temp[c] = path[i];
             c++;
             if(path[i] == '/') {
@@ -95,7 +96,14 @@ DIR* sys_opendir(char *path) {
         }
         temp[c-1] = '\0';
 
+        if(strcmp(current->current_dir, "/") == 0) {
+            if(strcmp(temp, "rootfs") != 0) {
+                return (DIR *)NULL;
+            }
+        }
+
         if(strcmp(temp, "rootfs") == 0) {
+
             // It is a absolute path
             name = strtok(directory_path, "/");
 
@@ -183,30 +191,44 @@ dentry* sys_readdir(DIR* dir) {
     return NULL;
 }
 
+void add_slash_at_end_and_back(char s[100]) {
+    char new_path[100];
+    int len = strlen(s) - 1;
+    if (s[0] == '/' && s[len] == '/') {
+        strcpy(new_path, s);
+
+    } else if (s[0] != '/') {
+        new_path[0] = '/';
+        strcat(new_path, s);
+        if (s[len] != '/') {
+            strcat(new_path, "/");
+        }
+
+    } else if(s[len] != '/') {
+        strcpy(new_path, s);
+        strcat(new_path, "/");
+    }
+    strcpy(s, new_path);
+}
+
 int sys_chdir(char *path) {
 
     char curr[100];
     strcpy(curr, current->current_dir);
     char directory_path[100];
     strcpy(directory_path, path);
-    int i = 0, c=0;
+    int i = 0, c = 0;
 
-    if(strcmp(path, "/") == 0) {
+    if (strcmp(path, "/") == 0) {
         strcpy(current->current_dir, "/");
         return 0;
     }
 
     // if current working directory is / and path is not rootfs, then return
-    if(strcmp(current->current_dir, "/") == 0) {
-        if(strcmp(path, "rootfs") == 0) {
-            strcpy(current->current_dir, "/rootfs/");
-            return 0;
-        } else if(strcmp(path, ".") == 0 || strcmp(path, "..") == 0) {
+    if (strcmp(current->current_dir, "/") == 0) {
+        if (strcmp(path, ".") == 0 || strcmp(path, "..") == 0) {
             strcpy(current->current_dir, "/");
             return 0;
-        } else {
-            kprintf("\n%s: It is not a directory", path);
-            return -1;
         }
     }
 
@@ -219,13 +241,14 @@ int sys_chdir(char *path) {
     add_slash_at_end(path);
     char temp[100];
 
-    if(path[0] == '/') {
+    if (path[0] == '/') {
         i = 1;
     }
-    for (; i < strlen(path); i++) {
+    int len = strlen(path);
+    for (; i < len; i++) {
         temp[c] = path[i];
         c++;
-        if(path[i] == '/') {
+        if (path[i] == '/') {
             break;
         }
     }
@@ -242,7 +265,7 @@ int sys_chdir(char *path) {
 
     DIR *new_directory = sys_opendir(directory_path);
 
-    if(new_directory == NULL) {
+    if (new_directory == NULL) {
         kprintf("\n%s: It is not a directory", path);
         return -1;
     }
@@ -277,7 +300,7 @@ int sys_chdir(char *path) {
         int index = 0;
         new_curr_directory[index++] = '/';
         while (node && strcmp(node->name, "/") != 0) {
-            for(i = strlen(node->name) - 1; i>=0; i--) {
+            for (i = strlen(node->name) - 1; i>=0; i--) {
                 new_curr_directory[index++] = node->name[i];
             }
             new_curr_directory[index++] = '/';
@@ -290,7 +313,7 @@ int sys_chdir(char *path) {
         // Path reverse
         char more_curr_directory[100];
         int c = 0;
-        for(i = index-1; i >= 0; i--) {
+        for (i = index-1; i >= 0; i--) {
             more_curr_directory[c++] = new_curr_directory[i];
         }
         more_curr_directory[c] = '\0';
@@ -457,7 +480,8 @@ int8_t sys_open(char *path, uint8_t flags) {
     }
 
     //Check if it is just a file name
-    for(i = 0; i < strlen(path); i++) {
+    int len = strlen(path);
+    for(i = 0; i < len; i++) {
         if(path[i] == '/')
             flag = 1;
     }
@@ -487,7 +511,8 @@ int8_t sys_open(char *path, uint8_t flags) {
     if(path[0] == '/') {
         i = 1;
     }
-    for (; i < strlen(path); i++) {
+    len = strlen(path);
+    for (; i < len; i++) {
         temp[c] = path[i];
         c++;
         if(path[i] == '/') {
@@ -754,10 +779,12 @@ void sys_ps() {
 }
 
 void sys_shutdown() {
-    task_struct * pcb = process_list_head;
+    task_struct * pcb = process_list_head, *temp = NULL;
     while (pcb != NULL) {
         sys_kill(pcb->pid);
+        temp = pcb;
         pcb = pcb->next;
+        free_kernel_memory(temp);
     }
 
     clear_screen();
@@ -771,7 +798,6 @@ uint32_t sys_sleep(uint32_t seconds) {
     current->sleep_time = seconds;
     current->state = SLEEPING;
     sys_yield();
-    kprintf(" sleep done");
     return seconds;
 }
 

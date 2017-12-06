@@ -34,7 +34,7 @@ int is_alphabet(char c) {
 }
 
 // Decodes environment variable
-void decode_environment_variable(char *var, char decoded_var[]) {
+int decode_environment_variable(char *var, char decoded_var[]) {
     int i = 0, j = 0;
     decoded_var[0] = '\0';
 
@@ -48,6 +48,8 @@ void decode_environment_variable(char *var, char decoded_var[]) {
                 var++;
             }
             char *value = getenv(name);
+            if(value == NULL)
+                return 0;
             strcat(decoded_var, value);
             j = j + strlen(value);
         } else {
@@ -56,6 +58,7 @@ void decode_environment_variable(char *var, char decoded_var[]) {
         }
     }
     decoded_var[j] = '\0';
+    return 1;
 }
 
 
@@ -63,7 +66,9 @@ void decode_environment_variable(char *var, char decoded_var[]) {
 int set_environment_variable(char *token) {
     char decoded_var[BUFSIZE];
     char *name = strtok(token, "=");
-    decode_environment_variable(trim_quotes(strtok(NULL, "=")), decoded_var);
+    int result = decode_environment_variable(trim_quotes(strtok(NULL, "=")), decoded_var);
+    if (result == 0)
+        return 1;
     setenv(name, decoded_var, 1);
 
     if (strcmp(name, "PS1") == 0)
