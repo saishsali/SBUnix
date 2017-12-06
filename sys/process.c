@@ -481,12 +481,14 @@ void setup_child_task_stack(task_struct *parent_task, task_struct *child_task) {
     child_task->entry = *((uint64_t *)&parent_task->kstack[STACK_SIZE - 8 * 7]);
 }
 
+char arguments_copy[16][100], envp_copy[16][100];
+uint64_t envp_address[16], argv_address[16];
+
 /* Setup user process stack with argument values */
 void setup_user_process_stack(task_struct *task, char *argv[], char *envp[]) {
-    uint64_t u_rsp = task->u_rsp, argv_address[16], current_cr3 = get_cr3(), envp_address[16];
+    uint64_t u_rsp = task->u_rsp, current_cr3 = current->cr3;
     uint16_t argc = 0, argv_length, envc = 0, envp_length;
     int16_t i;
-    char arguments_copy[16][100], envp_copy[16][100];
 
     if (envp) {
         /*

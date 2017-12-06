@@ -4,6 +4,7 @@
 #define BUFSIZE 256
 
 extern char **env;
+extern int num_env;
 
 void update_envp(const char *name, const char *value) {
     int i, j, key_length = strlen(name);
@@ -45,11 +46,12 @@ void set_envp(const char *name, const char *value) {
     strcat(new_env, value);
 
     for (i = 0; env[i] != NULL; i++);
-    env[i] = (char *)malloc(256 * sizeof(int));
-    strcpy(env[i], new_env);
-    env[i + 1] = NULL;
+    if (i < num_env) {
+        env[i] = (char *)malloc(256 * sizeof(char));
+        strcpy(env[i], new_env);
+        env[i + 1] = NULL;
+    }
 }
-
 
 void setenv(const char *name, const char *value, int overwrite) {
     if (strlen(getenv(name)) > 0) {

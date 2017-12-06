@@ -7,6 +7,7 @@
 #include <sys/paging.h>
 #include <sys/page_descriptor.h>
 #include <sys/string.h>
+#include <sys/syscall.h>
 
 extern task_struct *current;
 void _flush_tlb();
@@ -39,6 +40,7 @@ void page_fault_exception(stack_registers *registers) {
 
         if (vma == NULL) {
             kprintf("Segmentation Fault, Address: %x, Error: %x\n", page_fault_address, registers->error_code);
+            // sys_exit();
             while(1);
         }
     } else if (registers->error_code & 0x01) {
