@@ -13,11 +13,13 @@ int char_to_int(char *s) {
 
 int main(int argc, char *argv[], char *envp[]) {
 	int pid = char_to_int(argv[2]);
-	if(pid > 1) {
+	if(pid > 2) {
 		kill(pid);
+	} else if(pid == 2 ) {
+		// Sbush process
 	} else {
 		// Idle process cant be killed
-		puts("\n Cant kill this process");
+		puts("\nCant kill this process");
 	}
     exit(1);
 }
