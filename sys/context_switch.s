@@ -3,7 +3,6 @@
 .global _context_switch
 _context_switch:
 
-    cli
     pushq %rax
     pushq %rbx
     pushq %rcx
@@ -39,5 +38,4 @@ _context_switch:
     popq %rbx
     popq %rax
 
-    sti
     retq

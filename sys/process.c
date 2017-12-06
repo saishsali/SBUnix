@@ -204,7 +204,6 @@ task_struct *create_new_task() {
 void idle() {
     while (1) {
         schedule();
-        // __asm__ __volatile__("hlt");
     }
 }
 

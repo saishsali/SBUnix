@@ -64,8 +64,6 @@ isr_common_stub:
 
     addq $16 ,%rsp
 
-    # Set interrupt
-    sti
     iretq
 
 INTERRUPT_HANDLER 0

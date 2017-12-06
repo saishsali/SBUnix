@@ -24,5 +24,9 @@ _x86_64_asm_pic_remapping:
     outb %al, $0x21
     outb %al, $0xA1
 
-    sti
+    # Masking interrupts
+    movb $0x0, %al
+    outb %al, $0x21
+    outb %al, $0xA1
+
     retq
