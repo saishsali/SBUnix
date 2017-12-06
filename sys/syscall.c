@@ -794,7 +794,6 @@ uint32_t sys_sleep(uint32_t seconds) {
     current->sleep_time = seconds;
     current->state = SLEEPING;
     sys_yield();
-    kprintf(" sleep done");
     return seconds;
 }
 

@@ -191,8 +191,6 @@ task_struct *create_new_task() {
 void idle() {
     while (1) {
         __asm__ __volatile__("sti");
-        __asm__ __volatile__("hlt");
-        __asm__ __volatile__("cli");
         schedule();
     }
 }
