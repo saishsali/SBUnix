@@ -223,21 +223,23 @@ void remove_page_tables(uint64_t cr3) {
 
     for (pml4_index = 0; pml4_index < 511; pml4_index++) {
         pml4_entry = task_pml4->entries[pml4_index];
-        if (!pml4_entry) {
+        if (!pml4_entry || !GET_ADDRESS(pml4_entry)) {
             continue;
         }
+
         pdpt = (PDPT *)physical_to_virtual_address((PDPT *)GET_ADDRESS(pml4_entry));
 
         for (pdpt_index = 0; pdpt_index < 512; pdpt_index++) {
             pdpt_entry = pdpt->entries[pdpt_index];
-            if (!pdpt_entry) {
+            if (!pdpt_entry || !GET_ADDRESS(pdpt_entry)) {
                 continue;
             }
+
             pdt = (PDT *)physical_to_virtual_address((PDT *)GET_ADDRESS(pdpt_entry));
 
             for (pdt_index = 0; pdt_index < 512; pdt_index++) {
                 pdt_entry = pdt->entries[pdt_index];
-                if (!pdt_entry) {
+                if (!pdt_entry || !GET_ADDRESS(pdt_entry)) {
                     continue;
                 }
                 pt = (PT *)physical_to_virtual_address((PT *)GET_ADDRESS(pdt_entry));
