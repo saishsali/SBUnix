@@ -5,4 +5,6 @@
 
 void syscall_handler();
 
+void sys_exit();
+
 #endif
