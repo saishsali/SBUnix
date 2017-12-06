@@ -78,7 +78,6 @@ task_struct *strawman_scheduler() {
 
 /* Schedule next task, set TSS rsp and context switch */
 void schedule() {
-    kprintf("\n schedule");
     task_struct *running_pcb = current;
 
     task_struct *next   = strawman_scheduler();
