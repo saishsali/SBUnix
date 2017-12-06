@@ -707,7 +707,7 @@ void sys_exit() {
 void sys_kill(int pid) {
     task_struct * pcb = process_list_head;
     while(pcb != NULL) {
-        if(pcb->pid == pid) {
+        if(pcb->pid == pid && pcb->state != ZOMBIE) {
             cleanup(pcb);
             break;
         }
@@ -777,14 +777,14 @@ void sys_ps() {
 void sys_shutdown() {
     task_struct * pcb = process_list_head, *temp = NULL;
     while (pcb != NULL) {
-        sys_kill(pcb->pid);
+        cleanup(pcb);
         temp = pcb;
         pcb = pcb->next;
         remove_pcb(temp);
     }
 
     clear_screen();
-    kprintf("\n\n\n\n*****************************************************************************");
+    kprintf("\n*****************************************************************************");
     kprintf("\n********************* SBUnix is now shutting down ***************************");
     kprintf("\n*****************************************************************************");
     while (1);
