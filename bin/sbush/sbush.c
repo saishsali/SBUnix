@@ -123,10 +123,13 @@ void parse(char *command, int *is_bg, char *tokens[]) {
     tokens[i] = NULL;
 
     if (i > 0 && strcmp(tokens[i-1], "&") == 0) {
-        puts("Background proces");
         *is_bg = 1;
-        tokens[i-1] = NULL;
+        tokens[i - 1] = NULL;
+    } else if ((i > 0 && tokens[i - 1][strlen(tokens[i - 1]) - 1] == '&')) {
+        *is_bg = 1;
+        tokens[i - 1][strlen(tokens[i - 1]) - 1] = '\0';
     }
+
 }
 
 // Check if pipe exists in a command
@@ -265,6 +268,8 @@ int execute(char **tokens, int is_bg) {
         } else {
             if (is_bg == 0) {
                 waitpid(pid, NULL, 0);
+            } else {
+                yield();
             }
         }
     }

@@ -759,7 +759,7 @@ void sys_ps() {
     };
 
     int i = 0;
-    kprintf("\n ----- LIST OF CURRENT PROCESSES --------- "
+    kprintf("\n ----| ----- |--------- | --------------- "
             "\n  #  |  PID  | State    |  Process Name "
             "\n ----| ----- |--------- | --------------- ");
 
