@@ -13,7 +13,6 @@ int char_to_int(char *s) {
 
 int main(int argc, char *argv[], char *envp[]) {
 	char seconds[10];
-	// int flag = 1;
 	int len = strlen(argv[1]);
 	if (argv[1][len - 1] == '&') {
 		strcpy(seconds, argv[1]);
@@ -24,11 +23,6 @@ int main(int argc, char *argv[], char *envp[]) {
 	}
 
     sleep(char_to_int(seconds));
-
-    // if(flag == 1)
-    // 	yield();
-
-    // puts("going to exit");
 
     exit(1);
 }
