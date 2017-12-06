@@ -41,6 +41,8 @@ void start(uint32_t *modulep, void *physbase, void *physfree) {
     kprintf("physfree %p\n", (uint64_t)physfree);
     kprintf("tarfs in [%p:%p]\n", &_binary_tarfs_start, &_binary_tarfs_end);
 
+    clear_screen();
+
     /* Setup Paging and load CR3 */
     setup_page_tables((uint64_t)physbase, (uint64_t)physfree, last_physical_address);
 
