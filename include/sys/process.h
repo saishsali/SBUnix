@@ -98,7 +98,7 @@ void remove_parent_from_child(task_struct *parent_task);
 
 void create_idle_process();
 
-void remove_pcb(task_struct *pcb);
+void remove_pcb(uint16_t pid);
 
 void add_child_to_parent(task_struct* child_task, task_struct* parent_task);
 

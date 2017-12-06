@@ -732,6 +732,8 @@ int sys_waitpid(int pid, int *status, int options) {
 
     sys_yield();
 
+    remove_pcb(current->wait_on_child_pid);
+
     return current->wait_on_child_pid;
 }
 
@@ -745,6 +747,8 @@ int sys_wait(int *status) {
     current->state = WAITING;
 
     sys_yield();
+
+    remove_pcb(current->wait_on_child_pid);
 
     return current->wait_on_child_pid;
 }
@@ -781,7 +785,7 @@ void sys_shutdown() {
         cleanup(pcb);
         temp = pcb;
         pcb = pcb->next;
-        remove_pcb(temp);
+        free_kernel_memory(temp);
     }
 
     clear_screen();

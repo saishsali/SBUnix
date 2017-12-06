@@ -7,4 +7,6 @@ void syscall_handler();
 
 void sys_exit();
 
+void sys_yield();
+
 #endif
