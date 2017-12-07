@@ -6,7 +6,7 @@
 #define MAX_PROCESS 1000
 
 #define STACK_START 0xF0000000
-#define STACK_LIMIT 0x5000      // 5 * 4096 bytes
+#define STACK_LIMIT 0x10000      // 10 * 4096 bytes
 
 #define STACK_SIZE  0x800       // 2048 bytes
 
