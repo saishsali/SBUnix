@@ -13,7 +13,7 @@ void timer_interrupt() {
     task_struct *pcb = process_list_head;
     timer++;
     if (timer % FREQUENCY == 0) {
-        // sys_yield();
+        sys_yield();
         kprintf_pos(ROW, COLUMN, "Time since boot: %d s", ++i);
 
         while (pcb != NULL) {

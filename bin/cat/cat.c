@@ -30,6 +30,7 @@ int main(int argc, char *argv[], char *envp[]) {
             }
         }
     }
+    puts("\n");
 
     exit(0);
 }

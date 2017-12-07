@@ -75,11 +75,18 @@ void remove_pcb(uint16_t pid) {
 
 /* Pick the first task from the list and put suspended task at the end of the list */
 task_struct *strawman_scheduler() {
-    task_struct *process = process_list_head, *tail;
+    task_struct *process = process_list_head, *tail, *temp = process_list_head;
 
-    while (process->state != READY && process->next != NULL) {
+    if (process->next == NULL) {
+        return process;
+    }
+
+    while (process->state != READY) {
         tail = process;
         process = process->next;
+        if (process == temp) {
+            return temp;
+        }
 
         process_list_tail->next = tail;
         tail->next = NULL;
