@@ -95,7 +95,11 @@ DIR* sys_opendir(char *dir_path) {
                 break;
             }
         }
-        temp[c-1] = '\0';
+        if (i == len) {
+            temp[c] = '\0';
+        } else {
+            temp[c-1] = '\0';
+        }
 
         if(strcmp(current->current_dir, "/") == 0) {
             if(strcmp(temp, "rootfs") != 0 && strcmp(temp, ".") != 0 && strcmp(temp, "..") != 0) {
@@ -261,7 +265,11 @@ int sys_chdir(char *dir_path) {
                 break;
             }
         }
-        temp[c] = '\0';
+        if (i == len) {
+            temp[c] = '\0';
+        } else {
+            temp[c-1] = '\0';
+        }
 
         if (strcmp(temp, "rootfs") != 0) {
             kprintf("\n%s: It is not a directory \n", path);
@@ -292,7 +300,11 @@ int sys_chdir(char *dir_path) {
             break;
         }
     }
-    temp[c-1] = '\0';
+    if (i == len) {
+        temp[c] = '\0';
+    } else {
+        temp[c-1] = '\0';
+    }
 
     strcpy(directory_path, current->current_dir);
 
