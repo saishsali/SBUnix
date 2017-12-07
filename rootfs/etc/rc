@@ -1,4 +1,4 @@
 #!/rootfs/bin/sbush
-# This is a comment!
-echo "*********WELCOME TO SBUNIX*********"
-echo "Type 'help' for list of commands"
+echo "********************************************************************************"
+echo "**************************WELCOME TO SBUNIX*************************************"
+echo "********************Type 'help' for list of commands****************************"
