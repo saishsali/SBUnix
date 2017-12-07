@@ -243,7 +243,6 @@ int sys_chdir(char *dir_path) {
 
 
     if (current_dir == NULL) {
-        kprintf("\nIt is not a valid path\n");
         return -1;
     }
 
@@ -271,7 +270,6 @@ int sys_chdir(char *dir_path) {
         }
 
         if (strcmp(temp, "rootfs") != 0) {
-            kprintf("\n%s: It is not a directory \n", path);
             return -1;
         }
 
@@ -317,7 +315,6 @@ int sys_chdir(char *dir_path) {
     DIR *new_directory = sys_opendir(directory_path);
 
     if (new_directory == NULL) {
-        kprintf("\n%s: It is not a directory \n", path);
         return -1;
     }
 
@@ -540,7 +537,6 @@ int8_t sys_open(char *file_path, uint8_t flags) {
     //Check if path is a directory
     DIR *current_dir = sys_opendir(path);
     if(current_dir != NULL) {
-        kprintf("\n%s: Is a directory \n", path);
         return -1;
     }
 
@@ -552,7 +548,6 @@ int8_t sys_open(char *file_path, uint8_t flags) {
         current_dir = sys_opendir(directory_path);
 
         if(current_dir == NULL) {
-            kprintf("\n%s: It is not a valid path", path);
             return -1;
         }
     }
@@ -571,7 +566,11 @@ int8_t sys_open(char *file_path, uint8_t flags) {
             break;
         }
     }
-    temp[c-1] = '\0';
+    if (i == len) {
+        temp[c] = '\0';
+    } else {
+        temp[c-1] = '\0';
+    }
 
     if (strcmp(temp, "rootfs") == 0){
         strcpy(directory_path, path);
@@ -598,7 +597,6 @@ int8_t sys_open(char *file_path, uint8_t flags) {
         DIR *new_directory = sys_opendir(directory_path);
 
         if (new_directory == NULL) {
-            kprintf("\n%s: It is not a valid path", path);
             return -1;
         }
 
