@@ -247,6 +247,8 @@ int builtin_command(char **tokens) {
     } else if (strcmp(tokens[0], "cd") == 0) {
         return change_directory(tokens);
     } else if (strcmp(tokens[0], "exit") == 0) {
+        exit(0);
+    } else if (strcmp(tokens[0], "shutdown") == 0) {
         shutdown();
     }
 
@@ -347,7 +349,7 @@ int execute(char **tokens, int is_bg) {
                 puts("-sbush: command not found");
                 exit(1);
             }
-        } else if (pid < 0) {
+         } else if (pid < 0) {
             puts("Fork error");
         } else {
             if (is_bg == 0) {
