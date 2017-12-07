@@ -2,7 +2,7 @@
 #include <stdio.h>
 
 pid_t waitpid(int pid, int *status) {
-    pid_t cid;
+    int64_t cid;
 
     __asm__ (
         "movq $14, %%rax;"
