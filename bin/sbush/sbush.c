@@ -256,9 +256,9 @@ int builtin_command(char **tokens) {
         exit(0);
     } else if (strcmp(tokens[0], "shutdown") == 0) {
         shutdown();
-    } else if (strcmp(tokens[0], "ulimit") == 0) {
+    } else if (strcmp(tokens[0], "ulimits") == 0) {
         return read_file("/rootfs/etc/ulimits");
-    } else if (strcmp(tokens[0], "helper") == 0) {
+    } else if (strcmp(tokens[0], "help") == 0) {
         return read_file("/rootfs/etc/help");
     }
 
@@ -322,6 +322,7 @@ void execute_script(int fd) {
             if (comment == 1)
                 comment = 0;
             else if (i != 0) {
+                printf("%c", c);
                 command[i] = '\0';
                 i = 0;
                 parse(command, &is_bg, tokens);
@@ -330,6 +331,13 @@ void execute_script(int fd) {
         } else if (comment == 0) {
             command[i++] = c;
         }
+    }
+
+    if(c != '\n') {
+        printf("\n");
+        command[i] = '\0';
+        parse(command, &is_bg, tokens);
+        execute(tokens, is_bg);
     }
 }
 

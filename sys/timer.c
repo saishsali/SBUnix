@@ -12,8 +12,9 @@ extern task_struct *process_list_head;
 void timer_interrupt() {
     task_struct *pcb = process_list_head;
     timer++;
+
+
     if (timer % FREQUENCY == 0) {
-        sys_yield();
         kprintf_pos(ROW, COLUMN, "Time since boot: %d s", ++i);
 
         while (pcb != NULL) {
@@ -26,5 +27,9 @@ void timer_interrupt() {
             }
             pcb = pcb->next;
         }
+    }
+
+    if (timer % (FREQUENCY / 2) == 0) {
+        sys_yield();
     }
 }

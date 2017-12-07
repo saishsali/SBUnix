@@ -1,8 +1,14 @@
 ********************************** H E L P ******************************
-ps              	Process status 
+ps              	Process List 
 ls  				List directory contents
 ls path				List directory contents of that path
+cat [file path] 	Prints file contents
+					example: cat file
 cd              	Change Directory
+ulimits          	Displays system limits
+sbush {filepath}  	Execute shebang files. example: sbush /etc/test/script.sh
+exit 				Kills the current process
+shutdown        	Exits all the process.
 echo $VAR       	Displays the current value set in the argument variable
 					example - echo $PATH
 export VAR=ABC  	Export used to create/set value to environment variable
@@ -11,10 +17,4 @@ sleep {seconds} 	Puts the shell to sleep for specified seconds
                 	example: sleep 5
 sleep {seconds} & 	Puts the shell to sleep for specified seconds in background
                 	example: sleep 5 &
-kill -9 pid			Kill the process with that pid [Note: Only **kill -9** supported]
-ulimit          	Displays system limits
-cat [file path] 	Prints file contents
-                	example: cat file
-sbush {filepath}  	Execute shebang files. example: sh /etc/test/script.sh
-exit 				Kills the current process
-shutdown        	Exits all the process.
+kill -9 pid			Kill the process with that pid [Note: Only kill -9 supported]

@@ -240,6 +240,12 @@ int sys_chdir(char *dir_path) {
         return -1;
     }
 
+    if(path[0] == '/') {
+        // absolute path
+        strcpy(current->current_dir, dir_path);
+        return 0;
+    }
+
     add_slash_at_end(path);
     char temp[100];
 
