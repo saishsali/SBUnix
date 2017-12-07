@@ -5,10 +5,6 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <fcntl.h>
-#include <sys/dirent.h>
-#include <sys/mman.h>
-#include <sys/paging.h>
-#include <sys/process.h>
 #define BUFSIZE 512
 
 char **env;
@@ -316,6 +312,20 @@ void execute_script(int fd) {
     ssize_t n;
     char c, command[BUFSIZE], *tokens[BUFSIZE];
 
+    while ((n = read(fd, &c, 1) != 0)) {
+        if (c == '\n') {
+            break;
+        }
+        command[i++] = c;
+    }
+    command[i] = '\0';
+
+    if (strcmp(command, "#!sbush") != 0 && strcmp(command, "#!/rootfs/bin/sbush") != 0) {
+        printf("-sbush: %s: no such file or directory", command);
+        return;
+    }
+
+    i = 0;
     while ((n = read(fd, &c, 1) != 0)) {
         if (c == '#') {
             comment = 1;

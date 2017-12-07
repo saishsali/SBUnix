@@ -1,7 +1,7 @@
 ********************************** H E L P ******************************
-ps              	Process List 
+ps              	Process List
 ls  				List directory contents
-ls path				List directory contents of that path
+ls path			    List directory contents of that path
 cat [file path] 	Prints file contents
 					example: cat file
 cd              	Change Directory
@@ -13,7 +13,7 @@ echo $VAR       	Displays the current value set in the argument variable
 					example - echo $PATH
 export VAR=ABC  	Export used to create/set value to environment variable
                 	example: export PATH=/rootfs/bin
-sleep {seconds} 	Puts the shell to sleep for specified seconds 
+sleep {seconds} 	Puts the shell to sleep for specified seconds
                 	example: sleep 5
 sleep {seconds} & 	Puts the shell to sleep for specified seconds in background
                 	example: sleep 5 &
