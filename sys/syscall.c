@@ -248,7 +248,6 @@ int sys_chdir(char *dir_path) {
     }
 
     if(path[0] == '/') {
-        kprintf(" path is %s", path);
 
         if (path[0] == '/') {
             i = 1;
