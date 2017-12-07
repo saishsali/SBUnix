@@ -26,7 +26,6 @@ int main(int argc, char *argv[], char *envp[]) {
 
     DIR * dir = opendir(buf);
     if (dir == NULL) {
-        puts("Directory does not exist");
         exit(1);
     }
 
