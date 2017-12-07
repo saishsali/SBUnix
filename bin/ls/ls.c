@@ -5,14 +5,29 @@
 #include <stdlib.h>
 #define BUFSIZE 256
 
+void add_slash_at_end(char *path) {
+    int i = strlen(path) - 1;
+    if (path[i] != '/') {
+        path[++i] = '/';
+        path[++i] = '\0';
+    }
+}
+
 int main(int argc, char *argv[], char *envp[]) {
     int i;
     char buf[BUFSIZE];
-    getcwd(buf, BUFSIZE);
+
+    if (argv[1]) {
+        add_slash_at_end(argv[1]);
+        strcpy(buf, argv[1]);
+    } else {
+        getcwd(buf, BUFSIZE);
+    }
 
     DIR * dir = opendir(buf);
     if (dir == NULL) {
         puts("Directory does not exist");
+        exit(1);
     }
 
     dentry* curr_dentry = NULL;
@@ -23,6 +38,7 @@ int main(int argc, char *argv[], char *envp[]) {
         putchar(' ');
     }
     putchar('\n');
+
     closedir(dir);
 
     exit(0);

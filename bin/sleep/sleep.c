@@ -11,9 +11,32 @@ int char_to_int(char *s) {
     return pid;
 }
 
+int valid(char *s) {
+	int i, len = strlen(s);
+
+	for(i = 1; i < len; i++) {
+		if(s[i] >= '0' && s[i] <= '9') {
+			// valid path
+		} else {
+			return 0;
+		}
+	}
+	return 1;
+}
+
 int main(int argc, char *argv[], char *envp[]) {
 	char seconds[10];
-	int len = strlen(argv[1]);
+	int len;
+
+	if (argc == 1) {
+		return 1;
+	}
+
+	if (valid(argv[1]) == 0) {
+		return 1;
+	}
+
+	len = strlen(argv[1]);
 	if (argv[1][len - 1] == '&') {
 		strcpy(seconds, argv[1]);
 		seconds[len - 1] = '\0';
