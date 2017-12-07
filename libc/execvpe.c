@@ -50,7 +50,7 @@ int execvpe(const char *file, char *argv[], char *envp[]) {
 
     if (slash_check == 1) {
         __asm__ volatile(
-            "movq $59, %%rax;"
+            "movq $21, %%rax;"
             "movq %1, %%rdi;"
             "movq %2, %%rsi;"
             "movq %3, %%rdx;"
@@ -70,7 +70,7 @@ int execvpe(const char *file, char *argv[], char *envp[]) {
             strcat(absolute_path, file);
 
             __asm__ volatile(
-                "movq $59, %%rax;"
+                "movq $21, %%rax;"
                 "movq %1, %%rdi;"
                 "movq %2, %%rsi;"
                 "movq %3, %%rdx;"
