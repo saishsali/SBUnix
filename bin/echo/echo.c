@@ -51,14 +51,13 @@ int get_environment_variable(char *name) {
         name++;
         value = getenv(name);
 
-        if(value)
-            puts(value);
-        else
-            putchar('\n');
+        if (value) {
+            printf("%s", value);
+        }
 
     } else {
         sanitize(name);
-        puts(name);
+        printf("%s", name);
     }
 
     return 1;
@@ -70,22 +69,22 @@ int main(int argc, char *argv[], char *envp[]) {
     int len, i, index = 1, c = 0;
 
     if (argv[1] == NULL) {
-        puts("\n");
-    } else {
-        if(argv[1][0] == '$') {
-            get_environment_variable(argv[1]);
+        return 0;
+    }
 
-        } else {
-            while (index < argc) {
-                len = strlen(argv[index]);
-                for (i = 0; i < len; i++) {
-                    str[c++] = argv[index][i];
-                }
-                str[c++] = ' ';
-                index++;
+    if (argv[1][0] == '$') {
+        get_environment_variable(argv[1]);
+
+    } else {
+        while (index < argc) {
+            len = strlen(argv[index]);
+            for (i = 0; i < len; i++) {
+                str[c++] = argv[index][i];
             }
-            get_environment_variable(str);
+            str[c++] = ' ';
+            index++;
         }
+        get_environment_variable(str);
     }
 
     exit(0);

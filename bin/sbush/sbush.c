@@ -172,7 +172,7 @@ int change_directory(char **tokens) {
         strcpy(path, tokens[1]);
     }
     if (chdir(path) != 0) {
-        puts("\nError changing directory");
+        printf("Error changing directory");
     }
     return 1;
 }
@@ -220,8 +220,26 @@ void parse(char *command, int *is_bg, char *tokens[]) {
 void print_path_variables() {
     int i;
     for (i = 0; env[i] != NULL; i++) {
-        puts(env[i]);
+        printf(env[i]);
     }
+}
+
+int read_file(char *filename) {
+    int fd;
+    char c;
+    ssize_t n;
+
+    fd = open(filename, O_RDONLY);
+    if (fd < 0) {
+        return -1;
+    }
+    while ((n = read(fd, &c, 1) != 0)) {
+        putchar(c);
+    }
+
+    close(fd);
+
+    return 1;
 }
 
 // Check for builtin commands
@@ -238,6 +256,10 @@ int builtin_command(char **tokens) {
         exit(0);
     } else if (strcmp(tokens[0], "shutdown") == 0) {
         shutdown();
+    } else if (strcmp(tokens[0], "ulimit") == 0) {
+        return read_file("/rootfs/etc/ulimits");
+    } else if (strcmp(tokens[0], "helper") == 0) {
+        return read_file("/rootfs/etc/help");
     }
 
     return -1;
@@ -257,11 +279,11 @@ int execute(char **tokens, int is_bg) {
     pid = fork();
     if (pid == 0) {
         if (execvpe(tokens[0], tokens, env) < 0) {
-            puts("-sbush: command not found");
+            printf("-sbush: command not found");
             exit(1);
         }
      } else if (pid < 0) {
-        puts("Fork error");
+        printf("Fork error");
     } else {
         if (is_bg == 0) {
             waitpid(pid, NULL);
@@ -315,7 +337,6 @@ void execute_script(int fd) {
 void lifetime(int argc, char* argv[]) {
     char command[BUFSIZE], *tokens[BUFSIZE];
     int flag = 0, fd, is_bg = 0;
-    ssize_t n;
 
     setenv("PS1", "sbush> ", 1);
     ps1 = getenv("PS1");
@@ -326,11 +347,7 @@ void lifetime(int argc, char* argv[]) {
         close_script(fd);
     } else {
         do {
-            n = write(1, ps1, strlen(ps1));
-            if (n == -1) {
-                puts("Command failed");
-            }
-
+            printf("\n%s", ps1);
             get_command(command, sizeof(command));
             parse(command, &is_bg, tokens);
             flag = execute(tokens, is_bg);

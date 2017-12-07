@@ -36,9 +36,8 @@ int main(int argc, char *argv[], char *envp[]) {
         }
         putchar(' ');
     }
-    putchar('\n');
 
     closedir(dir);
 
-    exit(0);
+    return 0;
 }

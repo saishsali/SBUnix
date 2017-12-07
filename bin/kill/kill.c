@@ -17,7 +17,7 @@ int main(int argc, char *argv[], char *envp[]) {
 		kill(pid, 1);
 	} else {
 		// Idle process cant be killed
-		puts("\nCant kill this process");
+		printf("You are not allowed to kill this process\n");
 	}
     exit(0);
 }

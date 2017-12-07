@@ -69,12 +69,13 @@ void remove_slash_from_start(char *path) {
     strcpy(path, copy_path);
 }
 
-DIR* sys_opendir(char *path) {
+DIR* sys_opendir(char *dir_path) {
     file_node *node;
     char *name;
     int i = 0, flag = 0, c = 0, len;
     DIR* ret_dir;
-    char directory_path[100];
+    char directory_path[100], path[100];
+    strcpy(path, dir_path);
     strcpy(directory_path, path);
 
     node = root_node;
@@ -213,11 +214,11 @@ void add_slash_at_end_and_back(char s[100]) {
     strcpy(s, new_path);
 }
 
-int sys_chdir(char *path) {
-
+int sys_chdir(char *dir_path) {
     char curr[100];
     strcpy(curr, current->current_dir);
-    char directory_path[100];
+    char directory_path[100], path[100];
+    strcpy(path, dir_path);
     strcpy(directory_path, path);
     int i = 0, c = 0;
 
@@ -236,7 +237,6 @@ int sys_chdir(char *path) {
 
     DIR* current_dir = sys_opendir(path);
     if (current_dir == NULL) {
-        kprintf("\n%s: It is not a directory", path);
         return -1;
     }
 
@@ -473,10 +473,10 @@ int remove_file_name_from_path(char *directory_path, char *file_name) {
 }
 
 /* Sys open to open files: http://pubs.opengroup.org/onlinepubs/009695399/functions/open.html */
-int8_t sys_open(char *path, uint8_t flags) {
-    char directory_path[100];
-    char file_name[20];
+int8_t sys_open(char *file_path, uint8_t flags) {
+    char directory_path[100], file_name[20], path[100];
     int i = 0, c = 0, flag = 0, index = 0;
+    strcpy(path, file_path);
     if (path == NULL) {
         return -1;
     }
@@ -830,7 +830,6 @@ void sys_ps() {
         }
         pcb = pcb->next;
     }
-    kprintf("\n");
 }
 
 void sys_shutdown() {
