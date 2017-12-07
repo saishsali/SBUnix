@@ -55,8 +55,7 @@ void start(uint32_t *modulep, void *physbase, void *physfree) {
     /* AHCI controller */
     // init_pci();
 
-    char *envp[] = {"PATH=/rootfs/bin:/bin:/random", "PS1=sbush> "};
-    task_struct *pcb = create_user_process("/rootfs/bin/init", NULL, envp);
+    task_struct *pcb = create_user_process("/rootfs/bin/init", NULL, NULL);
 
     /* Create Idle process */
     create_idle_process();
