@@ -64,6 +64,7 @@ void remove_pcb(uint16_t pid) {
             } else {
                 previous->next = pcb->next;
             }
+            process_ids[pcb->pid] = 0;
             free_kernel_memory(pcb);
             return;
         }
@@ -197,27 +198,17 @@ task_struct *create_new_task() {
     return pcb;
 }
 
-int count_pcb() {
-    task_struct *pcb = process_list_head;
-    int count = 0;
-    while(pcb != NULL) {
-        if(pcb->state == RUNNING || pcb->state == READY)
-            count++;
-        pcb = pcb->next;
-    }
-    return count;
-}
-
 /*
     - An idle function to schedule tasks in the list
     - Executed when there are no processes in the list
 */
 void idle() {
+    int status;
     while (1) {
-        if(count_pcb() == 1) {
+        if (sys_wait(&status) == -1) {
             sys_shutdown();
         }
-        schedule();
+        // __asm__ __volatile__("hlt");
     }
 }
 
@@ -357,6 +348,21 @@ void switch_to_user_mode(task_struct *pcb) {
     _switch_to_ring_3(pcb->entry, pcb->u_rsp);
 }
 
+/*
+    check if the parent task is in waiting state. Mark that parent task as ready after validating
+    that it was waiting on the child_task
+*/
+void check_if_parent_waiting(task_struct *child) {
+    task_struct *parent_task = child->parent;
+    if (parent_task->state == WAITING) {
+        if (!parent_task->wait_on_child_pid || parent_task->wait_on_child_pid == child->pid) {
+            parent_task->wait_on_child_pid = child->pid;
+            // since the parent was waiting for this task to finish. After it gets finished state should be READY
+            parent_task->state = READY;
+        }
+    }
+}
+
 void remove_child_from_parent(task_struct *child_task) {
     task_struct *parent_task = child_task->parent;
     task_struct *children = NULL, *prev_child = NULL;
@@ -390,20 +396,6 @@ void remove_child_from_parent(task_struct *child_task) {
         // remove child from its sibling list
         prev_child->siblings = child_task->siblings;
     }
-
-    /*
-        check if the parent task is in waiting state. Mark that parent task as ready after validating
-        that it was waiting on the child_task
-    */
-    if (parent_task->state == WAITING) {
-        if (!parent_task->wait_on_child_pid || parent_task->wait_on_child_pid == child_task->pid) {
-            parent_task->wait_on_child_pid = child_task->pid;
-            // since the parent was waiting for this task to finish. After it gets finished state should be READY
-            parent_task->state = READY;
-        }
-    }
-    child_task->parent = NULL;
-
 }
 
 void remove_parent_from_child(task_struct *parent_task) {

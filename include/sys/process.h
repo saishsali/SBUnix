@@ -104,4 +104,6 @@ void add_child_to_parent(task_struct* child_task, task_struct* parent_task);
 
 void update_siblings(task_struct *old_task, task_struct *new_task);
 
+void check_if_parent_waiting(task_struct *child);
+
 #endif

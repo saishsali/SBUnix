@@ -674,8 +674,7 @@ int8_t sys_execvpe(char *file, char *argv[], char *envp[]) {
 
 void cleanup(task_struct *current) {
     if (current->parent) {
-        // remove child from its parent and also adjust the siblings list
-        remove_child_from_parent(current);
+        check_if_parent_waiting(current);
     }
 
     // check if children exists for this parent
@@ -713,8 +712,8 @@ int sys_kill(pid_t pid) {
 }
 
 int sys_waitpid(int pid, int *status, int options) {
-    // check if the parent has any child
-    if (current->child_head == NULL) {
+    /* check if the parent has any child */
+    if (current->child_head == NULL || pid == 1) {
         return -1;
     }
 
@@ -734,7 +733,24 @@ int sys_waitpid(int pid, int *status, int options) {
 }
 
 int sys_wait(int *status) {
-    // check if the parent has any child
+    task_struct *child = current->child_head, *temp;
+    /* check if the parent has any child */
+    if (child == NULL) {
+        return -1;
+    }
+
+    /* Check if there are ZOMBIE childs */
+    while (child != NULL) {
+        if (child->state == ZOMBIE) {
+            remove_child_from_parent(child);
+            temp = child;
+            child = child->siblings;
+            remove_pcb(temp->pid);
+        } else {
+            child = child->siblings;
+        }
+    }
+
     if (current->child_head == NULL) {
         return -1;
     }

@@ -9,6 +9,8 @@ void sys_exit();
 
 void sys_yield();
 
+int sys_wait(int *);
+
 void sys_shutdown();
 
 #endif
