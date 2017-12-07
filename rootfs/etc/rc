@@ -1,0 +1,3 @@
+#!/bin/sh
+# This is a comment!
+echo "*********WELCOME TO SBUNIX*********"
