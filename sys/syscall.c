@@ -238,7 +238,7 @@ int sys_chdir(char *dir_path) {
 
 
     if (current_dir == NULL) {
-        kprintf("\n It is not a valid path\n");
+        kprintf("\nIt is not a valid path\n");
         return -1;
     }
 
