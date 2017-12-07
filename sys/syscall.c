@@ -819,14 +819,14 @@ void sys_ps() {
     };
 
     int i = 0;
-    kprintf("\n ----| ----- |--------- | --------------- "
-            "\n  #  |  PID  | State    |  Process Name "
-            "\n ----| ----- |--------- | --------------- ");
+    kprintf("\n | ----- |--------- | --------------- "
+            "\n |  PID  | State    |  Process Name "
+            "\n | ----- |--------- | --------------- ");
 
 
     while (pcb != NULL) {
         if (pcb->state != 0) {
-            kprintf("\n  %d  |   %d   |  %s  |  %s  ", i, pcb->pid, process_states[pcb->state], pcb->name);
+            kprintf("\n |  %d    |  %s  |  %s  ", pcb->pid, process_states[pcb->state], pcb->name);
             i++;
         }
         pcb = pcb->next;
