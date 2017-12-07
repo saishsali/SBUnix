@@ -217,6 +217,7 @@ int sys_chdir(char *dir_path) {
     char curr[100];
     strcpy(curr, current->current_dir);
     char directory_path[100], path[100];
+    char temp[100];
     strcpy(path, dir_path);
     strcpy(directory_path, path);
     int i = 0, c = 0, len = 0;
@@ -243,6 +244,30 @@ int sys_chdir(char *dir_path) {
     }
 
     if(path[0] == '/') {
+        kprintf(" path is %s", path);
+
+        if (path[0] == '/') {
+            i = 1;
+        } else {
+            i = 0;
+        }
+
+        c = 0;
+        len = strlen(path);
+        for (; i < len; i++) {
+            temp[c] = path[i];
+            c++;
+            if (path[i] == '/') {
+                break;
+            }
+        }
+        temp[c] = '\0';
+
+        if (strcmp(temp, "rootfs") != 0) {
+            kprintf("\n%s: It is not a directory \n", path);
+            return -1;
+        }
+
         // absolute path
         len = strlen(path) - 1;
         if(path[len] != '/') {
@@ -253,8 +278,9 @@ int sys_chdir(char *dir_path) {
     }
 
     add_slash_at_end(path);
-    char temp[100];
 
+    c = 0;
+    i = 0;
     if (path[0] == '/') {
         i = 1;
     }
@@ -280,7 +306,7 @@ int sys_chdir(char *dir_path) {
     DIR *new_directory = sys_opendir(directory_path);
 
     if (new_directory == NULL) {
-        kprintf("\n%s: It is not a directory", path);
+        kprintf("\n%s: It is not a directory \n", path);
         return -1;
     }
 
