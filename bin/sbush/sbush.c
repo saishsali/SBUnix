@@ -354,8 +354,6 @@ int execute(char **tokens, int is_bg) {
         } else {
             if (is_bg == 0) {
                 waitpid(pid, NULL);
-            } else {
-                yield();
             }
         }
     }
