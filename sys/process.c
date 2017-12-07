@@ -201,7 +201,7 @@ int count_pcb() {
     task_struct *pcb = process_list_head;
     int count = 0;
     while(pcb != NULL) {
-        if(pcb->state == RUNNING || pcb->state == READY)
+        if(pcb->state == RUNNING || pcb->state == READY || pcb->state == WAITING)
             count++;
         pcb = pcb->next;
     }
