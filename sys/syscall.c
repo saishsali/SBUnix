@@ -135,7 +135,6 @@ DIR* sys_opendir(char *dir_path) {
 
         } else {
             // It is a relative path
-
             strcpy(directory_path, current->current_dir);
 
             if (path[0] == '/')
@@ -220,7 +219,7 @@ int sys_chdir(char *dir_path) {
     char directory_path[100], path[100];
     strcpy(path, dir_path);
     strcpy(directory_path, path);
-    int i = 0, c = 0;
+    int i = 0, c = 0, len = 0;
 
     if (strcmp(path, "/") == 0) {
         strcpy(current->current_dir, "/");
@@ -236,13 +235,20 @@ int sys_chdir(char *dir_path) {
     }
 
     DIR* current_dir = sys_opendir(path);
+
+
     if (current_dir == NULL) {
+        kprintf("\n It is not a valid path\n");
         return -1;
     }
 
     if(path[0] == '/') {
         // absolute path
-        strcpy(current->current_dir, dir_path);
+        len = strlen(path) - 1;
+        if(path[len] != '/') {
+            strcat(path, "/");
+        }
+        strcpy(current->current_dir, path);
         return 0;
     }
 
@@ -252,7 +258,7 @@ int sys_chdir(char *dir_path) {
     if (path[0] == '/') {
         i = 1;
     }
-    int len = strlen(path);
+    len = strlen(path);
     for (; i < len; i++) {
         temp[c] = path[i];
         c++;
