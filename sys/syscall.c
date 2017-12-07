@@ -914,17 +914,11 @@ void syscall_handler(stack_registers * registers) {
         case 12:
             registers->rax = (uint64_t)sys_fork();
             break;
-        case 59:
-            registers->rax = sys_execvpe((char *)registers->rdi, (char **)registers->rsi, (char **)registers->rdx);
-            break;
         case 13:
             sys_exit(registers->rdi);
             break;
         case 14:
             registers->rax = sys_waitpid(registers->rdi, (int *)registers->rsi, registers->rdx);
-            break;
-        case 61:
-            registers->rax = sys_wait((int *)registers->rdi);
             break;
         case 15:
             sys_ps();
@@ -943,6 +937,12 @@ void syscall_handler(stack_registers * registers) {
             break;
         case 20:
             registers->rax = sys_getppid();
+            break;
+        case 21:
+            registers->rax = sys_execvpe((char *)registers->rdi, (char **)registers->rsi, (char **)registers->rdx);
+            break;
+        case 22:
+            registers->rax = sys_wait((int *)registers->rdi);
             break;
     }
 }
