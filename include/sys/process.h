@@ -72,7 +72,7 @@ struct PCB {
 
 typedef struct PCB task_struct;
 
-task_struct *process_list_head, *process_list_tail, *init_process;
+task_struct *process_list_head, *process_list_tail;
 
 int process_ids[MAX_PROCESS];
 
@@ -97,8 +97,6 @@ void remove_child_from_parent(task_struct *current);
 void remove_parent_from_child(task_struct *parent_task);
 
 void create_idle_process();
-
-void create_init_process();
 
 void remove_pcb(uint16_t pid);
 
