@@ -13,9 +13,9 @@ int char_to_int(char *s) {
 
 int main(int argc, char *argv[], char *envp[]) {
 	int pid = char_to_int(argv[2]);
-	if(pid > 2) {
+	if (pid > 3) {
 		kill(pid, 1);
-	} else if(pid == 2 ) {
+	} else if (pid == 3) {
 		// Sbush process
 	} else {
 		// Idle process cant be killed

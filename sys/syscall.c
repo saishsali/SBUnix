@@ -713,7 +713,7 @@ int sys_kill(pid_t pid) {
 
 int sys_waitpid(int pid, int *status, int options) {
     /* check if the parent has any child */
-    if (current->child_head == NULL || pid == 1) {
+    if (current->child_head == NULL || pid == 1 || pid == 2) {
         return -1;
     }
 

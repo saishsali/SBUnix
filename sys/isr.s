@@ -3,6 +3,8 @@
 .macro INTERRUPT_HANDLER num
     .globl isr\num
     isr\num:
+        # Clear interrupt
+        cli
         pushq $0
         pushq $\num
         jmp isr_common_stub
@@ -18,8 +20,6 @@
 
 .globl isr_common_stub
 isr_common_stub:
-    # Clear interrupt
-    cli
 
     # Push all registers
     pushq %rax
@@ -38,12 +38,12 @@ isr_common_stub:
     pushq %r14
     pushq %r15
 
-    movq %rsp, %rdi
-    call interrupt_handler
-
     # End-of-interrupt command
     movb $0x20, %al
     outb %al, $0x20
+
+    movq %rsp, %rdi
+    call interrupt_handler
 
     # Restore all registers
     popq %r15

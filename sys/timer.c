@@ -17,8 +17,9 @@ void timer_interrupt() {
         kprintf_pos(ROW, COLUMN, "Time since boot: %d s", ++i);
 
         while (pcb != NULL) {
-            if(pcb->sleep_time > 0)
+            if (pcb->sleep_time > 0) {
                 pcb->sleep_time--;
+            }
 
             if (pcb->sleep_time == 0 && pcb->state == SLEEPING) {
                 pcb->state = READY;
