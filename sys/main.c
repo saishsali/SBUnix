@@ -52,27 +52,14 @@ void start(uint32_t *modulep, void *physbase, void *physfree) {
     /* Free initial pages (0 to physbase) used by the bootloader */
     // deallocate_initial_pages((uint64_t)physbase);
 
-    /* Test kmalloc */
-    // char *temp = (char *)kmalloc(20);
-    // temp[0] = 'a';
-    // temp[1] = '\0';
-    // kprintf("Allocation works %s\n", temp);
-
-    /* Create threads and switch to ring 3 */
-    // create_threads();
-
     /* AHCI controller */
     // init_pci();
 
     /* Create Idle process */
     create_idle_process();
-    create_init_process();
-
-    /* Create user process, load its executable and switch to ring 3 */
     char *envp[] = {"PATH=/rootfs/bin:/bin:/random", "PS1=sbush> "};
-    task_struct *pcb = create_user_process("/rootfs/bin/sbush", NULL, envp);
+    task_struct *pcb = create_user_process("/rootfs/bin/init", NULL, envp);
     if (pcb) {
-        add_child_to_parent(pcb, init_process);
         switch_to_user_mode(pcb);
     }
 }
