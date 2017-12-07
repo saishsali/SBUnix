@@ -217,6 +217,7 @@ void print_path_variables() {
     int i;
     for (i = 0; env[i] != NULL; i++) {
         printf(env[i]);
+        printf("\n");
     }
 }
 

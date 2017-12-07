@@ -11,13 +11,11 @@ int char_to_int(char *s) {
     return pid;
 }
 
-int valid(char *s) {
+int valid(char s[100]) {
 	int i, len = strlen(s);
 
-	for(i = 1; i < len; i++) {
-		if(s[i] >= '0' && s[i] <= '9') {
-			// valid path
-		} else {
+	for(i = 0; i < len; i++) {
+		if((s[i] >= 'a' && s[i] <= 'z') || (s[i] >= 'A' && s[i] <= 'Z')) {
 			return 0;
 		}
 	}
@@ -29,10 +27,12 @@ int main(int argc, char *argv[], char *envp[]) {
 	int len;
 
 	if (argc == 1) {
+		printf("Usage: sleep <seconds>");
 		return 1;
 	}
 
 	if (valid(argv[1]) == 0) {
+		printf("Invalid arguments : Usage: sleep <seconds>\n");
 		return 1;
 	}
 
