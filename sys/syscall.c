@@ -97,12 +97,14 @@ DIR* sys_opendir(char *path) {
         temp[c-1] = '\0';
 
         if(strcmp(current->current_dir, "/") == 0) {
-            if(strcmp(temp, "rootfs") != 0) {
+            if(strcmp(temp, "rootfs") != 0 && strcmp(temp, ".") != 0 && strcmp(temp, "..") != 0) {
                 return (DIR *)NULL;
+            } else {
+                flag = 1;
             }
         }
 
-        if(strcmp(temp, "rootfs") == 0) {
+        if(strcmp(temp, "rootfs") == 0 || flag) {
 
             // It is a absolute path
             name = strtok(directory_path, "/");
