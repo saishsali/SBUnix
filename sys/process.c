@@ -241,20 +241,6 @@ void create_idle_process() {
     add_process(pcb);
 }
 
-/* Create a idle process and setup its stack such that the control goes to idle() function on first yield */
-void create_init_process() {
-    task_struct *pcb = create_new_task();
-    strcpy(pcb->name, "INIT");
-    pcb->entry = (uint64_t)init;
-    *((uint64_t *)&pcb->kstack[STACK_SIZE - 8 * 1]) = pcb->entry; // Push Return address
-
-    /* Stack entries from 498 to 510 are reserved for 13 registers pushed/poped in context_switch.s */
-    *((uint64_t *)&pcb->kstack[STACK_SIZE - 8 * 15]) = (uint64_t)pcb;    // Push PCB
-    pcb->rsp = (uint64_t)&pcb->kstack[STACK_SIZE - 8 * 15];
-    init_process = pcb;
-    add_process(pcb);
-}
-
 void add_child_to_parent(task_struct* child_task, task_struct* parent_task) {
     child_task->parent = parent_task;
     if (parent_task->child_head) {
@@ -429,6 +415,13 @@ void remove_child_from_parent(task_struct *child_task) {
 
 void remove_parent_from_child(task_struct *parent_task) {
     task_struct *current = parent_task->child_head;
+    task_struct *init_process = process_list_head;
+    while (init_process != NULL) {
+        if (init_process->pid == 1) {
+            break;
+        }
+        init_process = init_process->next;
+    }
 
     while (current->siblings) {
         current->parent = init_process;
