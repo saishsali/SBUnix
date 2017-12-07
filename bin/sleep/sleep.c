@@ -24,5 +24,5 @@ int main(int argc, char *argv[], char *envp[]) {
 
     sleep(char_to_int(seconds));
 
-    exit(1);
+    exit(0);
 }

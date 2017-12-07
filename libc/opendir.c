@@ -1,6 +1,6 @@
 #include <sys/dirent.h>
 
-DIR* opendir(char *path) {
+DIR *opendir(const char *path) {
     DIR * ret_directory = NULL;
     __asm__ __volatile__(
         "movq $4, %%rax;"

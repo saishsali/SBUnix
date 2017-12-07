@@ -43,9 +43,7 @@ struct dir {
     dentry *dentry;
 };
 
-int getdents(unsigned int fd, char *dirp, unsigned int count);
-
-DIR* opendir(char *path);
+DIR *opendir(const char *path);
 int8_t closedir(DIR *dir);
 dentry* readdir(DIR *dir);
 
