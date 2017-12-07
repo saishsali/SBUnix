@@ -29,10 +29,12 @@ int main(int argc, char *argv[], char *envp[]) {
 	int len;
 
 	if (argc == 1) {
+		printf("Usage: sleep <seconds>");
 		return 1;
 	}
 
 	if (valid(argv[1]) == 0) {
+		printf("Invalid arguments : Usage: sleep <seconds>\n");
 		return 1;
 	}
 

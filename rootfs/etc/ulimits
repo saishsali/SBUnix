@@ -6,3 +6,4 @@ Files per process 	    10
 Max Directory length	100
 Max file name length	20
 Max files in directory  20
+Max line length			512

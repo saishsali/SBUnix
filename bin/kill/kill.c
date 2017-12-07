@@ -11,7 +11,31 @@ int char_to_int(char *s) {
     return pid;
 }
 
+int valid(char *s) {
+	int i, len = strlen(s);
+
+	for(i = 1; i < len; i++) {
+		if(s[i] >= '0' && s[i] <= '9') {
+			// valid path
+		} else {
+			return 0;
+		}
+	}
+	return 1;
+}
+
 int main(int argc, char *argv[], char *envp[]) {
+
+	if(strcmp(argv[1], "-9") != 0) {
+		printf("Usage: kill -9 <pid>");
+		return 1;
+	}
+
+	if (valid(argv[2]) == 0) {
+		printf("Invalid arguments : Usage: kill -9 <pid>\n");
+		return 1;
+	}
+
 	int pid = char_to_int(argv[2]);
 	if (pid > 2) {
 		kill(pid, 1);
