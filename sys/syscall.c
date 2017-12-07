@@ -780,12 +780,14 @@ void sys_ps() {
 }
 
 void sys_shutdown() {
-    task_struct * pcb = process_list_head, *temp = NULL;
+    task_struct *pcb = process_list_head, *temp;
     while (pcb != NULL) {
-        cleanup(pcb);
+        if (pcb->state != ZOMBIE) {
+            cleanup(pcb);
+        }
         temp = pcb;
         pcb = pcb->next;
-        free_kernel_memory(temp);
+        remove_pcb(temp->pid);
     }
 
     clear_screen();

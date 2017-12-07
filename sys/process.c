@@ -197,12 +197,26 @@ task_struct *create_new_task() {
     return pcb;
 }
 
+int count_pcb() {
+    task_struct *pcb = process_list_head;
+    int count = 0;
+    while(pcb != NULL) {
+        if(pcb->state == RUNNING || pcb->state == READY)
+            count++;
+        pcb = pcb->next;
+    }
+    return count;
+}
+
 /*
     - An idle function to schedule tasks in the list
     - Executed when there are no processes in the list
 */
 void idle() {
     while (1) {
+        if(count_pcb() == 1) {
+            sys_shutdown();
+        }
         schedule();
         // __asm__ __volatile__("hlt");
     }

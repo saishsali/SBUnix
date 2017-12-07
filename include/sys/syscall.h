@@ -9,4 +9,6 @@ void sys_exit();
 
 void sys_yield();
 
+void sys_shutdown();
+
 #endif
