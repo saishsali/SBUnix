@@ -217,18 +217,6 @@ void parse(char *command, int *is_bg, char *tokens[]) {
 
 }
 
-// Check if pipe exists in a command
-int check_pipes(char **tokens) {
-    int i = 0;
-
-    while (tokens[i] != NULL) {
-        if (strcmp(tokens[i++], "|") == 0)
-            return 1;
-    }
-
-    return -1;
-}
-
 void print_path_variables() {
     int i;
     for (i = 0; env[i] != NULL; i++) {
@@ -255,80 +243,6 @@ int builtin_command(char **tokens) {
     return -1;
 }
 
-// Launch pipes
-void execute_pipes(char **tokens) {
-    int num_of_cmnds = 0, i = 0, j = 0, iterate = 0, pipe1[2], pipe2[2];
-    pid_t pid;
-    char *command[BUFSIZE];
-
-    while (tokens[i] != NULL) {
-        if(strcmp(tokens[i++], "|") == 0)
-            num_of_cmnds++;
-    }
-
-    num_of_cmnds++;
-    i = 0;
-    while (tokens[i] != NULL) {
-        j = 0;
-        while(tokens[i] != NULL && strcmp(tokens[i], "|") != 0) {
-            command[j++] = tokens[i++];
-        }
-        command[j] = NULL;
-
-        // pipe1 or pipe2 depends on which pipe was active previously
-        if (iterate & 1) {
-            if (pipe(pipe1) == -1)
-                puts("Pipe failed");
-        } else {
-            if (pipe(pipe2) == -1)
-                puts("Pipe failed");
-        }
-
-        //pipe1 is for even command and pipe2 is for odd command
-        pid = fork();
-
-        if(pid == 0) {
-            if(iterate == 0) {
-                dup2(pipe2[1], 1);
-            } else {
-                if (iterate & 1) { //odd
-                    dup2(pipe2[0], 0);
-                    if (iterate != num_of_cmnds - 1)
-                        dup2(pipe1[1], 1);
-                } else {
-                    dup2(pipe1[0], 0);
-                    if (iterate != num_of_cmnds - 1)
-                        dup2(pipe2[1], 1);
-                }
-            }
-            if (execvpe(command[0], command, env) == -1) {
-                puts("-sbush: command not found\n");
-            }
-        } else {
-            if (iterate == 0){
-                close(pipe2[1]);
-            } else {
-                if (iterate & 1) {
-                    close(pipe2[0]);
-                    if (iterate != num_of_cmnds - 1)
-                        close(pipe1[1]);
-                } else {
-                    close(pipe1[0]);
-                    if (iterate != num_of_cmnds - 1)
-                        close(pipe2[1]);
-                }
-            }
-            waitpid(pid, NULL);
-        }
-
-        if (tokens[i] == NULL)
-            break;
-        i++;
-        iterate++;
-    }
-}
-
-
 // Execute command
 int execute(char **tokens, int is_bg) {
     pid_t pid;
@@ -340,21 +254,17 @@ int execute(char **tokens, int is_bg) {
     if ((builtin = builtin_command(tokens)) != -1)
         return builtin;
 
-    if (check_pipes(tokens) == 1) {
-        execute_pipes(tokens);
+    pid = fork();
+    if (pid == 0) {
+        if (execvpe(tokens[0], tokens, env) < 0) {
+            puts("-sbush: command not found");
+            exit(1);
+        }
+     } else if (pid < 0) {
+        puts("Fork error");
     } else {
-        pid = fork();
-        if (pid == 0) {
-            if (execvpe(tokens[0], tokens, env) < 0) {
-                puts("-sbush: command not found");
-                exit(1);
-            }
-         } else if (pid < 0) {
-            puts("Fork error");
-        } else {
-            if (is_bg == 0) {
-                waitpid(pid, NULL);
-            }
+        if (is_bg == 0) {
+            waitpid(pid, NULL);
         }
     }
 
