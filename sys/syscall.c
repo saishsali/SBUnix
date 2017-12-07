@@ -706,6 +706,10 @@ int sys_kill(pid_t pid) {
     while (pcb != NULL) {
         if (pcb->pid == pid && pcb->state != ZOMBIE) {
             cleanup(pcb);
+            /* If the process kills itself, switch to some other process */
+            if (current == pcb) {
+                sys_yield();
+            }
             break;
         }
         pcb = pcb->next;
@@ -714,8 +718,25 @@ int sys_kill(pid_t pid) {
 }
 
 int sys_waitpid(int pid, int *status, int options) {
+    task_struct *child = current->child_head, *temp;
     /* check if the parent has any child */
-    if (current->child_head == NULL || pid == 1 || pid == 2) {
+    if (child == NULL || pid == 1 || pid == 2) {
+        return -1;
+    }
+
+    /* Check if there are ZOMBIE childs and free memory */
+    while (child != NULL) {
+        if (child->state == ZOMBIE) {
+            remove_child_from_parent(child);
+            temp = child;
+            child = child->siblings;
+            remove_pcb(temp->pid);
+        } else {
+            child = child->siblings;
+        }
+    }
+
+    if (current->child_head == NULL) {
         return -1;
     }
 
@@ -729,7 +750,16 @@ int sys_waitpid(int pid, int *status, int options) {
 
     sys_yield();
 
-    remove_pcb(current->wait_on_child_pid);
+    /* Unlink child from parent and free pcb of the child */
+    child = current->child_head;
+    while (child != NULL) {
+        if (child->pid == current->wait_on_child_pid) {
+            remove_child_from_parent(child);
+            remove_pcb(current->wait_on_child_pid);
+            break;
+        }
+        child = child->siblings;
+    }
 
     return current->wait_on_child_pid;
 }
@@ -741,7 +771,7 @@ int sys_wait(int *status) {
         return -1;
     }
 
-    /* Check if there are ZOMBIE childs */
+    /* Check if there are ZOMBIE childs and free memory */
     while (child != NULL) {
         if (child->state == ZOMBIE) {
             remove_child_from_parent(child);
@@ -762,7 +792,17 @@ int sys_wait(int *status) {
 
     sys_yield();
 
-    remove_pcb(current->wait_on_child_pid);
+    child = current->child_head;
+
+    /* Unlink child from parent and free pcb of the child */
+    while (child != NULL) {
+        if (child->pid == current->wait_on_child_pid) {
+            remove_child_from_parent(child);
+            remove_pcb(current->wait_on_child_pid);
+            break;
+        }
+        child = child->siblings;
+    }
 
     return current->wait_on_child_pid;
 }
