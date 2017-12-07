@@ -318,7 +318,7 @@ void execute_pipes(char **tokens) {
                         close(pipe2[1]);
                 }
             }
-            waitpid(pid, NULL, 0);
+            waitpid(pid, NULL);
         }
 
         if (tokens[i] == NULL)
@@ -353,7 +353,7 @@ int execute(char **tokens, int is_bg) {
             puts("Fork error");
         } else {
             if (is_bg == 0) {
-                waitpid(pid, NULL, 0);
+                waitpid(pid, NULL);
             } else {
                 yield();
             }
