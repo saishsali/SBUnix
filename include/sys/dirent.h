@@ -17,7 +17,7 @@ typedef struct dirent dentry;
 file_node* root_node;
 
 struct dirent {
-    char name[30];
+    char name[20];
     uint16_t d_reclen;
 
 };

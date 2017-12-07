@@ -492,6 +492,7 @@ int8_t sys_open(char *file_path, uint8_t flags) {
     DIR *current_dir = sys_opendir(path);
     if(current_dir != NULL) {
         kprintf("\n%s: Is a directory \n", path);
+        return -1;
     }
 
 
