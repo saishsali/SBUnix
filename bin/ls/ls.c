@@ -31,8 +31,8 @@ int main(int argc, char *argv[], char *envp[]) {
 
     dentry* curr_dentry = NULL;
     while ((curr_dentry = readdir(dir)) != NULL) {
-        for (i = 0; i < strlen(curr_dentry->name); i++) {
-            putchar(curr_dentry->name[i]);
+        for (i = 0; i < strlen(curr_dentry->d_name); i++) {
+            putchar(curr_dentry->d_name[i]);
         }
         putchar(' ');
     }

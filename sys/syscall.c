@@ -190,7 +190,7 @@ int sys_getcwd(char *buf, size_t size) {
 
 dentry* sys_readdir(DIR* dir) {
     if (dir->cursor > 1 && dir->node->last > 2 && dir->cursor < dir->node->last) {
-        strcpy(dir->dentry->name, dir->node->child[dir->cursor]->name);
+        strcpy(dir->dentry->d_name, dir->node->child[dir->cursor]->name);
         dir->cursor++;
         return dir->dentry;
     }
