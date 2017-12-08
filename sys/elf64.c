@@ -57,18 +57,6 @@ uint64_t read_program_header(task_struct *pcb, Elf64_Ehdr *elf_header, Elf64_Phd
     virtual_address = program_header->p_vaddr;
 
     set_cr3(pcb->cr3);
-    // while (virtual_address < (program_header->p_vaddr + program_header->p_memsz)) {
-    //     kmalloc_map(PAGE_SIZE, virtual_address, vm_type == TEXT ? RX_FLAG : RW_FLAG);
-
-    //     page_offset = 0;
-    //     while (page_offset < PAGE_SIZE && copy_offset <= program_header->p_filesz) {
-    //         *((char *)virtual_address + page_offset) = *((char *)elf_header + program_header->p_offset + copy_offset);
-    //         page_offset++;
-    //         copy_offset++;
-    //     }
-    //     virtual_address += PAGE_SIZE;
-    // }
-
 
     /* Alternative to above code: */
     kmalloc_map(program_header->p_memsz, virtual_address, vm_type == TEXT ? RX_FLAG : RW_FLAG);

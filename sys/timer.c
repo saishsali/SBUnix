@@ -29,7 +29,7 @@ void timer_interrupt() {
         }
     }
 
-    if (timer % (FREQUENCY / 2) == 0) {
+    if (timer % (FREQUENCY / 6) == 0) {
         sys_yield();
     }
 }
