@@ -10,10 +10,11 @@
 #define BUFSIZE 1024
 
 void read_test() {
-    puts("\nRunning read test");
+    puts("\nRunning read test. Please type something");
     char buf[BUFSIZE];
     read(0, buf, 128);
     puts(buf);
+    puts("\nRead successful");
 }
 
 void write_test() {
@@ -29,6 +30,7 @@ void opendir_test() {
     } else {
         puts("Directory exists");
     }
+    puts("\nopendir successful");
 }
 
 void readdir_test(){
@@ -49,6 +51,7 @@ void readdir_test(){
         putchar(' ');
     }
     closedir(dir);
+    puts("\nReaddir successful");
 }
 
 void file_open_close_test() {
@@ -56,6 +59,7 @@ void file_open_close_test() {
     int fd = open("/rootfs/etc/test/script.sh", O_RDONLY);
     close(fd);
     printf("FD: %d\n", fd);
+    puts("\nOpen and close file test successful");
 }
 
 void getcwd_chdir() {
@@ -68,6 +72,7 @@ void getcwd_chdir() {
 
     getcwd(buf1, BUFSIZE);
     puts(buf1);
+    puts("\nGet current working directory test successful");
 }
 
 void malloc_test() {
@@ -83,7 +88,7 @@ void malloc_test() {
 
 
 void file_read_test() {
-    puts("\nRunning read file test");
+    puts("\nRunning file read test");
     int fd = open("/rootfs/etc/test/script.sh", O_RDONLY);
     char buf[1024];
     read(fd, buf, 10);
@@ -92,6 +97,7 @@ void file_read_test() {
     read(fd, buf, 10);
     puts("reading file");
     puts(buf);
+    puts("\nFile read test successful");
 }
 
 void fork_test1() {
@@ -104,6 +110,7 @@ void fork_test1() {
         write(1, "\nParent 1", 2);
         waitpid(pid, NULL);
     }
+    puts("\nFork test 1 successful");
 }
 
 void fork_test2() {
@@ -125,6 +132,7 @@ void fork_test2() {
             waitpid(pid, NULL);
         }
     }
+    puts("\nFork test 2 successful");
 }
 
 void fork_test3() {
@@ -147,6 +155,7 @@ void fork_test3() {
         puts("In parent: ");
         puts(p);
     }
+    puts("\nFork test 3 successful");
 }
 
 void sys_exit_test() {
@@ -159,7 +168,7 @@ void sys_exit_test() {
         write(1, "\nParent 1", 2);
         waitpid(pid, NULL);
     }
-    puts("\nDone");
+    puts("\nExit test successful");
 }
 
 
@@ -173,11 +182,12 @@ void execvpe_test() {
     } else {
         waitpid(pid, NULL);
     }
+    puts("\nExecvpe test successful");
 }
 
 
 void fork_multiple_times_test() {
-    puts("\nRunning fork_multiple_times_test");
+    puts("\nRunning fork multiple times test");
     char *s[10] = {"/rootfs/bin/echo", "Hello World"};
     int pid;
     int i;
@@ -191,10 +201,11 @@ void fork_multiple_times_test() {
             waitpid(pid, NULL);
         }
     }
+    puts("\nFork multiple times test successful");
 }
 
 int main(int argc, char *argv[], char *envp[]) {
-    
+
     read_test();
 
     puts("\n************************");
@@ -250,7 +261,6 @@ int main(int argc, char *argv[], char *envp[]) {
     fork_multiple_times_test();
 
     puts("\n************************");
-
 
     return 0;
 }
