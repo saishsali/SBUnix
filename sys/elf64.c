@@ -77,7 +77,7 @@ uint64_t read_program_header(task_struct *pcb, Elf64_Ehdr *elf_header, Elf64_Phd
 
     set_cr3(current_cr3);
 
-    return virtual_address;
+    return program_header->p_vaddr + program_header->p_memsz;
 }
 
 void load_executable(task_struct *pcb, Elf64_Ehdr *elf_header) {
@@ -98,7 +98,7 @@ void load_executable(task_struct *pcb, Elf64_Ehdr *elf_header) {
     }
 
     // Create VMA for HEAP
-    add_vma(pcb, max_address, PAGE_SIZE, PROT_READ | PROT_WRITE, HEAP);
+    add_vma(pcb, ROUND_UP(max_address, PAGE_SIZE), PAGE_SIZE, PROT_READ | PROT_WRITE, HEAP);
 
     // Create VMA for STACK
     add_vma(pcb, STACK_START - STACK_LIMIT, STACK_LIMIT, PROT_READ | PROT_WRITE, STACK);
