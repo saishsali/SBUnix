@@ -744,8 +744,9 @@ void cleanup(task_struct *current) {
     current->state = ZOMBIE;
 }
 
-void sys_exit() {
+void sys_exit(int status) {
     cleanup(current);
+    current->exit_status = status;
     sys_yield();
 }
 
@@ -765,8 +766,9 @@ int sys_kill(pid_t pid) {
     return 0;
 }
 
-int sys_waitpid(int pid, int *status, int options) {
+int sys_waitpid(int pid, int *status) {
     task_struct *child = current->child_head, *temp;
+
     /* check if the parent has any child */
     if (child == NULL || pid == 1 || pid == 2) {
         return -1;
@@ -802,6 +804,9 @@ int sys_waitpid(int pid, int *status, int options) {
     child = current->child_head;
     while (child != NULL) {
         if (child->pid == current->wait_on_child_pid) {
+            if (status) {
+                *status = child->exit_status;
+            }
             remove_child_from_parent(child);
             remove_pcb(current->wait_on_child_pid);
             break;
@@ -814,6 +819,7 @@ int sys_waitpid(int pid, int *status, int options) {
 
 int sys_wait(int *status) {
     task_struct *child = current->child_head, *temp;
+
     /* check if the parent has any child */
     if (child == NULL) {
         return -1;
@@ -845,6 +851,9 @@ int sys_wait(int *status) {
     /* Unlink child from parent and free pcb of the child */
     while (child != NULL) {
         if (child->pid == current->wait_on_child_pid) {
+            if (status) {
+                *status = child->exit_status;
+            }
             remove_child_from_parent(child);
             remove_pcb(current->wait_on_child_pid);
             break;
@@ -959,7 +968,7 @@ void syscall_handler(stack_registers * registers) {
             sys_exit(registers->rdi);
             break;
         case 14:
-            registers->rax = sys_waitpid(registers->rdi, (int *)registers->rsi, registers->rdx);
+            registers->rax = sys_waitpid(registers->rdi, (int *)registers->rsi);
             break;
         case 15:
             sys_ps();
