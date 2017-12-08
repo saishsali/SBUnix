@@ -520,7 +520,7 @@ int remove_file_name_from_path(char *directory_path, char *file_name) {
 
 /* Sys open to open files: http://pubs.opengroup.org/onlinepubs/009695399/functions/open.html */
 int8_t sys_open(char *file_path, uint8_t flags) {
-    char directory_path[100], file_name[20], path[100];
+    char directory_path[100], file_name[20], path[100], temp[100];;
     int i = 0, c = 0, flag = 0, index = 0;
     strcpy(path, file_path);
     if (path == NULL) {
@@ -553,7 +553,6 @@ int8_t sys_open(char *file_path, uint8_t flags) {
     }
 
     add_slash_at_end(path);
-    char temp[100];
 
     if(path[0] == '/') {
         i = 1;

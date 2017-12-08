@@ -6,13 +6,11 @@
 #define MAX_PROCESS 1000
 
 #define STACK_START 0xF0000000
-#define STACK_LIMIT 0x10000      // 10 * 4096 bytes
+#define STACK_LIMIT 0x10000      // 64 KB (16 Pages each of 4096 bytes)
 
-#define STACK_SIZE  0x800       // 2048 bytes
+#define STACK_SIZE  0x800       // Kernel stack size 2048 bytes
 
-#define MAX_FD 10
-
-#define ROOT "/rootfs/"
+#define MAX_FD 100
 
 typedef struct vm_area_struct vma_struct;
 typedef struct mm_struct mm_struct;

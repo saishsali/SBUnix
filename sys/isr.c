@@ -9,8 +9,7 @@ void interrupt_handler(stack_registers *registers) {
     switch (registers->interrupt_number) {
         case 0:
             kprintf("Divide by zero exception\n");
-            // sys_exit();
-            while(1);
+            sys_exit();
             break;
         case 14:
             page_fault_exception(registers);
