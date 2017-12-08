@@ -1,9 +1,9 @@
 ********************************* U L I M I T S ******************************
-Max userprocesses		1000
-User Stack size 		16 * 4096 bytes
-Kernel Stack size 		2048 bytes
-Files per process 	    100
-Max Directory length	100
-Max file name length	20
+Max userprocesses       1000
+User Stack size         16 * 4096 bytes
+Kernel Stack size       2048 bytes
+Files per process       100
+Max Directory length    100
+Max file name length    20
 Max files in directory  20
-Max line length			512
+Max line length         512
