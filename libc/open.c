@@ -1,7 +1,7 @@
 #include <sys/defs.h>
 #include <unistd.h>
 
-int8_t open(char *path, int64_t flags) {
+int open(const char *path, int flags) {
     int64_t output;
     __asm__ (
         "movq $10, %%rax;"
@@ -14,5 +14,5 @@ int8_t open(char *path, int64_t flags) {
         : "%rax", "%rdi", "%rsi"
     );
 
-    return (int8_t)output;
+    return output;
 }

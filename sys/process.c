@@ -199,7 +199,6 @@ task_struct *create_new_task() {
     pcb->siblings = NULL;
     pcb->u_rsp = 0;
     memset(pcb->kstack, 0, STACK_SIZE);
-    memset(pcb->file_descriptor, 0, MAX_FD * sizeof(file_descriptor));
     pcb->pid = get_process_id();
     pcb->state = READY;
     pcb->cr3 = (uint64_t)set_user_address_space();

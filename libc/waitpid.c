@@ -1,7 +1,7 @@
 #include <sys/defs.h>
 #include <stdio.h>
 
-pid_t waitpid(int pid, int *status) {
+int waitpid(int pid, int *status) {
     int64_t cid;
 
     __asm__ (

@@ -1,6 +1,5 @@
 #ifndef _DIRENT_H
 #define _DIRENT_H
-
 #include <sys/defs.h>
 
 #define stdin 0
@@ -17,9 +16,7 @@ typedef struct dirent dentry;
 file_node* root_node;
 
 struct dirent {
-    char name[20];
-    uint16_t d_reclen;
-
+    char name[30];
 };
 
 struct file_node {

@@ -1,0 +1,3211 @@
+
+./rootfs/bin/sbush:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+00000000004000f0 <_start>:
+#include <stdlib.h>
+
+void _start(void) {
+  // call main() and exit() here
+    __asm__ (
+  4000f0:	48 89 e5             	mov    %rsp,%rbp
+  4000f3:	48 8b 7d 00          	mov    0x0(%rbp),%rdi
+  4000f7:	48 8d 75 08          	lea    0x8(%rbp),%rsi
+  4000fb:	48 8d 54 fd 10       	lea    0x10(%rbp,%rdi,8),%rdx
+  400100:	e8 9e 0c 00 00       	callq  400da3 <main>
+  400105:	48 89 c7             	mov    %rax,%rdi
+  400108:	48 c7 c0 0d 00 00 00 	mov    $0xd,%rax
+  40010f:	cd 80                	int    $0x80
+  400111:	c3                   	retq   
+  400112:	66 2e 0f 1f 84 00 00 	nopw   %cs:0x0(%rax,%rax,1)
+  400119:	00 00 00 
+  40011c:	0f 1f 40 00          	nopl   0x0(%rax)
+
+0000000000400120 <getenv>:
+
+char **env;
+char *ps1;
+int num_env = 16;
+
+char *getenv(const char *name) {
+  400120:	41 57                	push   %r15
+  400122:	41 56                	push   %r14
+  400124:	41 55                	push   %r13
+  400126:	41 54                	push   %r12
+  400128:	55                   	push   %rbp
+  400129:	53                   	push   %rbx
+  40012a:	48 81 ec 08 02 00 00 	sub    $0x208,%rsp
+  400131:	49 89 fd             	mov    %rdi,%r13
+    int key_length = strlen(name);
+  400134:	e8 b7 15 00 00       	callq  4016f0 <strlen>
+    char initial_envp[BUFSIZE], *result = NULL;
+    int i, j;
+
+    if (name == NULL || env == NULL)
+  400139:	4d 85 ed             	test   %r13,%r13
+  40013c:	0f 84 d3 00 00 00    	je     400215 <getenv+0xf5>
+  400142:	41 89 c6             	mov    %eax,%r14d
+  400145:	48 8d 15 1c 20 20 00 	lea    0x20201c(%rip),%rdx        # 602168 <env>
+  40014c:	48 8b 0a             	mov    (%rdx),%rcx
+  40014f:	48 85 c9             	test   %rcx,%rcx
+  400152:	0f 84 c4 00 00 00    	je     40021c <getenv+0xfc>
+        return NULL;
+
+    for (i = 0; env[i] != NULL; i++) {
+  400158:	48 8b 11             	mov    (%rcx),%rdx
+  40015b:	bd 00 00 00 00       	mov    $0x0,%ebp
+  400160:	41 bc 00 00 00 00    	mov    $0x0,%r12d
+  400166:	48 85 d2             	test   %rdx,%rdx
+  400169:	0f 85 8a 00 00 00    	jne    4001f9 <getenv+0xd9>
+  40016f:	e9 b4 00 00 00       	jmpq   400228 <getenv+0x108>
+        j = 0;
+        while (j < key_length) {
+            initial_envp[j] = env[i][j];
+  400174:	48 8b 11             	mov    (%rcx),%rdx
+  400177:	0f b6 14 02          	movzbl (%rdx,%rax,1),%edx
+  40017b:	88 14 04             	mov    %dl,(%rsp,%rax,1)
+  40017e:	48 ff c0             	inc    %rax
+    if (name == NULL || env == NULL)
+        return NULL;
+
+    for (i = 0; env[i] != NULL; i++) {
+        j = 0;
+        while (j < key_length) {
+  400181:	48 39 c3             	cmp    %rax,%rbx
+  400184:	75 ee                	jne    400174 <getenv+0x54>
+            initial_envp[j] = env[i][j];
+            j++;
+        }
+        initial_envp[key_length] = '\0';
+  400186:	42 c6 04 3c 00       	movb   $0x0,(%rsp,%r15,1)
+        if (strcmp(name, initial_envp) == 0) {
+  40018b:	48 89 e6             	mov    %rsp,%rsi
+  40018e:	4c 89 ef             	mov    %r13,%rdi
+  400191:	e8 d4 0d 00 00       	callq  400f6a <strcmp>
+  400196:	85 c0                	test   %eax,%eax
+  400198:	75 3e                	jne    4001d8 <getenv+0xb8>
+            for (j = 0; env[i][j] != '\0'; j++) {
+  40019a:	48 8d 05 c7 1f 20 00 	lea    0x201fc7(%rip),%rax        # 602168 <env>
+  4001a1:	48 8b 00             	mov    (%rax),%rax
+  4001a4:	48 8b 3c 28          	mov    (%rax,%rbp,1),%rdi
+  4001a8:	0f b6 07             	movzbl (%rdi),%eax
+  4001ab:	84 c0                	test   %al,%al
+  4001ad:	74 74                	je     400223 <getenv+0x103>
+  4001af:	be 00 00 00 00       	mov    $0x0,%esi
+  4001b4:	b9 00 00 00 00       	mov    $0x0,%ecx
+  4001b9:	ba 00 00 00 00       	mov    $0x0,%edx
+                if(env[i][j] == '=') {
+  4001be:	3c 3d                	cmp    $0x3d,%al
+                    result = env[i] + j + 1;
+  4001c0:	48 8d 74 37 01       	lea    0x1(%rdi,%rsi,1),%rsi
+  4001c5:	48 0f 44 d6          	cmove  %rsi,%rdx
+            initial_envp[j] = env[i][j];
+            j++;
+        }
+        initial_envp[key_length] = '\0';
+        if (strcmp(name, initial_envp) == 0) {
+            for (j = 0; env[i][j] != '\0'; j++) {
+  4001c9:	ff c1                	inc    %ecx
+  4001cb:	48 63 f1             	movslq %ecx,%rsi
+  4001ce:	0f b6 04 37          	movzbl (%rdi,%rsi,1),%eax
+  4001d2:	84 c0                	test   %al,%al
+  4001d4:	75 e8                	jne    4001be <getenv+0x9e>
+  4001d6:	eb 50                	jmp    400228 <getenv+0x108>
+    int i, j;
+
+    if (name == NULL || env == NULL)
+        return NULL;
+
+    for (i = 0; env[i] != NULL; i++) {
+  4001d8:	41 ff c4             	inc    %r12d
+  4001db:	49 63 ec             	movslq %r12d,%rbp
+  4001de:	48 c1 e5 03          	shl    $0x3,%rbp
+  4001e2:	48 8d 05 7f 1f 20 00 	lea    0x201f7f(%rip),%rax        # 602168 <env>
+  4001e9:	48 89 e9             	mov    %rbp,%rcx
+  4001ec:	48 03 08             	add    (%rax),%rcx
+  4001ef:	48 8b 11             	mov    (%rcx),%rdx
+  4001f2:	48 85 d2             	test   %rdx,%rdx
+  4001f5:	75 0b                	jne    400202 <getenv+0xe2>
+  4001f7:	eb 2f                	jmp    400228 <getenv+0x108>
+  4001f9:	8d 58 ff             	lea    -0x1(%rax),%ebx
+  4001fc:	48 ff c3             	inc    %rbx
+        j = 0;
+        while (j < key_length) {
+            initial_envp[j] = env[i][j];
+            j++;
+        }
+        initial_envp[key_length] = '\0';
+  4001ff:	4c 63 f8             	movslq %eax,%r15
+    if (name == NULL || env == NULL)
+        return NULL;
+
+    for (i = 0; env[i] != NULL; i++) {
+        j = 0;
+        while (j < key_length) {
+  400202:	45 85 f6             	test   %r14d,%r14d
+  400205:	0f 8e 7b ff ff ff    	jle    400186 <getenv+0x66>
+  40020b:	b8 00 00 00 00       	mov    $0x0,%eax
+  400210:	e9 5f ff ff ff       	jmpq   400174 <getenv+0x54>
+    int key_length = strlen(name);
+    char initial_envp[BUFSIZE], *result = NULL;
+    int i, j;
+
+    if (name == NULL || env == NULL)
+        return NULL;
+  400215:	ba 00 00 00 00       	mov    $0x0,%edx
+  40021a:	eb 0c                	jmp    400228 <getenv+0x108>
+  40021c:	ba 00 00 00 00       	mov    $0x0,%edx
+  400221:	eb 05                	jmp    400228 <getenv+0x108>
+            initial_envp[j] = env[i][j];
+            j++;
+        }
+        initial_envp[key_length] = '\0';
+        if (strcmp(name, initial_envp) == 0) {
+            for (j = 0; env[i][j] != '\0'; j++) {
+  400223:	ba 00 00 00 00       	mov    $0x0,%edx
+            break;
+        }
+    }
+    return result;
+
+}
+  400228:	48 89 d0             	mov    %rdx,%rax
+  40022b:	48 81 c4 08 02 00 00 	add    $0x208,%rsp
+  400232:	5b                   	pop    %rbx
+  400233:	5d                   	pop    %rbp
+  400234:	41 5c                	pop    %r12
+  400236:	41 5d                	pop    %r13
+  400238:	41 5e                	pop    %r14
+  40023a:	41 5f                	pop    %r15
+  40023c:	c3                   	retq   
+
+000000000040023d <update_envp>:
+
+void update_envp(const char *name, const char *value) {
+  40023d:	41 57                	push   %r15
+  40023f:	41 56                	push   %r14
+  400241:	41 55                	push   %r13
+  400243:	41 54                	push   %r12
+  400245:	55                   	push   %rbp
+  400246:	53                   	push   %rbx
+  400247:	48 81 ec 28 02 00 00 	sub    $0x228,%rsp
+  40024e:	48 89 7c 24 08       	mov    %rdi,0x8(%rsp)
+  400253:	49 89 f5             	mov    %rsi,%r13
+    int i, j, key_length = strlen(name);
+  400256:	e8 95 14 00 00       	callq  4016f0 <strlen>
+  40025b:	89 44 24 04          	mov    %eax,0x4(%rsp)
+    char initial_envp[BUFSIZE];
+    long int k;
+
+    for (i = 0; env[i] != NULL; i++) {
+  40025f:	48 8d 15 02 1f 20 00 	lea    0x201f02(%rip),%rdx        # 602168 <env>
+  400266:	48 8b 0a             	mov    (%rdx),%rcx
+  400269:	48 83 39 00          	cmpq   $0x0,(%rcx)
+  40026d:	0f 85 22 01 00 00    	jne    400395 <update_envp+0x158>
+  400273:	e9 4e 01 00 00       	jmpq   4003c6 <update_envp+0x189>
+        j = 0;
+        while (j < key_length) {
+            initial_envp[j] = env[i][j];
+  400278:	48 8b 11             	mov    (%rcx),%rdx
+  40027b:	0f b6 14 02          	movzbl (%rdx,%rax,1),%edx
+  40027f:	88 54 04 20          	mov    %dl,0x20(%rsp,%rax,1)
+  400283:	48 ff c0             	inc    %rax
+    char initial_envp[BUFSIZE];
+    long int k;
+
+    for (i = 0; env[i] != NULL; i++) {
+        j = 0;
+        while (j < key_length) {
+  400286:	48 39 d8             	cmp    %rbx,%rax
+  400289:	75 ed                	jne    400278 <update_envp+0x3b>
+            initial_envp[j] = env[i][j];
+            j++;
+        }
+        initial_envp[key_length] = '\0';
+  40028b:	48 8b 44 24 10       	mov    0x10(%rsp),%rax
+  400290:	c6 44 04 20 00       	movb   $0x0,0x20(%rsp,%rax,1)
+
+        if (strcmp(name, initial_envp) == 0) {
+  400295:	48 8d 74 24 20       	lea    0x20(%rsp),%rsi
+  40029a:	48 8b 7c 24 08       	mov    0x8(%rsp),%rdi
+  40029f:	e8 c6 0c 00 00       	callq  400f6a <strcmp>
+  4002a4:	85 c0                	test   %eax,%eax
+  4002a6:	0f 85 ca 00 00 00    	jne    400376 <update_envp+0x139>
+            for (j = 0; env[i][j] != '\0'; j++) {
+  4002ac:	48 8d 05 b5 1e 20 00 	lea    0x201eb5(%rip),%rax        # 602168 <env>
+  4002b3:	48 8b 00             	mov    (%rax),%rax
+  4002b6:	4a 8b 0c 20          	mov    (%rax,%r12,1),%rcx
+  4002ba:	0f b6 01             	movzbl (%rcx),%eax
+  4002bd:	84 c0                	test   %al,%al
+  4002bf:	0f 84 b1 00 00 00    	je     400376 <update_envp+0x139>
+                if (env[i][j] == '=') {
+  4002c5:	3c 3d                	cmp    $0x3d,%al
+  4002c7:	74 15                	je     4002de <update_envp+0xa1>
+  4002c9:	b8 00 00 00 00       	mov    $0x0,%eax
+  4002ce:	e9 92 00 00 00       	jmpq   400365 <update_envp+0x128>
+  4002d3:	80 fa 3d             	cmp    $0x3d,%dl
+  4002d6:	0f 85 89 00 00 00    	jne    400365 <update_envp+0x128>
+  4002dc:	eb 05                	jmp    4002e3 <update_envp+0xa6>
+  4002de:	b8 00 00 00 00       	mov    $0x0,%eax
+                    j++;
+  4002e3:	ff c0                	inc    %eax
+                    for (k = j; env[i][k] != '\0'; k++) {
+  4002e5:	48 98                	cltq   
+  4002e7:	48 89 c2             	mov    %rax,%rdx
+  4002ea:	48 89 44 24 18       	mov    %rax,0x18(%rsp)
+  4002ef:	49 89 c7             	mov    %rax,%r15
+  4002f2:	48 01 c8             	add    %rcx,%rax
+  4002f5:	80 38 00             	cmpb   $0x0,(%rax)
+  4002f8:	74 1f                	je     400319 <update_envp+0xdc>
+  4002fa:	48 8d 0d 67 1e 20 00 	lea    0x201e67(%rip),%rcx        # 602168 <env>
+                        env[i][k] = '\0';
+  400301:	c6 00 00             	movb   $0x0,(%rax)
+
+        if (strcmp(name, initial_envp) == 0) {
+            for (j = 0; env[i][j] != '\0'; j++) {
+                if (env[i][j] == '=') {
+                    j++;
+                    for (k = j; env[i][k] != '\0'; k++) {
+  400304:	48 ff c2             	inc    %rdx
+  400307:	48 8b 01             	mov    (%rcx),%rax
+  40030a:	48 89 d6             	mov    %rdx,%rsi
+  40030d:	4a 03 34 20          	add    (%rax,%r12,1),%rsi
+  400311:	48 89 f0             	mov    %rsi,%rax
+  400314:	80 3e 00             	cmpb   $0x0,(%rsi)
+  400317:	75 e8                	jne    400301 <update_envp+0xc4>
+  400319:	bd 00 00 00 00       	mov    $0x0,%ebp
+  40031e:	eb 1e                	jmp    40033e <update_envp+0x101>
+                        env[i][k] = '\0';
+                    }
+                    for(k = 0; k < strlen(value); k++) {
+                        env[i][j+k] = value[k];
+  400320:	41 0f b6 54 2d 00    	movzbl 0x0(%r13,%rbp,1),%edx
+  400326:	48 8d 05 3b 1e 20 00 	lea    0x201e3b(%rip),%rax        # 602168 <env>
+  40032d:	48 8b 00             	mov    (%rax),%rax
+  400330:	48 89 ef             	mov    %rbp,%rdi
+  400333:	4a 03 3c 20          	add    (%rax,%r12,1),%rdi
+  400337:	42 88 14 3f          	mov    %dl,(%rdi,%r15,1)
+                if (env[i][j] == '=') {
+                    j++;
+                    for (k = j; env[i][k] != '\0'; k++) {
+                        env[i][k] = '\0';
+                    }
+                    for(k = 0; k < strlen(value); k++) {
+  40033b:	48 ff c5             	inc    %rbp
+  40033e:	4c 89 ef             	mov    %r13,%rdi
+  400341:	e8 aa 13 00 00       	callq  4016f0 <strlen>
+  400346:	48 39 e8             	cmp    %rbp,%rax
+  400349:	77 d5                	ja     400320 <update_envp+0xe3>
+                        env[i][j+k] = value[k];
+                    }
+                    env[i][j+k] = '\0';
+  40034b:	48 8d 05 16 1e 20 00 	lea    0x201e16(%rip),%rax        # 602168 <env>
+  400352:	48 8b 00             	mov    (%rax),%rax
+  400355:	4a 03 2c 20          	add    (%rax,%r12,1),%rbp
+  400359:	48 8b 44 24 18       	mov    0x18(%rsp),%rax
+  40035e:	c6 44 05 00 00       	movb   $0x0,0x0(%rbp,%rax,1)
+                    break;
+  400363:	eb 11                	jmp    400376 <update_envp+0x139>
+            j++;
+        }
+        initial_envp[key_length] = '\0';
+
+        if (strcmp(name, initial_envp) == 0) {
+            for (j = 0; env[i][j] != '\0'; j++) {
+  400365:	ff c0                	inc    %eax
+  400367:	48 63 d0             	movslq %eax,%rdx
+  40036a:	0f b6 14 11          	movzbl (%rcx,%rdx,1),%edx
+  40036e:	84 d2                	test   %dl,%dl
+  400370:	0f 85 5d ff ff ff    	jne    4002d3 <update_envp+0x96>
+void update_envp(const char *name, const char *value) {
+    int i, j, key_length = strlen(name);
+    char initial_envp[BUFSIZE];
+    long int k;
+
+    for (i = 0; env[i] != NULL; i++) {
+  400376:	41 ff c6             	inc    %r14d
+  400379:	4d 63 e6             	movslq %r14d,%r12
+  40037c:	49 c1 e4 03          	shl    $0x3,%r12
+  400380:	48 8d 05 e1 1d 20 00 	lea    0x201de1(%rip),%rax        # 602168 <env>
+  400387:	4c 89 e1             	mov    %r12,%rcx
+  40038a:	48 03 08             	add    (%rax),%rcx
+  40038d:	48 83 39 00          	cmpq   $0x0,(%rcx)
+  400391:	75 1e                	jne    4003b1 <update_envp+0x174>
+  400393:	eb 31                	jmp    4003c6 <update_envp+0x189>
+  400395:	41 bc 00 00 00 00    	mov    $0x0,%r12d
+  40039b:	41 be 00 00 00 00    	mov    $0x0,%r14d
+  4003a1:	8d 58 ff             	lea    -0x1(%rax),%ebx
+  4003a4:	48 ff c3             	inc    %rbx
+        j = 0;
+        while (j < key_length) {
+            initial_envp[j] = env[i][j];
+            j++;
+        }
+        initial_envp[key_length] = '\0';
+  4003a7:	48 63 44 24 04       	movslq 0x4(%rsp),%rax
+  4003ac:	48 89 44 24 10       	mov    %rax,0x10(%rsp)
+    char initial_envp[BUFSIZE];
+    long int k;
+
+    for (i = 0; env[i] != NULL; i++) {
+        j = 0;
+        while (j < key_length) {
+  4003b1:	83 7c 24 04 00       	cmpl   $0x0,0x4(%rsp)
+  4003b6:	0f 8e cf fe ff ff    	jle    40028b <update_envp+0x4e>
+  4003bc:	b8 00 00 00 00       	mov    $0x0,%eax
+  4003c1:	e9 b2 fe ff ff       	jmpq   400278 <update_envp+0x3b>
+                    break;
+                }
+            }
+        }
+    }
+}
+  4003c6:	48 81 c4 28 02 00 00 	add    $0x228,%rsp
+  4003cd:	5b                   	pop    %rbx
+  4003ce:	5d                   	pop    %rbp
+  4003cf:	41 5c                	pop    %r12
+  4003d1:	41 5d                	pop    %r13
+  4003d3:	41 5e                	pop    %r14
+  4003d5:	41 5f                	pop    %r15
+  4003d7:	c3                   	retq   
+
+00000000004003d8 <set_envp>:
+
+void set_envp(const char *name, const char *value) {
+  4003d8:	41 54                	push   %r12
+  4003da:	55                   	push   %rbp
+  4003db:	53                   	push   %rbx
+  4003dc:	48 81 ec 10 02 00 00 	sub    $0x210,%rsp
+  4003e3:	48 89 f5             	mov    %rsi,%rbp
+    int i = 0;
+    char equal[2] = "=", new_env[BUFSIZE];
+  4003e6:	66 c7 84 24 0e 02 00 	movw   $0x3d,0x20e(%rsp)
+  4003ed:	00 3d 00 
+
+    strcpy(new_env, name);
+  4003f0:	48 8d 5c 24 0e       	lea    0xe(%rsp),%rbx
+  4003f5:	48 89 fe             	mov    %rdi,%rsi
+  4003f8:	48 89 df             	mov    %rbx,%rdi
+  4003fb:	e8 8f 0b 00 00       	callq  400f8f <strcpy>
+    strcat(new_env, equal);
+  400400:	48 8d b4 24 0e 02 00 	lea    0x20e(%rsp),%rsi
+  400407:	00 
+  400408:	48 89 df             	mov    %rbx,%rdi
+  40040b:	e8 cc 0b 00 00       	callq  400fdc <strcat>
+    strcat(new_env, value);
+  400410:	48 89 ee             	mov    %rbp,%rsi
+  400413:	48 89 df             	mov    %rbx,%rdi
+  400416:	e8 c1 0b 00 00       	callq  400fdc <strcat>
+
+    for (i = 0; env[i] != NULL; i++);
+  40041b:	48 8d 05 46 1d 20 00 	lea    0x201d46(%rip),%rax        # 602168 <env>
+  400422:	48 8b 10             	mov    (%rax),%rdx
+  400425:	48 83 3a 00          	cmpq   $0x0,(%rdx)
+  400429:	74 1f                	je     40044a <set_envp+0x72>
+  40042b:	b8 00 00 00 00       	mov    $0x0,%eax
+  400430:	ff c0                	inc    %eax
+  400432:	48 63 d8             	movslq %eax,%rbx
+  400435:	48 8d 2c dd 00 00 00 	lea    0x0(,%rbx,8),%rbp
+  40043c:	00 
+  40043d:	4c 8d 24 2a          	lea    (%rdx,%rbp,1),%r12
+  400441:	49 83 3c 24 00       	cmpq   $0x0,(%r12)
+  400446:	75 e8                	jne    400430 <set_envp+0x58>
+  400448:	eb 12                	jmp    40045c <set_envp+0x84>
+  40044a:	49 89 d4             	mov    %rdx,%r12
+  40044d:	bd 00 00 00 00       	mov    $0x0,%ebp
+  400452:	bb 00 00 00 00       	mov    $0x0,%ebx
+  400457:	b8 00 00 00 00       	mov    $0x0,%eax
+    if (i < num_env) {
+  40045c:	48 8d 15 b5 1b 20 00 	lea    0x201bb5(%rip),%rdx        # 602018 <num_env>
+  400463:	39 02                	cmp    %eax,(%rdx)
+  400465:	7e 34                	jle    40049b <set_envp+0xc3>
+        env[i] = (char *)malloc(256 * sizeof(char));
+  400467:	bf 00 01 00 00       	mov    $0x100,%edi
+  40046c:	e8 8d 0e 00 00       	callq  4012fe <malloc>
+  400471:	49 89 04 24          	mov    %rax,(%r12)
+        strcpy(env[i], new_env);
+  400475:	48 8d 74 24 0e       	lea    0xe(%rsp),%rsi
+  40047a:	4c 8d 25 e7 1c 20 00 	lea    0x201ce7(%rip),%r12        # 602168 <env>
+  400481:	49 8b 04 24          	mov    (%r12),%rax
+  400485:	48 8b 3c 28          	mov    (%rax,%rbp,1),%rdi
+  400489:	e8 01 0b 00 00       	callq  400f8f <strcpy>
+        env[i + 1] = NULL;
+  40048e:	49 8b 04 24          	mov    (%r12),%rax
+  400492:	48 c7 44 d8 08 00 00 	movq   $0x0,0x8(%rax,%rbx,8)
+  400499:	00 00 
+    }
+}
+  40049b:	48 81 c4 10 02 00 00 	add    $0x210,%rsp
+  4004a2:	5b                   	pop    %rbx
+  4004a3:	5d                   	pop    %rbp
+  4004a4:	41 5c                	pop    %r12
+  4004a6:	c3                   	retq   
+
+00000000004004a7 <setenv>:
+
+void setenv(const char *name, const char *value, int overwrite) {
+  4004a7:	41 54                	push   %r12
+  4004a9:	55                   	push   %rbp
+  4004aa:	53                   	push   %rbx
+  4004ab:	48 89 fb             	mov    %rdi,%rbx
+  4004ae:	49 89 f4             	mov    %rsi,%r12
+  4004b1:	89 d5                	mov    %edx,%ebp
+    if (strlen(getenv(name)) > 0) {
+  4004b3:	e8 68 fc ff ff       	callq  400120 <getenv>
+  4004b8:	48 89 c7             	mov    %rax,%rdi
+  4004bb:	e8 30 12 00 00       	callq  4016f0 <strlen>
+  4004c0:	48 85 c0             	test   %rax,%rax
+  4004c3:	74 12                	je     4004d7 <setenv+0x30>
+        if (overwrite == 1) {
+  4004c5:	83 fd 01             	cmp    $0x1,%ebp
+  4004c8:	75 18                	jne    4004e2 <setenv+0x3b>
+            update_envp(name, value);
+  4004ca:	4c 89 e6             	mov    %r12,%rsi
+  4004cd:	48 89 df             	mov    %rbx,%rdi
+  4004d0:	e8 68 fd ff ff       	callq  40023d <update_envp>
+  4004d5:	eb 0b                	jmp    4004e2 <setenv+0x3b>
+        }
+    } else {
+        set_envp(name, value);
+  4004d7:	4c 89 e6             	mov    %r12,%rsi
+  4004da:	48 89 df             	mov    %rbx,%rdi
+  4004dd:	e8 f6 fe ff ff       	callq  4003d8 <set_envp>
+    }
+}
+  4004e2:	5b                   	pop    %rbx
+  4004e3:	5d                   	pop    %rbp
+  4004e4:	41 5c                	pop    %r12
+  4004e6:	c3                   	retq   
+
+00000000004004e7 <trim_quotes>:
+
+// Removes leading and trailing quotes from a string
+char *trim_quotes(char *str) {
+  4004e7:	53                   	push   %rbx
+  4004e8:	48 89 fb             	mov    %rdi,%rbx
+    if (str[0] == '\"' || str[0] == '\'') {
+  4004eb:	0f b6 07             	movzbl (%rdi),%eax
+  4004ee:	3c 22                	cmp    $0x22,%al
+  4004f0:	74 04                	je     4004f6 <trim_quotes+0xf>
+  4004f2:	3c 27                	cmp    $0x27,%al
+  4004f4:	75 10                	jne    400506 <trim_quotes+0x1f>
+        str++;
+  4004f6:	48 ff c3             	inc    %rbx
+        str[strlen(str) - 1] = 0;
+  4004f9:	48 89 df             	mov    %rbx,%rdi
+  4004fc:	e8 ef 11 00 00       	callq  4016f0 <strlen>
+  400501:	c6 44 03 ff 00       	movb   $0x0,-0x1(%rbx,%rax,1)
+    }
+
+    return str;
+}
+  400506:	48 89 d8             	mov    %rbx,%rax
+  400509:	5b                   	pop    %rbx
+  40050a:	c3                   	retq   
+
+000000000040050b <is_alphabet>:
+
+// Checks if a character is an alphabet
+int is_alphabet(char c) {
+    if ((c >='a' && c <='z' ) || ( c >= 'A' && c <= 'Z'))
+  40050b:	83 e7 df             	and    $0xffffffdf,%edi
+  40050e:	83 ef 41             	sub    $0x41,%edi
+        return 1;
+
+    return -1;
+  400511:	40 80 ff 1a          	cmp    $0x1a,%dil
+  400515:	19 c0                	sbb    %eax,%eax
+  400517:	83 e0 02             	and    $0x2,%eax
+  40051a:	ff c8                	dec    %eax
+}
+  40051c:	c3                   	retq   
+
+000000000040051d <decode_environment_variable>:
+
+// Decodes environment variable
+int decode_environment_variable(char *var, char decoded_var[]) {
+  40051d:	41 56                	push   %r14
+  40051f:	41 55                	push   %r13
+  400521:	41 54                	push   %r12
+  400523:	55                   	push   %rbp
+  400524:	53                   	push   %rbx
+  400525:	48 81 ec 00 02 00 00 	sub    $0x200,%rsp
+  40052c:	48 89 fb             	mov    %rdi,%rbx
+  40052f:	49 89 f5             	mov    %rsi,%r13
+    int i = 0, j = 0;
+    decoded_var[0] = '\0';
+  400532:	c6 06 00             	movb   $0x0,(%rsi)
+    return -1;
+}
+
+// Decodes environment variable
+int decode_environment_variable(char *var, char decoded_var[]) {
+    int i = 0, j = 0;
+  400535:	41 bc 00 00 00 00    	mov    $0x0,%r12d
+            i = 0;
+            while(is_alphabet(*var) == 1) {
+                name[i++] = *var;
+                var++;
+            }
+            char *value = getenv(name);
+  40053b:	49 89 e6             	mov    %rsp,%r14
+// Decodes environment variable
+int decode_environment_variable(char *var, char decoded_var[]) {
+    int i = 0, j = 0;
+    decoded_var[0] = '\0';
+
+    while(*var) {
+  40053e:	eb 75                	jmp    4005b5 <decode_environment_variable+0x98>
+        if(*var == '$' && (is_alphabet(*(var + 1)) == 1)) {
+  400540:	3c 24                	cmp    $0x24,%al
+  400542:	75 5e                	jne    4005a2 <decode_environment_variable+0x85>
+  400544:	0f be 7b 01          	movsbl 0x1(%rbx),%edi
+  400548:	e8 be ff ff ff       	callq  40050b <is_alphabet>
+  40054d:	83 f8 01             	cmp    $0x1,%eax
+  400550:	75 50                	jne    4005a2 <decode_environment_variable+0x85>
+            char name[BUFSIZE];
+            var++;
+  400552:	48 ff c3             	inc    %rbx
+  400555:	48 89 e5             	mov    %rsp,%rbp
+            i = 0;
+            while(is_alphabet(*var) == 1) {
+  400558:	eb 0c                	jmp    400566 <decode_environment_variable+0x49>
+                name[i++] = *var;
+  40055a:	0f b6 03             	movzbl (%rbx),%eax
+  40055d:	88 45 00             	mov    %al,0x0(%rbp)
+                var++;
+  400560:	48 ff c3             	inc    %rbx
+  400563:	48 ff c5             	inc    %rbp
+    while(*var) {
+        if(*var == '$' && (is_alphabet(*(var + 1)) == 1)) {
+            char name[BUFSIZE];
+            var++;
+            i = 0;
+            while(is_alphabet(*var) == 1) {
+  400566:	0f be 3b             	movsbl (%rbx),%edi
+  400569:	e8 9d ff ff ff       	callq  40050b <is_alphabet>
+  40056e:	83 f8 01             	cmp    $0x1,%eax
+  400571:	74 e7                	je     40055a <decode_environment_variable+0x3d>
+                name[i++] = *var;
+                var++;
+            }
+            char *value = getenv(name);
+  400573:	4c 89 f7             	mov    %r14,%rdi
+  400576:	e8 a5 fb ff ff       	callq  400120 <getenv>
+  40057b:	48 89 c5             	mov    %rax,%rbp
+            if(value == NULL)
+  40057e:	48 85 c0             	test   %rax,%rax
+  400581:	75 07                	jne    40058a <decode_environment_variable+0x6d>
+                return 0;
+  400583:	b8 00 00 00 00       	mov    $0x0,%eax
+  400588:	eb 40                	jmp    4005ca <decode_environment_variable+0xad>
+            strcat(decoded_var, value);
+  40058a:	48 89 c6             	mov    %rax,%rsi
+  40058d:	4c 89 ef             	mov    %r13,%rdi
+  400590:	e8 47 0a 00 00       	callq  400fdc <strcat>
+            j = j + strlen(value);
+  400595:	48 89 ef             	mov    %rbp,%rdi
+  400598:	e8 53 11 00 00       	callq  4016f0 <strlen>
+  40059d:	41 01 c4             	add    %eax,%r12d
+int decode_environment_variable(char *var, char decoded_var[]) {
+    int i = 0, j = 0;
+    decoded_var[0] = '\0';
+
+    while(*var) {
+        if(*var == '$' && (is_alphabet(*(var + 1)) == 1)) {
+  4005a0:	eb 13                	jmp    4005b5 <decode_environment_variable+0x98>
+            if(value == NULL)
+                return 0;
+            strcat(decoded_var, value);
+            j = j + strlen(value);
+        } else {
+            decoded_var[j++] = *var;
+  4005a2:	0f b6 13             	movzbl (%rbx),%edx
+  4005a5:	49 63 c4             	movslq %r12d,%rax
+  4005a8:	41 88 54 05 00       	mov    %dl,0x0(%r13,%rax,1)
+            var++;
+  4005ad:	48 ff c3             	inc    %rbx
+            if(value == NULL)
+                return 0;
+            strcat(decoded_var, value);
+            j = j + strlen(value);
+        } else {
+            decoded_var[j++] = *var;
+  4005b0:	45 8d 64 24 01       	lea    0x1(%r12),%r12d
+// Decodes environment variable
+int decode_environment_variable(char *var, char decoded_var[]) {
+    int i = 0, j = 0;
+    decoded_var[0] = '\0';
+
+    while(*var) {
+  4005b5:	0f b6 03             	movzbl (%rbx),%eax
+  4005b8:	84 c0                	test   %al,%al
+  4005ba:	75 84                	jne    400540 <decode_environment_variable+0x23>
+        } else {
+            decoded_var[j++] = *var;
+            var++;
+        }
+    }
+    decoded_var[j] = '\0';
+  4005bc:	4d 63 e4             	movslq %r12d,%r12
+  4005bf:	43 c6 44 25 00 00    	movb   $0x0,0x0(%r13,%r12,1)
+    return 1;
+  4005c5:	b8 01 00 00 00       	mov    $0x1,%eax
+}
+  4005ca:	48 81 c4 00 02 00 00 	add    $0x200,%rsp
+  4005d1:	5b                   	pop    %rbx
+  4005d2:	5d                   	pop    %rbp
+  4005d3:	41 5c                	pop    %r12
+  4005d5:	41 5d                	pop    %r13
+  4005d7:	41 5e                	pop    %r14
+  4005d9:	c3                   	retq   
+
+00000000004005da <set_environment_variable>:
+
+
+// Set environment variable
+int set_environment_variable(char *token) {
+  4005da:	53                   	push   %rbx
+  4005db:	48 81 ec 00 02 00 00 	sub    $0x200,%rsp
+    char decoded_var[BUFSIZE];
+    char *name = strtok(token, "=");
+  4005e2:	48 8d 35 4f 11 00 00 	lea    0x114f(%rip),%rsi        # 401738 <write+0x22>
+  4005e9:	e8 f2 07 00 00       	callq  400de0 <strtok>
+  4005ee:	48 89 c3             	mov    %rax,%rbx
+    int result = decode_environment_variable(trim_quotes(strtok(NULL, "=")), decoded_var);
+  4005f1:	48 8d 35 40 11 00 00 	lea    0x1140(%rip),%rsi        # 401738 <write+0x22>
+  4005f8:	bf 00 00 00 00       	mov    $0x0,%edi
+  4005fd:	e8 de 07 00 00       	callq  400de0 <strtok>
+  400602:	48 89 c7             	mov    %rax,%rdi
+  400605:	e8 dd fe ff ff       	callq  4004e7 <trim_quotes>
+  40060a:	48 89 e6             	mov    %rsp,%rsi
+  40060d:	48 89 c7             	mov    %rax,%rdi
+  400610:	e8 08 ff ff ff       	callq  40051d <decode_environment_variable>
+    if (result == 0)
+  400615:	85 c0                	test   %eax,%eax
+  400617:	74 35                	je     40064e <set_environment_variable+0x74>
+        return 1;
+    setenv(name, decoded_var, 1);
+  400619:	48 89 e6             	mov    %rsp,%rsi
+  40061c:	ba 01 00 00 00       	mov    $0x1,%edx
+  400621:	48 89 df             	mov    %rbx,%rdi
+  400624:	e8 7e fe ff ff       	callq  4004a7 <setenv>
+
+    if (strcmp(name, "PS1") == 0)
+  400629:	48 8d 35 0a 11 00 00 	lea    0x110a(%rip),%rsi        # 40173a <write+0x24>
+  400630:	48 89 df             	mov    %rbx,%rdi
+  400633:	e8 32 09 00 00       	callq  400f6a <strcmp>
+  400638:	85 c0                	test   %eax,%eax
+  40063a:	75 12                	jne    40064e <set_environment_variable+0x74>
+        strcpy(ps1, decoded_var);
+  40063c:	48 89 e6             	mov    %rsp,%rsi
+  40063f:	48 8d 05 1a 1b 20 00 	lea    0x201b1a(%rip),%rax        # 602160 <ps1>
+  400646:	48 8b 38             	mov    (%rax),%rdi
+  400649:	e8 41 09 00 00       	callq  400f8f <strcpy>
+
+    return 1;
+}
+  40064e:	b8 01 00 00 00       	mov    $0x1,%eax
+  400653:	48 81 c4 00 02 00 00 	add    $0x200,%rsp
+  40065a:	5b                   	pop    %rbx
+  40065b:	c3                   	retq   
+
+000000000040065c <change_directory>:
+
+// Change directory
+int change_directory(char **tokens) {
+  40065c:	48 83 ec 78          	sub    $0x78,%rsp
+    char path[100];
+
+    if(tokens[1] == NULL) {
+  400660:	48 8b 77 08          	mov    0x8(%rdi),%rsi
+  400664:	48 85 f6             	test   %rsi,%rsi
+  400667:	75 13                	jne    40067c <change_directory+0x20>
+        strcpy(path, "/");
+  400669:	48 8d 7c 24 0c       	lea    0xc(%rsp),%rdi
+  40066e:	48 8d 35 c9 10 00 00 	lea    0x10c9(%rip),%rsi        # 40173e <write+0x28>
+  400675:	e8 15 09 00 00       	callq  400f8f <strcpy>
+  40067a:	eb 0a                	jmp    400686 <change_directory+0x2a>
+    } else {
+        strcpy(path, tokens[1]);
+  40067c:	48 8d 7c 24 0c       	lea    0xc(%rsp),%rdi
+  400681:	e8 09 09 00 00       	callq  400f8f <strcpy>
+    }
+    if (chdir(path) != 0) {
+  400686:	48 8d 7c 24 0c       	lea    0xc(%rsp),%rdi
+  40068b:	e8 73 0d 00 00       	callq  401403 <chdir>
+  400690:	85 c0                	test   %eax,%eax
+  400692:	74 11                	je     4006a5 <change_directory+0x49>
+        printf("Error changing directory");
+  400694:	48 8d 3d a5 10 00 00 	lea    0x10a5(%rip),%rdi        # 401740 <write+0x2a>
+  40069b:	b8 00 00 00 00       	mov    $0x0,%eax
+  4006a0:	e8 2e 0e 00 00       	callq  4014d3 <printf>
+    }
+    return 1;
+}
+  4006a5:	b8 01 00 00 00       	mov    $0x1,%eax
+  4006aa:	48 83 c4 78          	add    $0x78,%rsp
+  4006ae:	c3                   	retq   
+
+00000000004006af <get_command>:
+
+// Get command input for sbush from stdin
+void get_command(char command[], size_t len) {
+  4006af:	55                   	push   %rbp
+  4006b0:	53                   	push   %rbx
+  4006b1:	48 83 ec 08          	sub    $0x8,%rsp
+  4006b5:	48 89 fd             	mov    %rdi,%rbp
+  4006b8:	48 89 f2             	mov    %rsi,%rdx
+    ssize_t n;
+    if ((n = read(0, command, len)) == -1) {
+  4006bb:	48 89 fe             	mov    %rdi,%rsi
+  4006be:	bf 00 00 00 00       	mov    $0x0,%edi
+  4006c3:	e8 55 08 00 00       	callq  400f1d <read>
+  4006c8:	48 89 c3             	mov    %rax,%rbx
+  4006cb:	48 83 f8 ff          	cmp    $0xffffffffffffffff,%rax
+  4006cf:	75 0a                	jne    4006db <get_command+0x2c>
+        exit(0);
+  4006d1:	bf 00 00 00 00       	mov    $0x0,%edi
+  4006d6:	e8 64 08 00 00       	callq  400f3f <exit>
+    }
+    command[n - 1] = '\0';
+  4006db:	c6 44 1d ff 00       	movb   $0x0,-0x1(%rbp,%rbx,1)
+}
+  4006e0:	48 83 c4 08          	add    $0x8,%rsp
+  4006e4:	5b                   	pop    %rbx
+  4006e5:	5d                   	pop    %rbp
+  4006e6:	c3                   	retq   
+
+00000000004006e7 <parse>:
+
+// Parse command by using newlines, tabs, whitespaces tokens
+void parse(char *command, int *is_bg, char *tokens[]) {
+  4006e7:	41 56                	push   %r14
+  4006e9:	41 55                	push   %r13
+  4006eb:	41 54                	push   %r12
+  4006ed:	55                   	push   %rbp
+  4006ee:	53                   	push   %rbx
+  4006ef:	49 89 f6             	mov    %rsi,%r14
+  4006f2:	49 89 d4             	mov    %rdx,%r12
+    int i = 0;
+  4006f5:	bb 00 00 00 00       	mov    $0x0,%ebx
+    char *token;
+
+    while ((token = strtok(command, " \t\r\n")) != NULL) {
+  4006fa:	4c 8d 2d 5f 10 00 00 	lea    0x105f(%rip),%r13        # 401760 <write+0x4a>
+  400701:	eb 41                	jmp    400744 <parse+0x5d>
+        tokens[i++] = token;
+  400703:	8d 6b 01             	lea    0x1(%rbx),%ebp
+  400706:	48 63 d3             	movslq %ebx,%rdx
+  400709:	49 89 04 d4          	mov    %rax,(%r12,%rdx,8)
+        // Special case when export statement has extra spaces in it
+        if (strcmp(token, "export") == 0) {
+  40070d:	48 8d 35 45 10 00 00 	lea    0x1045(%rip),%rsi        # 401759 <write+0x43>
+  400714:	48 89 c7             	mov    %rax,%rdi
+  400717:	e8 4e 08 00 00       	callq  400f6a <strcmp>
+                break;
+            }
+            tokens[i++] = token;
+            break;
+        }
+        command = NULL;
+  40071c:	bf 00 00 00 00       	mov    $0x0,%edi
+    char *token;
+
+    while ((token = strtok(command, " \t\r\n")) != NULL) {
+        tokens[i++] = token;
+        // Special case when export statement has extra spaces in it
+        if (strcmp(token, "export") == 0) {
+  400721:	85 c0                	test   %eax,%eax
+  400723:	75 1d                	jne    400742 <parse+0x5b>
+            token = strtok(NULL, "");
+  400725:	48 8d 35 38 10 00 00 	lea    0x1038(%rip),%rsi        # 401764 <write+0x4e>
+  40072c:	e8 af 06 00 00       	callq  400de0 <strtok>
+            if(token == NULL) {
+  400731:	48 85 c0             	test   %rax,%rax
+  400734:	74 1d                	je     400753 <parse+0x6c>
+                break;
+            }
+            tokens[i++] = token;
+  400736:	83 c3 02             	add    $0x2,%ebx
+  400739:	48 63 ed             	movslq %ebp,%rbp
+  40073c:	49 89 04 ec          	mov    %rax,(%r12,%rbp,8)
+            break;
+  400740:	eb 13                	jmp    400755 <parse+0x6e>
+void parse(char *command, int *is_bg, char *tokens[]) {
+    int i = 0;
+    char *token;
+
+    while ((token = strtok(command, " \t\r\n")) != NULL) {
+        tokens[i++] = token;
+  400742:	89 eb                	mov    %ebp,%ebx
+// Parse command by using newlines, tabs, whitespaces tokens
+void parse(char *command, int *is_bg, char *tokens[]) {
+    int i = 0;
+    char *token;
+
+    while ((token = strtok(command, " \t\r\n")) != NULL) {
+  400744:	4c 89 ee             	mov    %r13,%rsi
+  400747:	e8 94 06 00 00       	callq  400de0 <strtok>
+  40074c:	48 85 c0             	test   %rax,%rax
+  40074f:	75 b2                	jne    400703 <parse+0x1c>
+  400751:	eb 02                	jmp    400755 <parse+0x6e>
+        tokens[i++] = token;
+  400753:	89 eb                	mov    %ebp,%ebx
+            break;
+        }
+        command = NULL;
+    }
+
+    tokens[i] = NULL;
+  400755:	48 63 c3             	movslq %ebx,%rax
+  400758:	48 8d 14 c5 00 00 00 	lea    0x0(,%rax,8),%rdx
+  40075f:	00 
+  400760:	49 c7 04 c4 00 00 00 	movq   $0x0,(%r12,%rax,8)
+  400767:	00 
+
+    if (i > 0 && strcmp(tokens[i-1], "&") == 0) {
+  400768:	85 db                	test   %ebx,%ebx
+  40076a:	7e 53                	jle    4007bf <parse+0xd8>
+  40076c:	49 8d 5c 14 f8       	lea    -0x8(%r12,%rdx,1),%rbx
+  400771:	48 8d 35 ed 0f 00 00 	lea    0xfed(%rip),%rsi        # 401765 <write+0x4f>
+  400778:	48 8b 3b             	mov    (%rbx),%rdi
+  40077b:	e8 ea 07 00 00       	callq  400f6a <strcmp>
+  400780:	85 c0                	test   %eax,%eax
+  400782:	75 29                	jne    4007ad <parse+0xc6>
+        *is_bg = 1;
+  400784:	41 c7 06 01 00 00 00 	movl   $0x1,(%r14)
+        tokens[i - 1] = NULL;
+  40078b:	48 c7 03 00 00 00 00 	movq   $0x0,(%rbx)
+  400792:	eb 2b                	jmp    4007bf <parse+0xd8>
+    } else if ((i > 0 && tokens[i - 1][strlen(tokens[i - 1]) - 1] == '&')) {
+        *is_bg = 1;
+  400794:	41 c7 06 01 00 00 00 	movl   $0x1,(%r14)
+        tokens[i - 1][strlen(tokens[i - 1]) - 1] = '\0';
+  40079b:	48 8b 1b             	mov    (%rbx),%rbx
+  40079e:	48 89 df             	mov    %rbx,%rdi
+  4007a1:	e8 4a 0f 00 00       	callq  4016f0 <strlen>
+  4007a6:	c6 44 03 ff 00       	movb   $0x0,-0x1(%rbx,%rax,1)
+    }
+
+}
+  4007ab:	eb 12                	jmp    4007bf <parse+0xd8>
+    tokens[i] = NULL;
+
+    if (i > 0 && strcmp(tokens[i-1], "&") == 0) {
+        *is_bg = 1;
+        tokens[i - 1] = NULL;
+    } else if ((i > 0 && tokens[i - 1][strlen(tokens[i - 1]) - 1] == '&')) {
+  4007ad:	48 8b 2b             	mov    (%rbx),%rbp
+  4007b0:	48 89 ef             	mov    %rbp,%rdi
+  4007b3:	e8 38 0f 00 00       	callq  4016f0 <strlen>
+  4007b8:	80 7c 05 ff 26       	cmpb   $0x26,-0x1(%rbp,%rax,1)
+  4007bd:	74 d5                	je     400794 <parse+0xad>
+        *is_bg = 1;
+        tokens[i - 1][strlen(tokens[i - 1]) - 1] = '\0';
+    }
+
+}
+  4007bf:	5b                   	pop    %rbx
+  4007c0:	5d                   	pop    %rbp
+  4007c1:	41 5c                	pop    %r12
+  4007c3:	41 5d                	pop    %r13
+  4007c5:	41 5e                	pop    %r14
+  4007c7:	c3                   	retq   
+
+00000000004007c8 <print_path_variables>:
+
+void print_path_variables() {
+    int i;
+    for (i = 0; env[i] != NULL; i++) {
+  4007c8:	48 8d 05 99 19 20 00 	lea    0x201999(%rip),%rax        # 602168 <env>
+  4007cf:	48 8b 00             	mov    (%rax),%rax
+  4007d2:	48 8b 38             	mov    (%rax),%rdi
+  4007d5:	48 85 ff             	test   %rdi,%rdi
+  4007d8:	74 47                	je     400821 <print_path_variables+0x59>
+        tokens[i - 1][strlen(tokens[i - 1]) - 1] = '\0';
+    }
+
+}
+
+void print_path_variables() {
+  4007da:	55                   	push   %rbp
+  4007db:	53                   	push   %rbx
+  4007dc:	48 83 ec 08          	sub    $0x8,%rsp
+    int i;
+    for (i = 0; env[i] != NULL; i++) {
+  4007e0:	bb 00 00 00 00       	mov    $0x0,%ebx
+        printf(env[i]);
+        printf("\n");
+  4007e5:	48 8d 2d 77 0f 00 00 	lea    0xf77(%rip),%rbp        # 401763 <write+0x4d>
+}
+
+void print_path_variables() {
+    int i;
+    for (i = 0; env[i] != NULL; i++) {
+        printf(env[i]);
+  4007ec:	b8 00 00 00 00       	mov    $0x0,%eax
+  4007f1:	e8 dd 0c 00 00       	callq  4014d3 <printf>
+        printf("\n");
+  4007f6:	48 89 ef             	mov    %rbp,%rdi
+  4007f9:	b8 00 00 00 00       	mov    $0x0,%eax
+  4007fe:	e8 d0 0c 00 00       	callq  4014d3 <printf>
+
+}
+
+void print_path_variables() {
+    int i;
+    for (i = 0; env[i] != NULL; i++) {
+  400803:	ff c3                	inc    %ebx
+  400805:	48 63 d3             	movslq %ebx,%rdx
+  400808:	48 8d 05 59 19 20 00 	lea    0x201959(%rip),%rax        # 602168 <env>
+  40080f:	48 8b 00             	mov    (%rax),%rax
+  400812:	48 8b 3c d0          	mov    (%rax,%rdx,8),%rdi
+  400816:	48 85 ff             	test   %rdi,%rdi
+  400819:	75 d1                	jne    4007ec <print_path_variables+0x24>
+        printf(env[i]);
+        printf("\n");
+    }
+}
+  40081b:	48 83 c4 08          	add    $0x8,%rsp
+  40081f:	5b                   	pop    %rbx
+  400820:	5d                   	pop    %rbp
+  400821:	f3 c3                	repz retq 
+
+0000000000400823 <read_file>:
+
+int read_file(char *filename) {
+  400823:	55                   	push   %rbp
+  400824:	53                   	push   %rbx
+  400825:	48 83 ec 18          	sub    $0x18,%rsp
+    int fd;
+    char c;
+    ssize_t n;
+
+    fd = open(filename, O_RDONLY);
+  400829:	be 00 00 00 00       	mov    $0x0,%esi
+  40082e:	e8 8e 07 00 00       	callq  400fc1 <open>
+    if (fd < 0) {
+  400833:	85 c0                	test   %eax,%eax
+  400835:	78 35                	js     40086c <read_file+0x49>
+  400837:	89 c3                	mov    %eax,%ebx
+        return -1;
+    }
+    while ((n = read(fd, &c, 1) != 0)) {
+  400839:	48 8d 6c 24 0f       	lea    0xf(%rsp),%rbp
+  40083e:	eb 0a                	jmp    40084a <read_file+0x27>
+        putchar(c);
+  400840:	0f be 7c 24 0f       	movsbl 0xf(%rsp),%edi
+  400845:	e8 ce 0b 00 00       	callq  401418 <putchar>
+
+    fd = open(filename, O_RDONLY);
+    if (fd < 0) {
+        return -1;
+    }
+    while ((n = read(fd, &c, 1) != 0)) {
+  40084a:	ba 01 00 00 00       	mov    $0x1,%edx
+  40084f:	48 89 ee             	mov    %rbp,%rsi
+  400852:	89 df                	mov    %ebx,%edi
+  400854:	e8 c4 06 00 00       	callq  400f1d <read>
+  400859:	48 85 c0             	test   %rax,%rax
+  40085c:	75 e2                	jne    400840 <read_file+0x1d>
+        putchar(c);
+    }
+
+    close(fd);
+  40085e:	89 df                	mov    %ebx,%edi
+  400860:	e8 ed 09 00 00       	callq  401252 <close>
+
+    return 1;
+  400865:	b8 01 00 00 00       	mov    $0x1,%eax
+  40086a:	eb 05                	jmp    400871 <read_file+0x4e>
+    char c;
+    ssize_t n;
+
+    fd = open(filename, O_RDONLY);
+    if (fd < 0) {
+        return -1;
+  40086c:	b8 ff ff ff ff       	mov    $0xffffffff,%eax
+    }
+
+    close(fd);
+
+    return 1;
+}
+  400871:	48 83 c4 18          	add    $0x18,%rsp
+  400875:	5b                   	pop    %rbx
+  400876:	5d                   	pop    %rbp
+  400877:	c3                   	retq   
+
+0000000000400878 <builtin_command>:
+
+// Check for builtin commands
+int builtin_command(char **tokens) {
+  400878:	53                   	push   %rbx
+  400879:	48 89 fb             	mov    %rdi,%rbx
+    if (strcmp(tokens[0], "export") == 0) {
+  40087c:	48 8d 35 d6 0e 00 00 	lea    0xed6(%rip),%rsi        # 401759 <write+0x43>
+  400883:	48 8b 3f             	mov    (%rdi),%rdi
+  400886:	e8 df 06 00 00       	callq  400f6a <strcmp>
+  40088b:	85 c0                	test   %eax,%eax
+  40088d:	75 22                	jne    4008b1 <builtin_command+0x39>
+        if (tokens[1] == NULL) {
+  40088f:	48 8b 7b 08          	mov    0x8(%rbx),%rdi
+  400893:	48 85 ff             	test   %rdi,%rdi
+  400896:	75 0f                	jne    4008a7 <builtin_command+0x2f>
+            print_path_variables();
+  400898:	e8 2b ff ff ff       	callq  4007c8 <print_path_variables>
+            return 1;
+  40089d:	b8 01 00 00 00       	mov    $0x1,%eax
+  4008a2:	e9 b4 00 00 00       	jmpq   40095b <builtin_command+0xe3>
+        }
+        return set_environment_variable(tokens[1]);
+  4008a7:	e8 2e fd ff ff       	callq  4005da <set_environment_variable>
+  4008ac:	e9 aa 00 00 00       	jmpq   40095b <builtin_command+0xe3>
+    } else if (strcmp(tokens[0], "cd") == 0) {
+  4008b1:	48 8d 35 af 0e 00 00 	lea    0xeaf(%rip),%rsi        # 401767 <write+0x51>
+  4008b8:	48 8b 3b             	mov    (%rbx),%rdi
+  4008bb:	e8 aa 06 00 00       	callq  400f6a <strcmp>
+  4008c0:	85 c0                	test   %eax,%eax
+  4008c2:	75 0d                	jne    4008d1 <builtin_command+0x59>
+        return change_directory(tokens);
+  4008c4:	48 89 df             	mov    %rbx,%rdi
+  4008c7:	e8 90 fd ff ff       	callq  40065c <change_directory>
+  4008cc:	e9 8a 00 00 00       	jmpq   40095b <builtin_command+0xe3>
+    } else if (strcmp(tokens[0], "exit") == 0) {
+  4008d1:	48 8d 35 92 0e 00 00 	lea    0xe92(%rip),%rsi        # 40176a <write+0x54>
+  4008d8:	48 8b 3b             	mov    (%rbx),%rdi
+  4008db:	e8 8a 06 00 00       	callq  400f6a <strcmp>
+  4008e0:	85 c0                	test   %eax,%eax
+  4008e2:	75 11                	jne    4008f5 <builtin_command+0x7d>
+        exit(0);
+  4008e4:	bf 00 00 00 00       	mov    $0x0,%edi
+  4008e9:	e8 51 06 00 00       	callq  400f3f <exit>
+        return read_file("/rootfs/etc/ulimits");
+    } else if (strcmp(tokens[0], "help") == 0) {
+        return read_file("/rootfs/etc/help");
+    }
+
+    return -1;
+  4008ee:	b8 ff ff ff ff       	mov    $0xffffffff,%eax
+  4008f3:	eb 66                	jmp    40095b <builtin_command+0xe3>
+        return set_environment_variable(tokens[1]);
+    } else if (strcmp(tokens[0], "cd") == 0) {
+        return change_directory(tokens);
+    } else if (strcmp(tokens[0], "exit") == 0) {
+        exit(0);
+    } else if (strcmp(tokens[0], "shutdown") == 0) {
+  4008f5:	48 8d 35 73 0e 00 00 	lea    0xe73(%rip),%rsi        # 40176f <write+0x59>
+  4008fc:	48 8b 3b             	mov    (%rbx),%rdi
+  4008ff:	e8 66 06 00 00       	callq  400f6a <strcmp>
+  400904:	85 c0                	test   %eax,%eax
+  400906:	75 0c                	jne    400914 <builtin_command+0x9c>
+        shutdown();
+  400908:	e8 bf 04 00 00       	callq  400dcc <shutdown>
+        return read_file("/rootfs/etc/ulimits");
+    } else if (strcmp(tokens[0], "help") == 0) {
+        return read_file("/rootfs/etc/help");
+    }
+
+    return -1;
+  40090d:	b8 ff ff ff ff       	mov    $0xffffffff,%eax
+  400912:	eb 47                	jmp    40095b <builtin_command+0xe3>
+        return change_directory(tokens);
+    } else if (strcmp(tokens[0], "exit") == 0) {
+        exit(0);
+    } else if (strcmp(tokens[0], "shutdown") == 0) {
+        shutdown();
+    } else if (strcmp(tokens[0], "ulimits") == 0) {
+  400914:	48 8d 35 69 0e 00 00 	lea    0xe69(%rip),%rsi        # 401784 <write+0x6e>
+  40091b:	48 8b 3b             	mov    (%rbx),%rdi
+  40091e:	e8 47 06 00 00       	callq  400f6a <strcmp>
+  400923:	85 c0                	test   %eax,%eax
+  400925:	75 0e                	jne    400935 <builtin_command+0xbd>
+        return read_file("/rootfs/etc/ulimits");
+  400927:	48 8d 3d 4a 0e 00 00 	lea    0xe4a(%rip),%rdi        # 401778 <write+0x62>
+  40092e:	e8 f0 fe ff ff       	callq  400823 <read_file>
+  400933:	eb 26                	jmp    40095b <builtin_command+0xe3>
+    } else if (strcmp(tokens[0], "help") == 0) {
+  400935:	48 8d 35 5c 0e 00 00 	lea    0xe5c(%rip),%rsi        # 401798 <write+0x82>
+  40093c:	48 8b 3b             	mov    (%rbx),%rdi
+  40093f:	e8 26 06 00 00       	callq  400f6a <strcmp>
+  400944:	85 c0                	test   %eax,%eax
+  400946:	75 0e                	jne    400956 <builtin_command+0xde>
+        return read_file("/rootfs/etc/help");
+  400948:	48 8d 3d 3d 0e 00 00 	lea    0xe3d(%rip),%rdi        # 40178c <write+0x76>
+  40094f:	e8 cf fe ff ff       	callq  400823 <read_file>
+  400954:	eb 05                	jmp    40095b <builtin_command+0xe3>
+    }
+
+    return -1;
+  400956:	b8 ff ff ff ff       	mov    $0xffffffff,%eax
+}
+  40095b:	5b                   	pop    %rbx
+  40095c:	c3                   	retq   
+
+000000000040095d <execute>:
+// Execute command
+int execute(char **tokens, int is_bg) {
+    pid_t pid;
+    int builtin;
+
+    if (tokens[0] == NULL)
+  40095d:	48 83 3f 00          	cmpq   $0x0,(%rdi)
+  400961:	0f 84 81 00 00 00    	je     4009e8 <execute+0x8b>
+
+    return -1;
+}
+
+// Execute command
+int execute(char **tokens, int is_bg) {
+  400967:	55                   	push   %rbp
+  400968:	53                   	push   %rbx
+  400969:	48 83 ec 08          	sub    $0x8,%rsp
+  40096d:	89 f5                	mov    %esi,%ebp
+  40096f:	48 89 fb             	mov    %rdi,%rbx
+    int builtin;
+
+    if (tokens[0] == NULL)
+        return 1;
+
+    if ((builtin = builtin_command(tokens)) != -1)
+  400972:	e8 01 ff ff ff       	callq  400878 <builtin_command>
+  400977:	83 f8 ff             	cmp    $0xffffffff,%eax
+  40097a:	75 72                	jne    4009ee <execute+0x91>
+        return builtin;
+
+    pid = fork();
+  40097c:	b8 00 00 00 00       	mov    $0x0,%eax
+  400981:	e8 b7 0a 00 00       	callq  40143d <fork>
+  400986:	89 c7                	mov    %eax,%edi
+    if (pid == 0) {
+  400988:	85 c0                	test   %eax,%eax
+  40098a:	75 42                	jne    4009ce <execute+0x71>
+        if (execvpe(tokens[0], tokens, env) < 0) {
+  40098c:	48 8d 05 d5 17 20 00 	lea    0x2017d5(%rip),%rax        # 602168 <env>
+  400993:	48 8b 10             	mov    (%rax),%rdx
+  400996:	48 89 de             	mov    %rbx,%rsi
+  400999:	48 8b 3b             	mov    (%rbx),%rdi
+  40099c:	e8 b0 07 00 00       	callq  401151 <execvpe>
+  4009a1:	89 c2                	mov    %eax,%edx
+        if (is_bg == 0) {
+            waitpid(pid, NULL);
+        }
+    }
+
+    return 1;
+  4009a3:	b8 01 00 00 00       	mov    $0x1,%eax
+    if ((builtin = builtin_command(tokens)) != -1)
+        return builtin;
+
+    pid = fork();
+    if (pid == 0) {
+        if (execvpe(tokens[0], tokens, env) < 0) {
+  4009a8:	85 d2                	test   %edx,%edx
+  4009aa:	79 42                	jns    4009ee <execute+0x91>
+            printf("-sbush: command not found");
+  4009ac:	48 8d 3d ea 0d 00 00 	lea    0xdea(%rip),%rdi        # 40179d <write+0x87>
+  4009b3:	b8 00 00 00 00       	mov    $0x0,%eax
+  4009b8:	e8 16 0b 00 00       	callq  4014d3 <printf>
+            exit(1);
+  4009bd:	bf 01 00 00 00       	mov    $0x1,%edi
+  4009c2:	e8 78 05 00 00       	callq  400f3f <exit>
+        if (is_bg == 0) {
+            waitpid(pid, NULL);
+        }
+    }
+
+    return 1;
+  4009c7:	b8 01 00 00 00       	mov    $0x1,%eax
+  4009cc:	eb 20                	jmp    4009ee <execute+0x91>
+  4009ce:	b8 01 00 00 00       	mov    $0x1,%eax
+            exit(1);
+        }
+     } else if (pid < 0) {
+        printf("Fork error");
+    } else {
+        if (is_bg == 0) {
+  4009d3:	85 ed                	test   %ebp,%ebp
+  4009d5:	75 17                	jne    4009ee <execute+0x91>
+            waitpid(pid, NULL);
+  4009d7:	be 00 00 00 00       	mov    $0x0,%esi
+  4009dc:	e8 6e 05 00 00       	callq  400f4f <waitpid>
+        }
+    }
+
+    return 1;
+  4009e1:	b8 01 00 00 00       	mov    $0x1,%eax
+  4009e6:	eb 06                	jmp    4009ee <execute+0x91>
+int execute(char **tokens, int is_bg) {
+    pid_t pid;
+    int builtin;
+
+    if (tokens[0] == NULL)
+        return 1;
+  4009e8:	b8 01 00 00 00       	mov    $0x1,%eax
+  4009ed:	c3                   	retq   
+            waitpid(pid, NULL);
+        }
+    }
+
+    return 1;
+}
+  4009ee:	48 83 c4 08          	add    $0x8,%rsp
+  4009f2:	5b                   	pop    %rbx
+  4009f3:	5d                   	pop    %rbp
+  4009f4:	c3                   	retq   
+
+00000000004009f5 <open_script>:
+
+// Read file
+int open_script(char *filename) {
+  4009f5:	53                   	push   %rbx
+    int fd;
+
+    fd = open(filename, 0x0000);
+  4009f6:	be 00 00 00 00       	mov    $0x0,%esi
+  4009fb:	e8 c1 05 00 00       	callq  400fc1 <open>
+  400a00:	89 c3                	mov    %eax,%ebx
+    if (fd < 0)
+  400a02:	85 c0                	test   %eax,%eax
+  400a04:	79 0a                	jns    400a10 <open_script+0x1b>
+        exit(0);
+  400a06:	bf 00 00 00 00       	mov    $0x0,%edi
+  400a0b:	e8 2f 05 00 00       	callq  400f3f <exit>
+
+    return fd;
+}
+  400a10:	89 d8                	mov    %ebx,%eax
+  400a12:	5b                   	pop    %rbx
+  400a13:	c3                   	retq   
+
+0000000000400a14 <close_script>:
+
+// Close file
+int close_script(int fildes) {
+  400a14:	48 83 ec 08          	sub    $0x8,%rsp
+    return close(fildes);
+  400a18:	e8 35 08 00 00       	callq  401252 <close>
+  400a1d:	0f be c0             	movsbl %al,%eax
+}
+  400a20:	48 83 c4 08          	add    $0x8,%rsp
+  400a24:	c3                   	retq   
+
+0000000000400a25 <execute_script>:
+
+// Execute sbush script (files that start with #!rootfs/bin/sbush)
+void execute_script(int fd) {
+  400a25:	41 57                	push   %r15
+  400a27:	41 56                	push   %r14
+  400a29:	41 55                	push   %r13
+  400a2b:	41 54                	push   %r12
+  400a2d:	55                   	push   %rbp
+  400a2e:	53                   	push   %rbx
+  400a2f:	48 81 ec 28 12 00 00 	sub    $0x1228,%rsp
+  400a36:	89 fb                	mov    %edi,%ebx
+    int i = 0, comment = 0, is_bg = 0;
+  400a38:	c7 84 24 1c 12 00 00 	movl   $0x0,0x121c(%rsp)
+  400a3f:	00 00 00 00 
+    ssize_t n;
+    char c, command[BUFSIZE], *tokens[BUFSIZE];
+
+    while ((n = read(fd, &c, 1) != 0)) {
+  400a43:	bd 00 00 00 00       	mov    $0x0,%ebp
+  400a48:	4c 8d ac 24 1b 12 00 	lea    0x121b(%rsp),%r13
+  400a4f:	00 
+  400a50:	eb 16                	jmp    400a68 <execute_script+0x43>
+        if (c == '\n') {
+  400a52:	0f b6 84 24 1b 12 00 	movzbl 0x121b(%rsp),%eax
+  400a59:	00 
+  400a5a:	3c 0a                	cmp    $0xa,%al
+  400a5c:	74 21                	je     400a7f <execute_script+0x5a>
+            break;
+        }
+        command[i++] = c;
+  400a5e:	88 84 2c 1b 10 00 00 	mov    %al,0x101b(%rsp,%rbp,1)
+  400a65:	48 ff c5             	inc    %rbp
+  400a68:	41 89 ec             	mov    %ebp,%r12d
+void execute_script(int fd) {
+    int i = 0, comment = 0, is_bg = 0;
+    ssize_t n;
+    char c, command[BUFSIZE], *tokens[BUFSIZE];
+
+    while ((n = read(fd, &c, 1) != 0)) {
+  400a6b:	ba 01 00 00 00       	mov    $0x1,%edx
+  400a70:	4c 89 ee             	mov    %r13,%rsi
+  400a73:	89 df                	mov    %ebx,%edi
+  400a75:	e8 a3 04 00 00       	callq  400f1d <read>
+  400a7a:	48 85 c0             	test   %rax,%rax
+  400a7d:	75 d3                	jne    400a52 <execute_script+0x2d>
+        if (c == '\n') {
+            break;
+        }
+        command[i++] = c;
+    }
+    command[i] = '\0';
+  400a7f:	4d 63 e4             	movslq %r12d,%r12
+  400a82:	42 c6 84 24 1b 10 00 	movb   $0x0,0x101b(%rsp,%r12,1)
+  400a89:	00 00 
+
+    if (strcmp(command, "#!sbush") != 0 && strcmp(command, "#!/rootfs/bin/sbush") != 0) {
+  400a8b:	48 8d bc 24 1b 10 00 	lea    0x101b(%rsp),%rdi
+  400a92:	00 
+  400a93:	48 8d 35 1d 0d 00 00 	lea    0xd1d(%rip),%rsi        # 4017b7 <write+0xa1>
+  400a9a:	e8 cb 04 00 00       	callq  400f6a <strcmp>
+  400a9f:	85 c0                	test   %eax,%eax
+  400aa1:	75 32                	jne    400ad5 <execute_script+0xb0>
+                i = 0;
+                parse(command, &is_bg, tokens);
+                execute(tokens, is_bg);
+            }
+        } else if (comment == 0) {
+            command[i++] = c;
+  400aa3:	41 bd 00 00 00 00    	mov    $0x0,%r13d
+  400aa9:	bd 00 00 00 00       	mov    $0x0,%ebp
+        printf("-sbush: %s: no such file or directory", command);
+        return;
+    }
+
+    i = 0;
+    while ((n = read(fd, &c, 1) != 0)) {
+  400aae:	4c 8d a4 24 1b 12 00 	lea    0x121b(%rsp),%r12
+  400ab5:	00 
+                comment = 0;
+            else if (i != 0) {
+                printf("%c", c);
+                command[i] = '\0';
+                i = 0;
+                parse(command, &is_bg, tokens);
+  400ab6:	4c 8d 74 24 18       	lea    0x18(%rsp),%r14
+  400abb:	4c 8d bc 24 1c 12 00 	lea    0x121c(%rsp),%r15
+  400ac2:	00 
+  400ac3:	48 8d 84 24 1b 10 00 	lea    0x101b(%rsp),%rax
+  400aca:	00 
+  400acb:	48 89 44 24 08       	mov    %rax,0x8(%rsp)
+  400ad0:	e9 b9 00 00 00       	jmpq   400b8e <execute_script+0x169>
+        }
+        command[i++] = c;
+    }
+    command[i] = '\0';
+
+    if (strcmp(command, "#!sbush") != 0 && strcmp(command, "#!/rootfs/bin/sbush") != 0) {
+  400ad5:	48 8d bc 24 1b 10 00 	lea    0x101b(%rsp),%rdi
+  400adc:	00 
+  400add:	48 8d 35 db 0c 00 00 	lea    0xcdb(%rip),%rsi        # 4017bf <write+0xa9>
+  400ae4:	e8 81 04 00 00       	callq  400f6a <strcmp>
+  400ae9:	85 c0                	test   %eax,%eax
+  400aeb:	74 b6                	je     400aa3 <execute_script+0x7e>
+        printf("-sbush: %s: no such file or directory", command);
+  400aed:	48 8d b4 24 1b 10 00 	lea    0x101b(%rsp),%rsi
+  400af4:	00 
+  400af5:	48 8d 3d ec 0c 00 00 	lea    0xcec(%rip),%rdi        # 4017e8 <write+0xd2>
+  400afc:	b8 00 00 00 00       	mov    $0x0,%eax
+  400b01:	e8 cd 09 00 00       	callq  4014d3 <printf>
+  400b06:	e9 e8 00 00 00       	jmpq   400bf3 <execute_script+0x1ce>
+        return;
+    }
+
+    i = 0;
+    while ((n = read(fd, &c, 1) != 0)) {
+        if (c == '#') {
+  400b0b:	0f b6 84 24 1b 12 00 	movzbl 0x121b(%rsp),%eax
+  400b12:	00 
+  400b13:	3c 23                	cmp    $0x23,%al
+  400b15:	74 69                	je     400b80 <execute_script+0x15b>
+            comment = 1;
+        } else if (c == '\n') {
+  400b17:	3c 0a                	cmp    $0xa,%al
+  400b19:	75 51                	jne    400b6c <execute_script+0x147>
+            if (comment == 1)
+  400b1b:	41 83 fd 01          	cmp    $0x1,%r13d
+  400b1f:	74 67                	je     400b88 <execute_script+0x163>
+                comment = 0;
+            else if (i != 0) {
+  400b21:	85 ed                	test   %ebp,%ebp
+  400b23:	74 69                	je     400b8e <execute_script+0x169>
+                printf("%c", c);
+  400b25:	be 0a 00 00 00       	mov    $0xa,%esi
+  400b2a:	48 8d 3d a2 0c 00 00 	lea    0xca2(%rip),%rdi        # 4017d3 <write+0xbd>
+  400b31:	b8 00 00 00 00       	mov    $0x0,%eax
+  400b36:	e8 98 09 00 00       	callq  4014d3 <printf>
+                command[i] = '\0';
+  400b3b:	48 63 ed             	movslq %ebp,%rbp
+  400b3e:	c6 84 2c 1b 10 00 00 	movb   $0x0,0x101b(%rsp,%rbp,1)
+  400b45:	00 
+                i = 0;
+                parse(command, &is_bg, tokens);
+  400b46:	4c 89 f2             	mov    %r14,%rdx
+  400b49:	4c 89 fe             	mov    %r15,%rsi
+  400b4c:	48 8b 7c 24 08       	mov    0x8(%rsp),%rdi
+  400b51:	e8 91 fb ff ff       	callq  4006e7 <parse>
+                execute(tokens, is_bg);
+  400b56:	8b b4 24 1c 12 00 00 	mov    0x121c(%rsp),%esi
+  400b5d:	4c 89 f7             	mov    %r14,%rdi
+  400b60:	e8 f8 fd ff ff       	callq  40095d <execute>
+            if (comment == 1)
+                comment = 0;
+            else if (i != 0) {
+                printf("%c", c);
+                command[i] = '\0';
+                i = 0;
+  400b65:	bd 00 00 00 00       	mov    $0x0,%ebp
+  400b6a:	eb 22                	jmp    400b8e <execute_script+0x169>
+                parse(command, &is_bg, tokens);
+                execute(tokens, is_bg);
+            }
+        } else if (comment == 0) {
+  400b6c:	45 85 ed             	test   %r13d,%r13d
+  400b6f:	75 1d                	jne    400b8e <execute_script+0x169>
+            command[i++] = c;
+  400b71:	48 63 d5             	movslq %ebp,%rdx
+  400b74:	88 84 14 1b 10 00 00 	mov    %al,0x101b(%rsp,%rdx,1)
+  400b7b:	8d 6d 01             	lea    0x1(%rbp),%ebp
+  400b7e:	eb 0e                	jmp    400b8e <execute_script+0x169>
+    }
+
+    i = 0;
+    while ((n = read(fd, &c, 1) != 0)) {
+        if (c == '#') {
+            comment = 1;
+  400b80:	41 bd 01 00 00 00    	mov    $0x1,%r13d
+  400b86:	eb 06                	jmp    400b8e <execute_script+0x169>
+        } else if (c == '\n') {
+            if (comment == 1)
+                comment = 0;
+  400b88:	41 bd 00 00 00 00    	mov    $0x0,%r13d
+        printf("-sbush: %s: no such file or directory", command);
+        return;
+    }
+
+    i = 0;
+    while ((n = read(fd, &c, 1) != 0)) {
+  400b8e:	ba 01 00 00 00       	mov    $0x1,%edx
+  400b93:	4c 89 e6             	mov    %r12,%rsi
+  400b96:	89 df                	mov    %ebx,%edi
+  400b98:	e8 80 03 00 00       	callq  400f1d <read>
+  400b9d:	48 85 c0             	test   %rax,%rax
+  400ba0:	0f 85 65 ff ff ff    	jne    400b0b <execute_script+0xe6>
+        } else if (comment == 0) {
+            command[i++] = c;
+        }
+    }
+
+    if(c != '\n') {
+  400ba6:	80 bc 24 1b 12 00 00 	cmpb   $0xa,0x121b(%rsp)
+  400bad:	0a 
+  400bae:	74 43                	je     400bf3 <execute_script+0x1ce>
+        printf("\n");
+  400bb0:	48 8d 3d ac 0b 00 00 	lea    0xbac(%rip),%rdi        # 401763 <write+0x4d>
+  400bb7:	e8 17 09 00 00       	callq  4014d3 <printf>
+        command[i] = '\0';
+  400bbc:	48 63 ed             	movslq %ebp,%rbp
+  400bbf:	c6 84 2c 1b 10 00 00 	movb   $0x0,0x101b(%rsp,%rbp,1)
+  400bc6:	00 
+        parse(command, &is_bg, tokens);
+  400bc7:	48 8d 5c 24 18       	lea    0x18(%rsp),%rbx
+  400bcc:	48 8d b4 24 1c 12 00 	lea    0x121c(%rsp),%rsi
+  400bd3:	00 
+  400bd4:	48 8d bc 24 1b 10 00 	lea    0x101b(%rsp),%rdi
+  400bdb:	00 
+  400bdc:	48 89 da             	mov    %rbx,%rdx
+  400bdf:	e8 03 fb ff ff       	callq  4006e7 <parse>
+        execute(tokens, is_bg);
+  400be4:	8b b4 24 1c 12 00 00 	mov    0x121c(%rsp),%esi
+  400beb:	48 89 df             	mov    %rbx,%rdi
+  400bee:	e8 6a fd ff ff       	callq  40095d <execute>
+    }
+}
+  400bf3:	48 81 c4 28 12 00 00 	add    $0x1228,%rsp
+  400bfa:	5b                   	pop    %rbx
+  400bfb:	5d                   	pop    %rbp
+  400bfc:	41 5c                	pop    %r12
+  400bfe:	41 5d                	pop    %r13
+  400c00:	41 5e                	pop    %r14
+  400c02:	41 5f                	pop    %r15
+  400c04:	c3                   	retq   
+
+0000000000400c05 <lifetime>:
+
+// Lifetime of a command
+void lifetime(int argc, char* argv[]) {
+  400c05:	41 55                	push   %r13
+  400c07:	41 54                	push   %r12
+  400c09:	55                   	push   %rbp
+  400c0a:	53                   	push   %rbx
+  400c0b:	48 81 ec 18 12 00 00 	sub    $0x1218,%rsp
+  400c12:	89 fb                	mov    %edi,%ebx
+  400c14:	48 89 f5             	mov    %rsi,%rbp
+    char command[BUFSIZE], *tokens[BUFSIZE];
+    int flag = 0, fd, is_bg = 0;
+  400c17:	c7 44 24 0c 00 00 00 	movl   $0x0,0xc(%rsp)
+  400c1e:	00 
+
+    setenv("PS1", "sbush> ", 1);
+  400c1f:	ba 01 00 00 00       	mov    $0x1,%edx
+  400c24:	48 8d 35 ab 0b 00 00 	lea    0xbab(%rip),%rsi        # 4017d6 <write+0xc0>
+  400c2b:	48 8d 3d 08 0b 00 00 	lea    0xb08(%rip),%rdi        # 40173a <write+0x24>
+  400c32:	e8 70 f8 ff ff       	callq  4004a7 <setenv>
+    ps1 = getenv("PS1");
+  400c37:	48 8d 3d fc 0a 00 00 	lea    0xafc(%rip),%rdi        # 40173a <write+0x24>
+  400c3e:	e8 dd f4 ff ff       	callq  400120 <getenv>
+  400c43:	48 8d 15 16 15 20 00 	lea    0x201516(%rip),%rdx        # 602160 <ps1>
+  400c4a:	48 89 02             	mov    %rax,(%rdx)
+
+    if (argc >= 2) { // If a script is to be executed
+  400c4d:	83 fb 01             	cmp    $0x1,%ebx
+  400c50:	7e 1b                	jle    400c6d <lifetime+0x68>
+        fd = open_script(argv[1]);
+  400c52:	48 8b 7d 08          	mov    0x8(%rbp),%rdi
+  400c56:	e8 9a fd ff ff       	callq  4009f5 <open_script>
+  400c5b:	89 c3                	mov    %eax,%ebx
+        execute_script(fd);
+  400c5d:	89 c7                	mov    %eax,%edi
+  400c5f:	e8 c1 fd ff ff       	callq  400a25 <execute_script>
+        close_script(fd);
+  400c64:	89 df                	mov    %ebx,%edi
+  400c66:	e8 a9 fd ff ff       	callq  400a14 <close_script>
+  400c6b:	eb 61                	jmp    400cce <lifetime+0xc9>
+    } else {
+        do {
+            printf("\n%s", ps1);
+  400c6d:	4c 8d 2d ec 14 20 00 	lea    0x2014ec(%rip),%r13        # 602160 <ps1>
+            get_command(command, sizeof(command));
+  400c74:	48 8d ac 24 10 10 00 	lea    0x1010(%rsp),%rbp
+  400c7b:	00 
+            parse(command, &is_bg, tokens);
+  400c7c:	48 8d 5c 24 10       	lea    0x10(%rsp),%rbx
+  400c81:	4c 8d 64 24 0c       	lea    0xc(%rsp),%r12
+        fd = open_script(argv[1]);
+        execute_script(fd);
+        close_script(fd);
+    } else {
+        do {
+            printf("\n%s", ps1);
+  400c86:	49 8b 75 00          	mov    0x0(%r13),%rsi
+  400c8a:	48 8d 3d 4d 0b 00 00 	lea    0xb4d(%rip),%rdi        # 4017de <write+0xc8>
+  400c91:	b8 00 00 00 00       	mov    $0x0,%eax
+  400c96:	e8 38 08 00 00       	callq  4014d3 <printf>
+            get_command(command, sizeof(command));
+  400c9b:	be 00 02 00 00       	mov    $0x200,%esi
+  400ca0:	48 89 ef             	mov    %rbp,%rdi
+  400ca3:	e8 07 fa ff ff       	callq  4006af <get_command>
+            parse(command, &is_bg, tokens);
+  400ca8:	48 89 da             	mov    %rbx,%rdx
+  400cab:	4c 89 e6             	mov    %r12,%rsi
+  400cae:	48 89 ef             	mov    %rbp,%rdi
+  400cb1:	e8 31 fa ff ff       	callq  4006e7 <parse>
+            flag = execute(tokens, is_bg);
+  400cb6:	8b 74 24 0c          	mov    0xc(%rsp),%esi
+  400cba:	48 89 df             	mov    %rbx,%rdi
+  400cbd:	e8 9b fc ff ff       	callq  40095d <execute>
+            is_bg = 0;
+  400cc2:	c7 44 24 0c 00 00 00 	movl   $0x0,0xc(%rsp)
+  400cc9:	00 
+        } while (flag);
+  400cca:	85 c0                	test   %eax,%eax
+  400ccc:	75 b8                	jne    400c86 <lifetime+0x81>
+    }
+}
+  400cce:	48 81 c4 18 12 00 00 	add    $0x1218,%rsp
+  400cd5:	5b                   	pop    %rbx
+  400cd6:	5d                   	pop    %rbp
+  400cd7:	41 5c                	pop    %r12
+  400cd9:	41 5d                	pop    %r13
+  400cdb:	c3                   	retq   
+
+0000000000400cdc <setup_environment_variables>:
+
+/* Setup environment variables by making a copy of envp */
+void setup_environment_variables(char *envp[]) {
+  400cdc:	41 57                	push   %r15
+  400cde:	41 56                	push   %r14
+  400ce0:	41 55                	push   %r13
+  400ce2:	41 54                	push   %r12
+  400ce4:	55                   	push   %rbp
+  400ce5:	53                   	push   %rbx
+  400ce6:	48 83 ec 08          	sub    $0x8,%rsp
+  400cea:	49 89 fe             	mov    %rdi,%r14
+    int i = 0;
+    env = (char **)malloc((num_env + 1) * sizeof(char *));
+  400ced:	48 8d 05 24 13 20 00 	lea    0x201324(%rip),%rax        # 602018 <num_env>
+  400cf4:	8b 38                	mov    (%rax),%edi
+  400cf6:	ff c7                	inc    %edi
+  400cf8:	48 63 ff             	movslq %edi,%rdi
+  400cfb:	48 c1 e7 03          	shl    $0x3,%rdi
+  400cff:	e8 fa 05 00 00       	callq  4012fe <malloc>
+  400d04:	48 8d 15 5d 14 20 00 	lea    0x20145d(%rip),%rdx        # 602168 <env>
+  400d0b:	48 89 02             	mov    %rax,(%rdx)
+
+    while (envp[i] != NULL && i < num_env) {
+  400d0e:	49 83 3e 00          	cmpq   $0x0,(%r14)
+  400d12:	74 62                	je     400d76 <setup_environment_variables+0x9a>
+  400d14:	48 8d 05 fd 12 20 00 	lea    0x2012fd(%rip),%rax        # 602018 <num_env>
+  400d1b:	83 38 00             	cmpl   $0x0,(%rax)
+  400d1e:	7e 5d                	jle    400d7d <setup_environment_variables+0xa1>
+  400d20:	4d 89 f4             	mov    %r14,%r12
+  400d23:	bb 00 00 00 00       	mov    $0x0,%ebx
+  400d28:	bd 00 00 00 00       	mov    $0x0,%ebp
+        env[i] = (char *)malloc(256 * sizeof(char));
+  400d2d:	49 89 d5             	mov    %rdx,%r13
+  400d30:	49 89 df             	mov    %rbx,%r15
+  400d33:	4d 03 7d 00          	add    0x0(%r13),%r15
+  400d37:	bf 00 01 00 00       	mov    $0x100,%edi
+  400d3c:	e8 bd 05 00 00       	callq  4012fe <malloc>
+  400d41:	49 89 07             	mov    %rax,(%r15)
+        strcpy(env[i], envp[i]);
+  400d44:	49 8b 45 00          	mov    0x0(%r13),%rax
+  400d48:	48 8b 3c 18          	mov    (%rax,%rbx,1),%rdi
+  400d4c:	49 8b 34 24          	mov    (%r12),%rsi
+  400d50:	e8 3a 02 00 00       	callq  400f8f <strcpy>
+        i++;
+  400d55:	ff c5                	inc    %ebp
+/* Setup environment variables by making a copy of envp */
+void setup_environment_variables(char *envp[]) {
+    int i = 0;
+    env = (char **)malloc((num_env + 1) * sizeof(char *));
+
+    while (envp[i] != NULL && i < num_env) {
+  400d57:	48 63 dd             	movslq %ebp,%rbx
+  400d5a:	48 c1 e3 03          	shl    $0x3,%rbx
+  400d5e:	4d 8d 24 1e          	lea    (%r14,%rbx,1),%r12
+  400d62:	49 83 3c 24 00       	cmpq   $0x0,(%r12)
+  400d67:	74 19                	je     400d82 <setup_environment_variables+0xa6>
+  400d69:	48 8d 05 a8 12 20 00 	lea    0x2012a8(%rip),%rax        # 602018 <num_env>
+  400d70:	39 28                	cmp    %ebp,(%rax)
+  400d72:	7f bc                	jg     400d30 <setup_environment_variables+0x54>
+  400d74:	eb 0c                	jmp    400d82 <setup_environment_variables+0xa6>
+  400d76:	bb 00 00 00 00       	mov    $0x0,%ebx
+  400d7b:	eb 05                	jmp    400d82 <setup_environment_variables+0xa6>
+  400d7d:	bb 00 00 00 00       	mov    $0x0,%ebx
+        env[i] = (char *)malloc(256 * sizeof(char));
+        strcpy(env[i], envp[i]);
+        i++;
+    }
+    env[i] = NULL;
+  400d82:	48 8d 05 df 13 20 00 	lea    0x2013df(%rip),%rax        # 602168 <env>
+  400d89:	48 8b 00             	mov    (%rax),%rax
+  400d8c:	48 c7 04 18 00 00 00 	movq   $0x0,(%rax,%rbx,1)
+  400d93:	00 
+}
+  400d94:	48 83 c4 08          	add    $0x8,%rsp
+  400d98:	5b                   	pop    %rbx
+  400d99:	5d                   	pop    %rbp
+  400d9a:	41 5c                	pop    %r12
+  400d9c:	41 5d                	pop    %r13
+  400d9e:	41 5e                	pop    %r14
+  400da0:	41 5f                	pop    %r15
+  400da2:	c3                   	retq   
+
+0000000000400da3 <main>:
+
+int main(int argc, char* argv[], char *envp[]) {
+  400da3:	55                   	push   %rbp
+  400da4:	53                   	push   %rbx
+  400da5:	48 83 ec 08          	sub    $0x8,%rsp
+  400da9:	89 fb                	mov    %edi,%ebx
+  400dab:	48 89 f5             	mov    %rsi,%rbp
+    setup_environment_variables(envp);
+  400dae:	48 89 d7             	mov    %rdx,%rdi
+  400db1:	e8 26 ff ff ff       	callq  400cdc <setup_environment_variables>
+    lifetime(argc, argv);
+  400db6:	48 89 ee             	mov    %rbp,%rsi
+  400db9:	89 df                	mov    %ebx,%edi
+  400dbb:	e8 45 fe ff ff       	callq  400c05 <lifetime>
+
+    return 0;
+}
+  400dc0:	b8 00 00 00 00       	mov    $0x0,%eax
+  400dc5:	48 83 c4 08          	add    $0x8,%rsp
+  400dc9:	5b                   	pop    %rbx
+  400dca:	5d                   	pop    %rbp
+  400dcb:	c3                   	retq   
+
+0000000000400dcc <shutdown>:
+#include <sys/defs.h>
+
+void shutdown() {
+    __asm__ (
+  400dcc:	48 c7 c0 11 00 00 00 	mov    $0x11,%rax
+  400dd3:	cd 80                	int    $0x80
+  400dd5:	c3                   	retq   
+  400dd6:	66 2e 0f 1f 84 00 00 	nopw   %cs:0x0(%rax,%rax,1)
+  400ddd:	00 00 00 
+
+0000000000400de0 <strtok>:
+#include <string.h>
+
+char *start = '\0';
+
+char* strtok(char* str, const char* delim) {
+  400de0:	55                   	push   %rbp
+  400de1:	53                   	push   %rbx
+  400de2:	48 83 ec 08          	sub    $0x8,%rsp
+  400de6:	48 89 fd             	mov    %rdi,%rbp
+  400de9:	48 89 f3             	mov    %rsi,%rbx
+
+    int i = 0;
+    int len = strlen(delim);
+  400dec:	48 89 f7             	mov    %rsi,%rdi
+  400def:	e8 fc 08 00 00       	callq  4016f0 <strlen>
+  400df4:	89 c6                	mov    %eax,%esi
+
+    if(!str && !start)
+  400df6:	48 85 ed             	test   %rbp,%rbp
+  400df9:	75 14                	jne    400e0f <strtok+0x2f>
+  400dfb:	48 8d 05 1e 12 20 00 	lea    0x20121e(%rip),%rax        # 602020 <start>
+  400e02:	48 8b 00             	mov    (%rax),%rax
+  400e05:	48 85 c0             	test   %rax,%rax
+  400e08:	75 15                	jne    400e1f <strtok+0x3f>
+  400e0a:	e9 07 01 00 00       	jmpq   400f16 <strtok+0x136>
+        return '\0';
+
+    if(str && start == '\0') {
+  400e0f:	48 8d 05 0a 12 20 00 	lea    0x20120a(%rip),%rax        # 602020 <start>
+  400e16:	48 83 38 00          	cmpq   $0x0,(%rax)
+  400e1a:	75 03                	jne    400e1f <strtok+0x3f>
+        start = str;
+  400e1c:	48 89 28             	mov    %rbp,(%rax)
+    }
+
+    char* token = start;
+  400e1f:	48 8d 05 fa 11 20 00 	lea    0x2011fa(%rip),%rax        # 602020 <start>
+  400e26:	4c 8b 00             	mov    (%rax),%r8
+    while (1) {
+        for (i = 0; i < len; i++) {
+  400e29:	85 f6                	test   %esi,%esi
+  400e2b:	7e 2f                	jle    400e5c <strtok+0x7c>
+            if (*token == delim[i]) {
+  400e2d:	41 0f b6 00          	movzbl (%r8),%eax
+  400e31:	48 8d 4b 01          	lea    0x1(%rbx),%rcx
+  400e35:	ba 00 00 00 00       	mov    $0x0,%edx
+  400e3a:	3a 03                	cmp    (%rbx),%al
+  400e3c:	75 16                	jne    400e54 <strtok+0x74>
+  400e3e:	eb 0a                	jmp    400e4a <strtok+0x6a>
+  400e40:	48 ff c1             	inc    %rcx
+  400e43:	38 41 ff             	cmp    %al,-0x1(%rcx)
+  400e46:	75 0c                	jne    400e54 <strtok+0x74>
+  400e48:	eb 05                	jmp    400e4f <strtok+0x6f>
+        start = str;
+    }
+
+    char* token = start;
+    while (1) {
+        for (i = 0; i < len; i++) {
+  400e4a:	ba 00 00 00 00       	mov    $0x0,%edx
+            if (*token == delim[i]) {
+                token++;
+  400e4f:	49 ff c0             	inc    %r8
+                break;
+  400e52:	eb 0d                	jmp    400e61 <strtok+0x81>
+        start = str;
+    }
+
+    char* token = start;
+    while (1) {
+        for (i = 0; i < len; i++) {
+  400e54:	ff c2                	inc    %edx
+  400e56:	39 d6                	cmp    %edx,%esi
+  400e58:	75 e6                	jne    400e40 <strtok+0x60>
+  400e5a:	eb 09                	jmp    400e65 <strtok+0x85>
+  400e5c:	ba 00 00 00 00       	mov    $0x0,%edx
+                token++;
+                break;
+            }
+        }
+
+        if (i == len) {
+  400e61:	39 d6                	cmp    %edx,%esi
+  400e63:	75 c4                	jne    400e29 <strtok+0x49>
+            start = token;
+  400e65:	48 8d 05 b4 11 20 00 	lea    0x2011b4(%rip),%rax        # 602020 <start>
+  400e6c:	4c 89 00             	mov    %r8,(%rax)
+            break;
+        }
+    }
+
+    if (*start == '\0') {
+  400e6f:	41 80 38 00          	cmpb   $0x0,(%r8)
+  400e73:	75 3d                	jne    400eb2 <strtok+0xd2>
+        start = '\0';
+  400e75:	48 c7 00 00 00 00 00 	movq   $0x0,(%rax)
+        return '\0';
+  400e7c:	b8 00 00 00 00       	mov    $0x0,%eax
+  400e81:	e9 90 00 00 00       	jmpq   400f16 <strtok+0x136>
+  400e86:	48 ff c1             	inc    %rcx
+    }
+
+    while (*start != '\0') {
+        for (i = 0; i < len; i++) {
+            if (*start == delim[i]) {
+  400e89:	3a 41 ff             	cmp    -0x1(%rcx),%al
+  400e8c:	75 1a                	jne    400ea8 <strtok+0xc8>
+                *start = '\0';
+  400e8e:	c6 07 00             	movb   $0x0,(%rdi)
+                break;
+            }
+        }
+        start++;
+  400e91:	48 8d 05 88 11 20 00 	lea    0x201188(%rip),%rax        # 602020 <start>
+  400e98:	48 8b 38             	mov    (%rax),%rdi
+  400e9b:	48 8d 4f 01          	lea    0x1(%rdi),%rcx
+  400e9f:	48 89 08             	mov    %rcx,(%rax)
+        if (i < len)
+  400ea2:	39 d6                	cmp    %edx,%esi
+  400ea4:	7e 13                	jle    400eb9 <strtok+0xd9>
+  400ea6:	eb 2e                	jmp    400ed6 <strtok+0xf6>
+        start = '\0';
+        return '\0';
+    }
+
+    while (*start != '\0') {
+        for (i = 0; i < len; i++) {
+  400ea8:	ff c2                	inc    %edx
+  400eaa:	39 d6                	cmp    %edx,%esi
+  400eac:	75 d8                	jne    400e86 <strtok+0xa6>
+  400eae:	66 90                	xchg   %ax,%ax
+  400eb0:	eb 3f                	jmp    400ef1 <strtok+0x111>
+    if (*start == '\0') {
+        start = '\0';
+        return '\0';
+    }
+
+    while (*start != '\0') {
+  400eb2:	4c 8d 0d 67 11 20 00 	lea    0x201167(%rip),%r9        # 602020 <start>
+  400eb9:	49 8b 39             	mov    (%r9),%rdi
+  400ebc:	0f b6 07             	movzbl (%rdi),%eax
+  400ebf:	84 c0                	test   %al,%al
+  400ec1:	74 1b                	je     400ede <strtok+0xfe>
+        for (i = 0; i < len; i++) {
+  400ec3:	85 f6                	test   %esi,%esi
+  400ec5:	7e 2a                	jle    400ef1 <strtok+0x111>
+            if (*start == delim[i]) {
+  400ec7:	3a 03                	cmp    (%rbx),%al
+  400ec9:	74 35                	je     400f00 <strtok+0x120>
+  400ecb:	48 8d 4b 01          	lea    0x1(%rbx),%rcx
+  400ecf:	ba 00 00 00 00       	mov    $0x0,%edx
+  400ed4:	eb d2                	jmp    400ea8 <strtok+0xc8>
+  400ed6:	4c 89 c0             	mov    %r8,%rax
+        start++;
+        if (i < len)
+            break;
+    }
+
+    if (*start == '\0')
+  400ed9:	80 39 00             	cmpb   $0x0,(%rcx)
+  400edc:	75 38                	jne    400f16 <strtok+0x136>
+        start = '\0';
+  400ede:	48 8d 05 3b 11 20 00 	lea    0x20113b(%rip),%rax        # 602020 <start>
+  400ee5:	48 c7 00 00 00 00 00 	movq   $0x0,(%rax)
+  400eec:	4c 89 c0             	mov    %r8,%rax
+  400eef:	eb 25                	jmp    400f16 <strtok+0x136>
+            if (*start == delim[i]) {
+                *start = '\0';
+                break;
+            }
+        }
+        start++;
+  400ef1:	48 ff c7             	inc    %rdi
+  400ef4:	48 8d 05 25 11 20 00 	lea    0x201125(%rip),%rax        # 602020 <start>
+  400efb:	48 89 38             	mov    %rdi,(%rax)
+  400efe:	eb b9                	jmp    400eb9 <strtok+0xd9>
+    }
+
+    while (*start != '\0') {
+        for (i = 0; i < len; i++) {
+            if (*start == delim[i]) {
+                *start = '\0';
+  400f00:	c6 07 00             	movb   $0x0,(%rdi)
+                break;
+            }
+        }
+        start++;
+  400f03:	48 8d 05 16 11 20 00 	lea    0x201116(%rip),%rax        # 602020 <start>
+  400f0a:	48 8b 18             	mov    (%rax),%rbx
+  400f0d:	48 8d 4b 01          	lea    0x1(%rbx),%rcx
+  400f11:	48 89 08             	mov    %rcx,(%rax)
+  400f14:	eb c0                	jmp    400ed6 <strtok+0xf6>
+
+    if (*start == '\0')
+        start = '\0';
+
+    return token;
+}
+  400f16:	48 83 c4 08          	add    $0x8,%rsp
+  400f1a:	5b                   	pop    %rbx
+  400f1b:	5d                   	pop    %rbp
+  400f1c:	c3                   	retq   
+
+0000000000400f1d <read>:
+#include <sys/defs.h>
+
+ssize_t read(int fd, void *buf, size_t count) {
+  400f1d:	48 89 f1             	mov    %rsi,%rcx
+  400f20:	49 89 d1             	mov    %rdx,%r9
+    ssize_t num_bytes;
+
+    __asm__ (
+  400f23:	4c 63 c7             	movslq %edi,%r8
+  400f26:	48 c7 c0 00 00 00 00 	mov    $0x0,%rax
+  400f2d:	4c 89 c7             	mov    %r8,%rdi
+  400f30:	48 89 ce             	mov    %rcx,%rsi
+  400f33:	4c 89 ca             	mov    %r9,%rdx
+  400f36:	cd 80                	int    $0x80
+  400f38:	48 89 c1             	mov    %rax,%rcx
+        : "r" ((int64_t)fd), "r" (buf), "r" (count)
+        : "%rax", "%rdi", "%rsi", "%rdx"
+    );
+
+    return num_bytes;
+}
+  400f3b:	48 89 c8             	mov    %rcx,%rax
+  400f3e:	c3                   	retq   
+
+0000000000400f3f <exit>:
+#include <sys/defs.h>
+
+void exit(int status) {
+    __asm__ (
+  400f3f:	48 63 d7             	movslq %edi,%rdx
+  400f42:	48 c7 c0 0d 00 00 00 	mov    $0xd,%rax
+  400f49:	48 89 d7             	mov    %rdx,%rdi
+  400f4c:	cd 80                	int    $0x80
+  400f4e:	c3                   	retq   
+
+0000000000400f4f <waitpid>:
+#include <sys/defs.h>
+#include <stdio.h>
+
+int waitpid(int pid, int *status) {
+  400f4f:	48 89 f1             	mov    %rsi,%rcx
+    int64_t cid;
+
+    __asm__ (
+  400f52:	48 63 d7             	movslq %edi,%rdx
+  400f55:	48 c7 c0 0e 00 00 00 	mov    $0xe,%rax
+  400f5c:	48 89 d7             	mov    %rdx,%rdi
+  400f5f:	48 89 ce             	mov    %rcx,%rsi
+  400f62:	cd 80                	int    $0x80
+  400f64:	48 89 c2             	mov    %rax,%rdx
+        : "r" ((int64_t)pid), "r" (status)
+        : "%rax", "%rdi", "%rsi"
+    );
+
+    return cid;
+}
+  400f67:	89 d0                	mov    %edx,%eax
+  400f69:	c3                   	retq   
+
+0000000000400f6a <strcmp>:
+int strcmp(const char *s1, const char *s2) {
+    while (*s1 && *s1 == *s2) {
+  400f6a:	0f b6 07             	movzbl (%rdi),%eax
+  400f6d:	84 c0                	test   %al,%al
+  400f6f:	74 15                	je     400f86 <strcmp+0x1c>
+  400f71:	3a 06                	cmp    (%rsi),%al
+  400f73:	75 11                	jne    400f86 <strcmp+0x1c>
+        if (*s1 == '\0')
+            return 0;
+        s1++;
+  400f75:	48 ff c7             	inc    %rdi
+        s2++;
+  400f78:	48 ff c6             	inc    %rsi
+int strcmp(const char *s1, const char *s2) {
+    while (*s1 && *s1 == *s2) {
+  400f7b:	0f b6 07             	movzbl (%rdi),%eax
+  400f7e:	84 c0                	test   %al,%al
+  400f80:	74 04                	je     400f86 <strcmp+0x1c>
+  400f82:	3a 06                	cmp    (%rsi),%al
+  400f84:	74 ef                	je     400f75 <strcmp+0xb>
+  400f86:	0f b6 c0             	movzbl %al,%eax
+  400f89:	0f b6 16             	movzbl (%rsi),%edx
+  400f8c:	29 d0                	sub    %edx,%eax
+        s1++;
+        s2++;
+    }
+
+    return *(const unsigned char *)s1 - *(const unsigned char*)s2;
+}
+  400f8e:	c3                   	retq   
+
+0000000000400f8f <strcpy>:
+char *strcpy (char *dest, const char *src) {
+  400f8f:	48 89 f8             	mov    %rdi,%rax
+    int i = 0;
+    while (src[i] != '\0') {
+  400f92:	0f b6 16             	movzbl (%rsi),%edx
+  400f95:	84 d2                	test   %dl,%dl
+  400f97:	74 1e                	je     400fb7 <strcpy+0x28>
+  400f99:	b9 00 00 00 00       	mov    $0x0,%ecx
+  400f9e:	41 b8 00 00 00 00    	mov    $0x0,%r8d
+        dest[i] = src[i];
+  400fa4:	88 14 08             	mov    %dl,(%rax,%rcx,1)
+        i++;
+  400fa7:	41 ff c0             	inc    %r8d
+char *strcpy (char *dest, const char *src) {
+    int i = 0;
+    while (src[i] != '\0') {
+  400faa:	49 63 c8             	movslq %r8d,%rcx
+  400fad:	0f b6 14 0e          	movzbl (%rsi,%rcx,1),%edx
+  400fb1:	84 d2                	test   %dl,%dl
+  400fb3:	75 ef                	jne    400fa4 <strcpy+0x15>
+  400fb5:	eb 05                	jmp    400fbc <strcpy+0x2d>
+  400fb7:	b9 00 00 00 00       	mov    $0x0,%ecx
+        dest[i] = src[i];
+        i++;
+    }
+    dest[i] = '\0';
+  400fbc:	c6 04 08 00          	movb   $0x0,(%rax,%rcx,1)
+
+    return dest;
+}
+  400fc0:	c3                   	retq   
+
+0000000000400fc1 <open>:
+#include <sys/defs.h>
+#include <unistd.h>
+
+int open(const char *path, int flags) {
+  400fc1:	48 89 f9             	mov    %rdi,%rcx
+    int64_t output;
+    __asm__ (
+  400fc4:	48 63 d6             	movslq %esi,%rdx
+  400fc7:	48 c7 c0 0a 00 00 00 	mov    $0xa,%rax
+  400fce:	48 89 cf             	mov    %rcx,%rdi
+  400fd1:	48 89 d6             	mov    %rdx,%rsi
+  400fd4:	cd 80                	int    $0x80
+  400fd6:	48 89 c2             	mov    %rax,%rdx
+        : "r" (path), "r" ((int64_t)flags)
+        : "%rax", "%rdi", "%rsi"
+    );
+
+    return output;
+}
+  400fd9:	89 d0                	mov    %edx,%eax
+  400fdb:	c3                   	retq   
+
+0000000000400fdc <strcat>:
+char *strcat(char *dest, const char *src) {
+  400fdc:	48 89 f8             	mov    %rdi,%rax
+    int i = 0, j = 0;
+    while (dest[i] != '\0') {
+  400fdf:	80 3f 00             	cmpb   $0x0,(%rdi)
+  400fe2:	74 12                	je     400ff6 <strcat+0x1a>
+  400fe4:	b9 00 00 00 00       	mov    $0x0,%ecx
+        i++;
+  400fe9:	ff c1                	inc    %ecx
+char *strcat(char *dest, const char *src) {
+    int i = 0, j = 0;
+    while (dest[i] != '\0') {
+  400feb:	48 63 d1             	movslq %ecx,%rdx
+  400fee:	80 3c 10 00          	cmpb   $0x0,(%rax,%rdx,1)
+  400ff2:	75 f5                	jne    400fe9 <strcat+0xd>
+  400ff4:	eb 05                	jmp    400ffb <strcat+0x1f>
+char *strcat(char *dest, const char *src) {
+    int i = 0, j = 0;
+  400ff6:	b9 00 00 00 00       	mov    $0x0,%ecx
+    while (dest[i] != '\0') {
+        i++;
+    }
+
+    while (src[j] != '\0') {
+  400ffb:	44 0f b6 0e          	movzbl (%rsi),%r9d
+  400fff:	45 84 c9             	test   %r9b,%r9b
+  401002:	74 24                	je     401028 <strcat+0x4c>
+  401004:	89 ca                	mov    %ecx,%edx
+        dest[i++] = src[j++];
+  401006:	44 8d 42 01          	lea    0x1(%rdx),%r8d
+  40100a:	48 63 d2             	movslq %edx,%rdx
+  40100d:	44 88 0c 10          	mov    %r9b,(%rax,%rdx,1)
+    int i = 0, j = 0;
+    while (dest[i] != '\0') {
+        i++;
+    }
+
+    while (src[j] != '\0') {
+  401011:	44 89 c2             	mov    %r8d,%edx
+  401014:	29 ca                	sub    %ecx,%edx
+  401016:	48 63 d2             	movslq %edx,%rdx
+  401019:	44 0f b6 0c 16       	movzbl (%rsi,%rdx,1),%r9d
+        dest[i++] = src[j++];
+  40101e:	44 89 c2             	mov    %r8d,%edx
+    int i = 0, j = 0;
+    while (dest[i] != '\0') {
+        i++;
+    }
+
+    while (src[j] != '\0') {
+  401021:	45 84 c9             	test   %r9b,%r9b
+  401024:	75 e0                	jne    401006 <strcat+0x2a>
+  401026:	eb 03                	jmp    40102b <strcat+0x4f>
+  401028:	41 89 c8             	mov    %ecx,%r8d
+        dest[i++] = src[j++];
+    }
+
+    dest[i] = '\0';
+  40102b:	4d 63 c0             	movslq %r8d,%r8
+  40102e:	42 c6 04 00 00       	movb   $0x0,(%rax,%r8,1)
+
+    return dest;
+}
+  401033:	c3                   	retq   
+
+0000000000401034 <get_environment>:
+#include <stdio.h>
+#define BUFSIZE 512
+
+char **env;
+
+char *get_environment(const char *name) {
+  401034:	41 57                	push   %r15
+  401036:	41 56                	push   %r14
+  401038:	41 55                	push   %r13
+  40103a:	41 54                	push   %r12
+  40103c:	55                   	push   %rbp
+  40103d:	53                   	push   %rbx
+  40103e:	48 81 ec 08 02 00 00 	sub    $0x208,%rsp
+  401045:	49 89 fd             	mov    %rdi,%r13
+    int key_length = strlen(name);
+  401048:	e8 a3 06 00 00       	callq  4016f0 <strlen>
+    char initial_envp[BUFSIZE], *result = NULL;
+    int i, j;
+
+    if (name == NULL || env == NULL)
+  40104d:	4d 85 ed             	test   %r13,%r13
+  401050:	0f 84 d3 00 00 00    	je     401129 <get_environment+0xf5>
+  401056:	41 89 c6             	mov    %eax,%r14d
+  401059:	48 8d 15 08 11 20 00 	lea    0x201108(%rip),%rdx        # 602168 <env>
+  401060:	48 8b 0a             	mov    (%rdx),%rcx
+  401063:	48 85 c9             	test   %rcx,%rcx
+  401066:	0f 84 c4 00 00 00    	je     401130 <get_environment+0xfc>
+        return NULL;
+
+    for (i = 0; env[i] != NULL; i++) {
+  40106c:	48 8b 11             	mov    (%rcx),%rdx
+  40106f:	bd 00 00 00 00       	mov    $0x0,%ebp
+  401074:	41 bc 00 00 00 00    	mov    $0x0,%r12d
+  40107a:	48 85 d2             	test   %rdx,%rdx
+  40107d:	0f 85 8a 00 00 00    	jne    40110d <get_environment+0xd9>
+  401083:	e9 b4 00 00 00       	jmpq   40113c <get_environment+0x108>
+        j = 0;
+        while (j < key_length) {
+            initial_envp[j] = env[i][j];
+  401088:	48 8b 11             	mov    (%rcx),%rdx
+  40108b:	0f b6 14 02          	movzbl (%rdx,%rax,1),%edx
+  40108f:	88 14 04             	mov    %dl,(%rsp,%rax,1)
+  401092:	48 ff c0             	inc    %rax
+    if (name == NULL || env == NULL)
+        return NULL;
+
+    for (i = 0; env[i] != NULL; i++) {
+        j = 0;
+        while (j < key_length) {
+  401095:	48 39 c3             	cmp    %rax,%rbx
+  401098:	75 ee                	jne    401088 <get_environment+0x54>
+            initial_envp[j] = env[i][j];
+            j++;
+        }
+        initial_envp[key_length] = '\0';
+  40109a:	42 c6 04 3c 00       	movb   $0x0,(%rsp,%r15,1)
+        if (strcmp(name, initial_envp) == 0) {
+  40109f:	48 89 e6             	mov    %rsp,%rsi
+  4010a2:	4c 89 ef             	mov    %r13,%rdi
+  4010a5:	e8 c0 fe ff ff       	callq  400f6a <strcmp>
+  4010aa:	85 c0                	test   %eax,%eax
+  4010ac:	75 3e                	jne    4010ec <get_environment+0xb8>
+            for (j = 0; env[i][j] != '\0'; j++) {
+  4010ae:	48 8d 05 b3 10 20 00 	lea    0x2010b3(%rip),%rax        # 602168 <env>
+  4010b5:	48 8b 00             	mov    (%rax),%rax
+  4010b8:	48 8b 3c 28          	mov    (%rax,%rbp,1),%rdi
+  4010bc:	0f b6 07             	movzbl (%rdi),%eax
+  4010bf:	84 c0                	test   %al,%al
+  4010c1:	74 74                	je     401137 <get_environment+0x103>
+  4010c3:	be 00 00 00 00       	mov    $0x0,%esi
+  4010c8:	b9 00 00 00 00       	mov    $0x0,%ecx
+  4010cd:	ba 00 00 00 00       	mov    $0x0,%edx
+                if(env[i][j] == '=') {
+  4010d2:	3c 3d                	cmp    $0x3d,%al
+                    result = env[i] + j + 1;
+  4010d4:	48 8d 74 37 01       	lea    0x1(%rdi,%rsi,1),%rsi
+  4010d9:	48 0f 44 d6          	cmove  %rsi,%rdx
+            initial_envp[j] = env[i][j];
+            j++;
+        }
+        initial_envp[key_length] = '\0';
+        if (strcmp(name, initial_envp) == 0) {
+            for (j = 0; env[i][j] != '\0'; j++) {
+  4010dd:	ff c1                	inc    %ecx
+  4010df:	48 63 f1             	movslq %ecx,%rsi
+  4010e2:	0f b6 04 37          	movzbl (%rdi,%rsi,1),%eax
+  4010e6:	84 c0                	test   %al,%al
+  4010e8:	75 e8                	jne    4010d2 <get_environment+0x9e>
+  4010ea:	eb 50                	jmp    40113c <get_environment+0x108>
+    int i, j;
+
+    if (name == NULL || env == NULL)
+        return NULL;
+
+    for (i = 0; env[i] != NULL; i++) {
+  4010ec:	41 ff c4             	inc    %r12d
+  4010ef:	49 63 ec             	movslq %r12d,%rbp
+  4010f2:	48 c1 e5 03          	shl    $0x3,%rbp
+  4010f6:	48 8d 05 6b 10 20 00 	lea    0x20106b(%rip),%rax        # 602168 <env>
+  4010fd:	48 89 e9             	mov    %rbp,%rcx
+  401100:	48 03 08             	add    (%rax),%rcx
+  401103:	48 8b 11             	mov    (%rcx),%rdx
+  401106:	48 85 d2             	test   %rdx,%rdx
+  401109:	75 0b                	jne    401116 <get_environment+0xe2>
+  40110b:	eb 2f                	jmp    40113c <get_environment+0x108>
+  40110d:	8d 58 ff             	lea    -0x1(%rax),%ebx
+  401110:	48 ff c3             	inc    %rbx
+        j = 0;
+        while (j < key_length) {
+            initial_envp[j] = env[i][j];
+            j++;
+        }
+        initial_envp[key_length] = '\0';
+  401113:	4c 63 f8             	movslq %eax,%r15
+    if (name == NULL || env == NULL)
+        return NULL;
+
+    for (i = 0; env[i] != NULL; i++) {
+        j = 0;
+        while (j < key_length) {
+  401116:	45 85 f6             	test   %r14d,%r14d
+  401119:	0f 8e 7b ff ff ff    	jle    40109a <get_environment+0x66>
+  40111f:	b8 00 00 00 00       	mov    $0x0,%eax
+  401124:	e9 5f ff ff ff       	jmpq   401088 <get_environment+0x54>
+    int key_length = strlen(name);
+    char initial_envp[BUFSIZE], *result = NULL;
+    int i, j;
+
+    if (name == NULL || env == NULL)
+        return NULL;
+  401129:	ba 00 00 00 00       	mov    $0x0,%edx
+  40112e:	eb 0c                	jmp    40113c <get_environment+0x108>
+  401130:	ba 00 00 00 00       	mov    $0x0,%edx
+  401135:	eb 05                	jmp    40113c <get_environment+0x108>
+            initial_envp[j] = env[i][j];
+            j++;
+        }
+        initial_envp[key_length] = '\0';
+        if (strcmp(name, initial_envp) == 0) {
+            for (j = 0; env[i][j] != '\0'; j++) {
+  401137:	ba 00 00 00 00       	mov    $0x0,%edx
+            }
+            break;
+        }
+    }
+    return result;
+}
+  40113c:	48 89 d0             	mov    %rdx,%rax
+  40113f:	48 81 c4 08 02 00 00 	add    $0x208,%rsp
+  401146:	5b                   	pop    %rbx
+  401147:	5d                   	pop    %rbp
+  401148:	41 5c                	pop    %r12
+  40114a:	41 5d                	pop    %r13
+  40114c:	41 5e                	pop    %r14
+  40114e:	41 5f                	pop    %r15
+  401150:	c3                   	retq   
+
+0000000000401151 <execvpe>:
+
+int execvpe(const char *file, char *argv[], char *envp[]) {
+  401151:	41 56                	push   %r14
+  401153:	41 55                	push   %r13
+  401155:	41 54                	push   %r12
+  401157:	55                   	push   %rbp
+  401158:	53                   	push   %rbx
+  401159:	48 81 ec 00 02 00 00 	sub    $0x200,%rsp
+  401160:	49 89 f8             	mov    %rdi,%r8
+  401163:	49 89 f5             	mov    %rsi,%r13
+  401166:	49 89 d4             	mov    %rdx,%r12
+    int64_t status = 0;
+    char *token, *slash = "/";
+    int slash_check = 0, i = 0;
+    char absolute_path[256], path_env[256];
+
+    env = envp;
+  401169:	48 8d 05 f8 0f 20 00 	lea    0x200ff8(%rip),%rax        # 602168 <env>
+  401170:	48 89 10             	mov    %rdx,(%rax)
+}
+
+int execvpe(const char *file, char *argv[], char *envp[]) {
+    int64_t status = 0;
+    char *token, *slash = "/";
+    int slash_check = 0, i = 0;
+  401173:	b8 00 00 00 00       	mov    $0x0,%eax
+    char absolute_path[256], path_env[256];
+
+    env = envp;
+
+    while (file[i] != '\0') {
+  401178:	eb 0b                	jmp    401185 <execvpe+0x34>
+        if (file[i++] == '/') {
+  40117a:	ff c0                	inc    %eax
+  40117c:	80 fa 2f             	cmp    $0x2f,%dl
+  40117f:	0f 84 a3 00 00 00    	je     401228 <execvpe+0xd7>
+    int slash_check = 0, i = 0;
+    char absolute_path[256], path_env[256];
+
+    env = envp;
+
+    while (file[i] != '\0') {
+  401185:	48 63 d0             	movslq %eax,%rdx
+  401188:	41 0f b6 14 10       	movzbl (%r8,%rdx,1),%edx
+  40118d:	84 d2                	test   %dl,%dl
+  40118f:	75 e9                	jne    40117a <execvpe+0x29>
+  401191:	eb 55                	jmp    4011e8 <execvpe+0x97>
+    } else {
+        strcpy(path_env, get_environment("PATH"));
+        token = strtok(path_env, ":");
+
+        while (token != NULL) {
+            strcpy(absolute_path, token);
+  401193:	48 89 c6             	mov    %rax,%rsi
+  401196:	48 89 df             	mov    %rbx,%rdi
+  401199:	e8 f1 fd ff ff       	callq  400f8f <strcpy>
+            strcat(absolute_path, slash);
+  40119e:	48 8d 35 99 05 00 00 	lea    0x599(%rip),%rsi        # 40173e <write+0x28>
+  4011a5:	48 89 df             	mov    %rbx,%rdi
+  4011a8:	e8 2f fe ff ff       	callq  400fdc <strcat>
+            strcat(absolute_path, file);
+  4011ad:	4c 89 f6             	mov    %r14,%rsi
+  4011b0:	48 89 df             	mov    %rbx,%rdi
+  4011b3:	e8 24 fe ff ff       	callq  400fdc <strcat>
+
+            __asm__ volatile(
+  4011b8:	48 c7 c0 15 00 00 00 	mov    $0x15,%rax
+  4011bf:	48 89 df             	mov    %rbx,%rdi
+  4011c2:	4c 89 ee             	mov    %r13,%rsi
+  4011c5:	4c 89 e2             	mov    %r12,%rdx
+  4011c8:	cd 80                	int    $0x80
+  4011ca:	48 89 c1             	mov    %rax,%rcx
+  4011cd:	48 89 cd             	mov    %rcx,%rbp
+                "movq %%rax, %0;"
+                : "=r" (status)
+                : "r" (absolute_path), "r" (argv), "r" (envp)
+                : "%rax", "%rdi", "%rsi", "%rdx"
+            );
+            token = strtok(NULL, ":");
+  4011d0:	48 8d 35 39 06 00 00 	lea    0x639(%rip),%rsi        # 401810 <write+0xfa>
+  4011d7:	bf 00 00 00 00       	mov    $0x0,%edi
+  4011dc:	e8 ff fb ff ff       	callq  400de0 <strtok>
+        );
+    } else {
+        strcpy(path_env, get_environment("PATH"));
+        token = strtok(path_env, ":");
+
+        while (token != NULL) {
+  4011e1:	48 85 c0             	test   %rax,%rax
+  4011e4:	75 ad                	jne    401193 <execvpe+0x42>
+  4011e6:	eb 58                	jmp    401240 <execvpe+0xef>
+  4011e8:	4d 89 c6             	mov    %r8,%r14
+            : "=r" (status)
+            : "r" (file), "r" (argv), "r" (envp)
+            : "%rax", "%rdi", "%rsi", "%rdx"
+        );
+    } else {
+        strcpy(path_env, get_environment("PATH"));
+  4011eb:	48 8d 3d 20 06 00 00 	lea    0x620(%rip),%rdi        # 401812 <write+0xfc>
+  4011f2:	e8 3d fe ff ff       	callq  401034 <get_environment>
+  4011f7:	48 89 c6             	mov    %rax,%rsi
+  4011fa:	48 89 e7             	mov    %rsp,%rdi
+  4011fd:	e8 8d fd ff ff       	callq  400f8f <strcpy>
+        token = strtok(path_env, ":");
+  401202:	48 8d 35 07 06 00 00 	lea    0x607(%rip),%rsi        # 401810 <write+0xfa>
+  401209:	48 89 e7             	mov    %rsp,%rdi
+  40120c:	e8 cf fb ff ff       	callq  400de0 <strtok>
+
+        while (token != NULL) {
+            strcpy(absolute_path, token);
+  401211:	48 8d 9c 24 00 01 00 	lea    0x100(%rsp),%rbx
+  401218:	00 
+    }
+    return result;
+}
+
+int execvpe(const char *file, char *argv[], char *envp[]) {
+    int64_t status = 0;
+  401219:	bd 00 00 00 00       	mov    $0x0,%ebp
+        );
+    } else {
+        strcpy(path_env, get_environment("PATH"));
+        token = strtok(path_env, ":");
+
+        while (token != NULL) {
+  40121e:	48 85 c0             	test   %rax,%rax
+  401221:	74 1d                	je     401240 <execvpe+0xef>
+  401223:	e9 6b ff ff ff       	jmpq   401193 <execvpe+0x42>
+            break;
+        }
+    }
+
+    if (slash_check == 1) {
+        __asm__ volatile(
+  401228:	48 c7 c0 15 00 00 00 	mov    $0x15,%rax
+  40122f:	4c 89 c7             	mov    %r8,%rdi
+  401232:	4c 89 ee             	mov    %r13,%rsi
+  401235:	4c 89 e2             	mov    %r12,%rdx
+  401238:	cd 80                	int    $0x80
+  40123a:	48 89 c1             	mov    %rax,%rcx
+  40123d:	48 89 cd             	mov    %rcx,%rbp
+            token = strtok(NULL, ":");
+        }
+    }
+
+    return status;
+}
+  401240:	89 e8                	mov    %ebp,%eax
+  401242:	48 81 c4 00 02 00 00 	add    $0x200,%rsp
+  401249:	5b                   	pop    %rbx
+  40124a:	5d                   	pop    %rbp
+  40124b:	41 5c                	pop    %r12
+  40124d:	41 5d                	pop    %r13
+  40124f:	41 5e                	pop    %r14
+  401251:	c3                   	retq   
+
+0000000000401252 <close>:
+#include <sys/defs.h>
+#include <unistd.h>
+
+int8_t close(int fd) {
+	int64_t result;
+    __asm__ (
+  401252:	48 63 d7             	movslq %edi,%rdx
+  401255:	48 c7 c0 0b 00 00 00 	mov    $0xb,%rax
+  40125c:	48 89 d7             	mov    %rdx,%rdi
+  40125f:	cd 80                	int    $0x80
+  401261:	48 89 c2             	mov    %rax,%rdx
+        : "=r" ((int64_t)result)
+        : "r" ((int64_t)fd)
+        : "%rax", "%rdi"
+    );
+    return (int8_t)result;
+}
+  401264:	89 d0                	mov    %edx,%eax
+  401266:	c3                   	retq   
+  401267:	66 0f 1f 84 00 00 00 	nopw   0x0(%rax,%rax,1)
+  40126e:	00 00 
+
+0000000000401270 <free>:
+static Header* freeptr = NULL;           /* start of free list */
+
+/* free: put block ap in free list */
+void free(void *ap) {
+    Header *bp, *p;
+    bp = (Header *)ap - 1; /* point to block header */
+  401270:	48 8d 4f f0          	lea    -0x10(%rdi),%rcx
+
+    for (p = freeptr; !(bp > p && bp < p->s.ptr); p = p->s.ptr) {
+  401274:	48 8b 05 b5 0d 20 00 	mov    0x200db5(%rip),%rax        # 602030 <freeptr>
+  40127b:	eb 10                	jmp    40128d <free+0x1d>
+        if (p >= p->s.ptr && (bp > p || bp < p->s.ptr)) {
+  40127d:	48 8b 10             	mov    (%rax),%rdx
+  401280:	48 39 d0             	cmp    %rdx,%rax
+  401283:	72 05                	jb     40128a <free+0x1a>
+  401285:	48 39 d1             	cmp    %rdx,%rcx
+  401288:	72 10                	jb     40129a <free+0x2a>
+
+static Header base = {0};                /* empty list to get started */
+static Header* freeptr = NULL;           /* start of free list */
+
+/* free: put block ap in free list */
+void free(void *ap) {
+  40128a:	48 89 d0             	mov    %rdx,%rax
+    Header *bp, *p;
+    bp = (Header *)ap - 1; /* point to block header */
+
+    for (p = freeptr; !(bp > p && bp < p->s.ptr); p = p->s.ptr) {
+  40128d:	48 39 c8             	cmp    %rcx,%rax
+  401290:	73 eb                	jae    40127d <free+0xd>
+  401292:	48 8b 10             	mov    (%rax),%rdx
+  401295:	48 39 d1             	cmp    %rdx,%rcx
+  401298:	73 5d                	jae    4012f7 <free+0x87>
+        if (p >= p->s.ptr && (bp > p || bp < p->s.ptr)) {
+            break; /* freed block at start or end of arena */
+        }
+    }
+
+    if (bp + bp->s.size == p->s.ptr) {
+  40129a:	4c 8b 47 f8          	mov    -0x8(%rdi),%r8
+  40129e:	4c 89 c2             	mov    %r8,%rdx
+  4012a1:	48 c1 e2 04          	shl    $0x4,%rdx
+  4012a5:	48 01 ca             	add    %rcx,%rdx
+  4012a8:	48 8b 30             	mov    (%rax),%rsi
+  4012ab:	48 39 f2             	cmp    %rsi,%rdx
+  4012ae:	75 14                	jne    4012c4 <free+0x54>
+        bp->s.size += p->s.ptr->s.size;
+  4012b0:	4c 03 42 08          	add    0x8(%rdx),%r8
+  4012b4:	4c 89 47 f8          	mov    %r8,-0x8(%rdi)
+        bp->s.ptr = p->s.ptr->s.ptr;
+  4012b8:	48 8b 10             	mov    (%rax),%rdx
+  4012bb:	48 8b 12             	mov    (%rdx),%rdx
+  4012be:	48 89 57 f0          	mov    %rdx,-0x10(%rdi)
+  4012c2:	eb 04                	jmp    4012c8 <free+0x58>
+    } else {
+        bp->s.ptr = p->s.ptr;
+  4012c4:	48 89 77 f0          	mov    %rsi,-0x10(%rdi)
+    }
+
+    if (p + p->s.size == bp) {
+  4012c8:	48 8b 70 08          	mov    0x8(%rax),%rsi
+  4012cc:	48 89 f2             	mov    %rsi,%rdx
+  4012cf:	48 c1 e2 04          	shl    $0x4,%rdx
+  4012d3:	48 01 c2             	add    %rax,%rdx
+  4012d6:	48 39 d1             	cmp    %rdx,%rcx
+  4012d9:	75 11                	jne    4012ec <free+0x7c>
+        p->s.size += bp->s.size;
+  4012db:	48 03 77 f8          	add    -0x8(%rdi),%rsi
+  4012df:	48 89 70 08          	mov    %rsi,0x8(%rax)
+        p->s.ptr = bp->s.ptr;
+  4012e3:	48 8b 57 f0          	mov    -0x10(%rdi),%rdx
+  4012e7:	48 89 10             	mov    %rdx,(%rax)
+  4012ea:	eb 03                	jmp    4012ef <free+0x7f>
+    } else {
+        p->s.ptr = bp;
+  4012ec:	48 89 08             	mov    %rcx,(%rax)
+    }
+
+    freeptr = p;
+  4012ef:	48 89 05 3a 0d 20 00 	mov    %rax,0x200d3a(%rip)        # 602030 <freeptr>
+}
+  4012f6:	c3                   	retq   
+void free(void *ap) {
+    Header *bp, *p;
+    bp = (Header *)ap - 1; /* point to block header */
+
+    for (p = freeptr; !(bp > p && bp < p->s.ptr); p = p->s.ptr) {
+        if (p >= p->s.ptr && (bp > p || bp < p->s.ptr)) {
+  4012f7:	48 39 d0             	cmp    %rdx,%rax
+  4012fa:	72 8e                	jb     40128a <free+0x1a>
+  4012fc:	eb 9c                	jmp    40129a <free+0x2a>
+
+00000000004012fe <malloc>:
+
+    return freeptr;
+}
+
+/* Malloc: general-purpose storage allocator */
+void *malloc(size_t nbytes) {
+  4012fe:	41 56                	push   %r14
+  401300:	41 55                	push   %r13
+  401302:	41 54                	push   %r12
+  401304:	55                   	push   %rbp
+  401305:	53                   	push   %rbx
+    Header*  prevptr;
+    size_t   nunits;
+    void*    result;
+    int     is_allocating;
+
+    nunits = (nbytes + sizeof(Header) - 1) / sizeof(Header) + 1;
+  401306:	48 8d 5f 0f          	lea    0xf(%rdi),%rbx
+  40130a:	48 c1 eb 04          	shr    $0x4,%rbx
+  40130e:	48 ff c3             	inc    %rbx
+
+    prevptr = freeptr;
+  401311:	48 8b 0d 18 0d 20 00 	mov    0x200d18(%rip),%rcx        # 602030 <freeptr>
+    if (prevptr == NULL)  {                     /* no free list yet */
+  401318:	48 85 c9             	test   %rcx,%rcx
+  40131b:	75 20                	jne    40133d <malloc+0x3f>
+        base.s.ptr  = &base;
+  40131d:	48 8d 0d 1c 0d 20 00 	lea    0x200d1c(%rip),%rcx        # 602040 <base>
+  401324:	48 89 0d 15 0d 20 00 	mov    %rcx,0x200d15(%rip)        # 602040 <base>
+        freeptr     = &base;
+  40132b:	48 89 0d fe 0c 20 00 	mov    %rcx,0x200cfe(%rip)        # 602030 <freeptr>
+        prevptr     = &base;
+        base.s.size = 0;
+  401332:	48 c7 05 0b 0d 20 00 	movq   $0x0,0x200d0b(%rip)        # 602048 <base+0x8>
+  401339:	00 00 00 00 
+    }
+
+    is_allocating = 1;
+    for (p = prevptr->s.ptr; is_allocating != 0; p = p->s.ptr) {
+  40133d:	48 8b 01             	mov    (%rcx),%rax
+  401340:	48 81 fb 00 04 00 00 	cmp    $0x400,%rbx
+  401347:	41 bd 00 04 00 00    	mov    $0x400,%r13d
+  40134d:	4c 0f 43 eb          	cmovae %rbx,%r13
+    Header *up;
+
+    if (nunits < NALLOC) {
+        nunits = NALLOC;
+    }
+    cp = mmap(0, nunits * sizeof(Header), 0x007);
+  401351:	4d 89 ee             	mov    %r13,%r14
+  401354:	49 c1 e6 04          	shl    $0x4,%r14
+        freeptr     = &base;
+        prevptr     = &base;
+        base.s.size = 0;
+    }
+
+    is_allocating = 1;
+  401358:	bd 01 00 00 00       	mov    $0x1,%ebp
+    for (p = prevptr->s.ptr; is_allocating != 0; p = p->s.ptr) {
+        if (p->s.size >= nunits) {              /* big enough */
+  40135d:	48 8b 50 08          	mov    0x8(%rax),%rdx
+  401361:	48 39 d3             	cmp    %rdx,%rbx
+  401364:	77 31                	ja     401397 <malloc+0x99>
+            if (p->s.size == nunits) {          /* exactly */
+  401366:	48 39 d3             	cmp    %rdx,%rbx
+  401369:	75 08                	jne    401373 <malloc+0x75>
+                prevptr->s.ptr = p->s.ptr;
+  40136b:	48 8b 10             	mov    (%rax),%rdx
+  40136e:	48 89 11             	mov    %rdx,(%rcx)
+  401371:	eb 12                	jmp    401385 <malloc+0x87>
+            } else {                            /* allocate tail end */
+                p->s.size -= nunits;
+  401373:	48 29 da             	sub    %rbx,%rdx
+  401376:	48 89 50 08          	mov    %rdx,0x8(%rax)
+                p += p->s.size;
+  40137a:	48 c1 e2 04          	shl    $0x4,%rdx
+  40137e:	48 01 d0             	add    %rdx,%rax
+                p->s.size = nunits;
+  401381:	48 89 58 08          	mov    %rbx,0x8(%rax)
+            }
+
+            freeptr = prevptr;
+  401385:	48 89 0d a4 0c 20 00 	mov    %rcx,0x200ca4(%rip)        # 602030 <freeptr>
+            result = p+1;
+  40138c:	4c 8d 60 10          	lea    0x10(%rax),%r12
+            is_allocating = 0;                  /* we are done */
+        }
+
+        if (p == freeptr) {                     /* wrapped around free list */
+  401390:	48 39 c8             	cmp    %rcx,%rax
+  401393:	74 0d                	je     4013a2 <malloc+0xa4>
+  401395:	eb 60                	jmp    4013f7 <malloc+0xf9>
+  401397:	48 39 05 92 0c 20 00 	cmp    %rax,0x200c92(%rip)        # 602030 <freeptr>
+  40139e:	75 39                	jne    4013d9 <malloc+0xdb>
+  4013a0:	eb 05                	jmp    4013a7 <malloc+0xa9>
+                p->s.size = nunits;
+            }
+
+            freeptr = prevptr;
+            result = p+1;
+            is_allocating = 0;                  /* we are done */
+  4013a2:	bd 00 00 00 00       	mov    $0x0,%ebp
+    Header *up;
+
+    if (nunits < NALLOC) {
+        nunits = NALLOC;
+    }
+    cp = mmap(0, nunits * sizeof(Header), 0x007);
+  4013a7:	ba 07 00 00 00       	mov    $0x7,%edx
+  4013ac:	4c 89 f6             	mov    %r14,%rsi
+  4013af:	bf 00 00 00 00       	mov    $0x0,%edi
+  4013b4:	e8 93 00 00 00       	callq  40144c <mmap>
+
+    if (cp == NULL) {
+  4013b9:	48 85 c0             	test   %rax,%rax
+  4013bc:	74 2b                	je     4013e9 <malloc+0xeb>
+        return NULL;
+    }
+    up = (Header *)cp;
+    up->s.size = nunits;
+  4013be:	4c 89 68 08          	mov    %r13,0x8(%rax)
+    free((void *)(up + 1));
+  4013c2:	48 8d 78 10          	lea    0x10(%rax),%rdi
+  4013c6:	e8 a5 fe ff ff       	callq  401270 <free>
+
+    return freeptr;
+  4013cb:	48 8b 0d 5e 0c 20 00 	mov    0x200c5e(%rip),%rcx        # 602030 <freeptr>
+            is_allocating = 0;                  /* we are done */
+        }
+
+        if (p == freeptr) {                     /* wrapped around free list */
+            p = morecore(nunits);
+            if (p == NULL) {
+  4013d2:	48 85 c9             	test   %rcx,%rcx
+  4013d5:	75 05                	jne    4013dc <malloc+0xde>
+  4013d7:	eb 18                	jmp    4013f1 <malloc+0xf3>
+  4013d9:	48 89 c1             	mov    %rax,%rcx
+        prevptr     = &base;
+        base.s.size = 0;
+    }
+
+    is_allocating = 1;
+    for (p = prevptr->s.ptr; is_allocating != 0; p = p->s.ptr) {
+  4013dc:	48 8b 01             	mov    (%rcx),%rax
+  4013df:	85 ed                	test   %ebp,%ebp
+  4013e1:	0f 85 76 ff ff ff    	jne    40135d <malloc+0x5f>
+  4013e7:	eb 0e                	jmp    4013f7 <malloc+0xf9>
+        }
+
+        if (p == freeptr) {                     /* wrapped around free list */
+            p = morecore(nunits);
+            if (p == NULL) {
+                result = NULL;                   /* none left */
+  4013e9:	41 bc 00 00 00 00    	mov    $0x0,%r12d
+  4013ef:	eb 06                	jmp    4013f7 <malloc+0xf9>
+  4013f1:	41 bc 00 00 00 00    	mov    $0x0,%r12d
+        }
+        prevptr = p;
+    }                                           /* for */
+
+    return result;
+}
+  4013f7:	4c 89 e0             	mov    %r12,%rax
+  4013fa:	5b                   	pop    %rbx
+  4013fb:	5d                   	pop    %rbp
+  4013fc:	41 5c                	pop    %r12
+  4013fe:	41 5d                	pop    %r13
+  401400:	41 5e                	pop    %r14
+  401402:	c3                   	retq   
+
+0000000000401403 <chdir>:
+#include <sys/defs.h>
+
+int chdir(char *path) {
+  401403:	48 89 fa             	mov    %rdi,%rdx
+    ssize_t output;
+    __asm__ (
+  401406:	48 c7 c0 07 00 00 00 	mov    $0x7,%rax
+  40140d:	48 89 d7             	mov    %rdx,%rdi
+  401410:	cd 80                	int    $0x80
+  401412:	48 89 c2             	mov    %rax,%rdx
+        : "r" (path)
+        : "%rax", "%rdi"
+    );
+
+    return output;
+}
+  401415:	89 d0                	mov    %edx,%eax
+  401417:	c3                   	retq   
+
+0000000000401418 <putchar>:
+#include <stdio.h>
+#include <unistd.h>
+
+int putchar(int c)
+{
+  401418:	48 83 ec 18          	sub    $0x18,%rsp
+  40141c:	89 7c 24 0c          	mov    %edi,0xc(%rsp)
+    write(1, &c, 1);
+  401420:	48 8d 74 24 0c       	lea    0xc(%rsp),%rsi
+  401425:	ba 01 00 00 00       	mov    $0x1,%edx
+  40142a:	bf 01 00 00 00       	mov    $0x1,%edi
+  40142f:	e8 e2 02 00 00       	callq  401716 <write>
+    return c;
+}
+  401434:	8b 44 24 0c          	mov    0xc(%rsp),%eax
+  401438:	48 83 c4 18          	add    $0x18,%rsp
+  40143c:	c3                   	retq   
+
+000000000040143d <fork>:
+#include <sys/defs.h>
+
+pid_t fork() {
+    int64_t pid;
+
+    __asm__ (
+  40143d:	48 c7 c0 0c 00 00 00 	mov    $0xc,%rax
+  401444:	cd 80                	int    $0x80
+  401446:	48 89 c2             	mov    %rax,%rdx
+        :
+        : "%rax"
+    );
+
+    return pid;
+}
+  401449:	89 d0                	mov    %edx,%eax
+  40144b:	c3                   	retq   
+
+000000000040144c <mmap>:
+#include <sys/defs.h>
+
+void *mmap(void *start, size_t length, uint64_t flags) {
+  40144c:	49 89 f8             	mov    %rdi,%r8
+  40144f:	48 89 f1             	mov    %rsi,%rcx
+  401452:	49 89 d1             	mov    %rdx,%r9
+    void* result;
+    __asm__ (
+  401455:	48 c7 c0 03 00 00 00 	mov    $0x3,%rax
+  40145c:	4c 89 c7             	mov    %r8,%rdi
+  40145f:	48 89 ce             	mov    %rcx,%rsi
+  401462:	4c 89 ca             	mov    %r9,%rdx
+  401465:	cd 80                	int    $0x80
+  401467:	48 89 c1             	mov    %rax,%rcx
+        : "r" (start), "r" (length), "r" ((int64_t)flags)
+        : "%rax", "%rdi", "%rsi", "%rdx"
+    );
+
+    return result;
+}
+  40146a:	48 89 c8             	mov    %rcx,%rax
+  40146d:	c3                   	retq   
+
+000000000040146e <decimal_conversion>:
+#include <stdio.h>
+#include <sys/stdarg.h>
+#define SIZE 256
+
+char *decimal_conversion(unsigned long long decimal, int base) {
+  40146e:	48 83 ec 20          	sub    $0x20,%rsp
+    static char buf[SIZE];
+    char *result = &buf[SIZE - 1], representation[] = "0123456789ABCDEF";
+  401472:	48 b8 30 31 32 33 34 	movabs $0x3736353433323130,%rax
+  401479:	35 36 37 
+  40147c:	48 89 44 24 0f       	mov    %rax,0xf(%rsp)
+  401481:	48 b8 38 39 41 42 43 	movabs $0x4645444342413938,%rax
+  401488:	44 45 46 
+  40148b:	48 89 44 24 17       	mov    %rax,0x17(%rsp)
+  401490:	c6 44 24 1f 00       	movb   $0x0,0x1f(%rsp)
+    int remainder;
+
+    if (decimal == 0) {
+        return "0";
+  401495:	48 8d 05 7b 03 00 00 	lea    0x37b(%rip),%rax        # 401817 <write+0x101>
+char *decimal_conversion(unsigned long long decimal, int base) {
+    static char buf[SIZE];
+    char *result = &buf[SIZE - 1], representation[] = "0123456789ABCDEF";
+    int remainder;
+
+    if (decimal == 0) {
+  40149c:	48 85 ff             	test   %rdi,%rdi
+  40149f:	74 2d                	je     4014ce <decimal_conversion+0x60>
+  4014a1:	48 8d 0d b7 0c 20 00 	lea    0x200cb7(%rip),%rcx        # 60215f <buf.1151+0xff>
+        return "0";
+    }
+
+    while (decimal > 0) {
+        remainder = decimal % base;
+  4014a8:	48 63 f6             	movslq %esi,%rsi
+  4014ab:	48 89 f8             	mov    %rdi,%rax
+  4014ae:	ba 00 00 00 00       	mov    $0x0,%edx
+  4014b3:	48 f7 f6             	div    %rsi
+        decimal /= base;
+  4014b6:	48 89 c7             	mov    %rax,%rdi
+        result--;
+  4014b9:	48 ff c9             	dec    %rcx
+        *result = representation[remainder];
+  4014bc:	48 63 d2             	movslq %edx,%rdx
+  4014bf:	0f b6 54 14 0f       	movzbl 0xf(%rsp,%rdx,1),%edx
+  4014c4:	88 11                	mov    %dl,(%rcx)
+
+    if (decimal == 0) {
+        return "0";
+    }
+
+    while (decimal > 0) {
+  4014c6:	48 85 c0             	test   %rax,%rax
+  4014c9:	75 e0                	jne    4014ab <decimal_conversion+0x3d>
+        remainder = decimal % base;
+        decimal /= base;
+        result--;
+  4014cb:	48 89 c8             	mov    %rcx,%rax
+        *result = representation[remainder];
+    }
+
+    return result;
+}
+  4014ce:	48 83 c4 20          	add    $0x20,%rsp
+  4014d2:	c3                   	retq   
+
+00000000004014d3 <printf>:
+    }
+}
+
+// Write string pointer by fmt to standard output
+int printf(const char *fmt, ...)
+{
+  4014d3:	48 83 ec 58          	sub    $0x58,%rsp
+  4014d7:	48 89 74 24 28       	mov    %rsi,0x28(%rsp)
+  4014dc:	48 89 54 24 30       	mov    %rdx,0x30(%rsp)
+  4014e1:	48 89 4c 24 38       	mov    %rcx,0x38(%rsp)
+  4014e6:	4c 89 44 24 40       	mov    %r8,0x40(%rsp)
+  4014eb:	4c 89 4c 24 48       	mov    %r9,0x48(%rsp)
+    va_list arguments;
+    va_start(arguments, fmt);
+  4014f0:	c7 44 24 08 08 00 00 	movl   $0x8,0x8(%rsp)
+  4014f7:	00 
+  4014f8:	48 8d 44 24 60       	lea    0x60(%rsp),%rax
+  4014fd:	48 89 44 24 10       	mov    %rax,0x10(%rsp)
+  401502:	48 8d 44 24 20       	lea    0x20(%rsp),%rax
+  401507:	48 89 44 24 18       	mov    %rax,0x18(%rsp)
+    output(fmt, arguments);
+  40150c:	48 8d 74 24 08       	lea    0x8(%rsp),%rsi
+  401511:	e8 0a 00 00 00       	callq  401520 <output>
+    va_end(arguments);
+    return 1;
+  401516:	b8 01 00 00 00       	mov    $0x1,%eax
+  40151b:	48 83 c4 58          	add    $0x58,%rsp
+  40151f:	c3                   	retq   
+
+0000000000401520 <output>:
+
+    return result;
+}
+
+// Handle format specifiers and write to console
+void output(const char *fmt, va_list arguments) {
+  401520:	41 55                	push   %r13
+  401522:	41 54                	push   %r12
+  401524:	55                   	push   %rbp
+  401525:	53                   	push   %rbx
+  401526:	48 83 ec 08          	sub    $0x8,%rsp
+  40152a:	48 89 fb             	mov    %rdi,%rbx
+    int num;
+    const char *c;
+
+    while (*fmt) {
+  40152d:	0f b6 3f             	movzbl (%rdi),%edi
+  401530:	40 84 ff             	test   %dil,%dil
+  401533:	0f 84 a8 01 00 00    	je     4016e1 <output+0x1c1>
+  401539:	48 89 f5             	mov    %rsi,%rbp
+        if (*fmt == '%') {
+            c = fmt;
+            fmt++;
+
+            switch(*fmt) {
+  40153c:	4c 8d 25 d9 02 00 00 	lea    0x2d9(%rip),%r12        # 40181c <write+0x106>
+void output(const char *fmt, va_list arguments) {
+    int num;
+    const char *c;
+
+    while (*fmt) {
+        if (*fmt == '%') {
+  401543:	40 80 ff 25          	cmp    $0x25,%dil
+  401547:	0f 85 76 01 00 00    	jne    4016c3 <output+0x1a3>
+            c = fmt;
+            fmt++;
+  40154d:	4c 8d 6b 01          	lea    0x1(%rbx),%r13
+
+            switch(*fmt) {
+  401551:	0f b6 43 01          	movzbl 0x1(%rbx),%eax
+  401555:	83 e8 63             	sub    $0x63,%eax
+  401558:	3c 15                	cmp    $0x15,%al
+  40155a:	0f 87 4e 01 00 00    	ja     4016ae <output+0x18e>
+  401560:	0f b6 c0             	movzbl %al,%eax
+  401563:	49 63 04 84          	movslq (%r12,%rax,4),%rax
+  401567:	4c 01 e0             	add    %r12,%rax
+  40156a:	ff e0                	jmpq   *%rax
+                case 'c':
+                    putchar(va_arg(arguments, int));
+  40156c:	8b 45 00             	mov    0x0(%rbp),%eax
+  40156f:	83 f8 2f             	cmp    $0x2f,%eax
+  401572:	77 0e                	ja     401582 <output+0x62>
+  401574:	89 c2                	mov    %eax,%edx
+  401576:	48 03 55 10          	add    0x10(%rbp),%rdx
+  40157a:	83 c0 08             	add    $0x8,%eax
+  40157d:	89 45 00             	mov    %eax,0x0(%rbp)
+  401580:	eb 0c                	jmp    40158e <output+0x6e>
+  401582:	48 8b 55 08          	mov    0x8(%rbp),%rdx
+  401586:	48 8d 42 08          	lea    0x8(%rdx),%rax
+  40158a:	48 89 45 08          	mov    %rax,0x8(%rbp)
+  40158e:	8b 3a                	mov    (%rdx),%edi
+  401590:	e8 83 fe ff ff       	callq  401418 <putchar>
+                    break;
+  401595:	e9 35 01 00 00       	jmpq   4016cf <output+0x1af>
+
+                case 'd':
+                    num = va_arg(arguments, int);
+  40159a:	8b 45 00             	mov    0x0(%rbp),%eax
+  40159d:	83 f8 2f             	cmp    $0x2f,%eax
+  4015a0:	77 0e                	ja     4015b0 <output+0x90>
+  4015a2:	89 c2                	mov    %eax,%edx
+  4015a4:	48 03 55 10          	add    0x10(%rbp),%rdx
+  4015a8:	83 c0 08             	add    $0x8,%eax
+  4015ab:	89 45 00             	mov    %eax,0x0(%rbp)
+  4015ae:	eb 0c                	jmp    4015bc <output+0x9c>
+  4015b0:	48 8b 55 08          	mov    0x8(%rbp),%rdx
+  4015b4:	48 8d 42 08          	lea    0x8(%rdx),%rax
+  4015b8:	48 89 45 08          	mov    %rax,0x8(%rbp)
+  4015bc:	8b 1a                	mov    (%rdx),%ebx
+                    if (num < 0) {
+  4015be:	85 db                	test   %ebx,%ebx
+  4015c0:	79 0c                	jns    4015ce <output+0xae>
+                        putchar('-');
+  4015c2:	bf 2d 00 00 00       	mov    $0x2d,%edi
+  4015c7:	e8 4c fe ff ff       	callq  401418 <putchar>
+                        num *= -1;
+  4015cc:	f7 db                	neg    %ebx
+                    }
+                    printf(decimal_conversion(num, 10));
+  4015ce:	48 63 fb             	movslq %ebx,%rdi
+  4015d1:	be 0a 00 00 00       	mov    $0xa,%esi
+  4015d6:	e8 93 fe ff ff       	callq  40146e <decimal_conversion>
+  4015db:	48 89 c7             	mov    %rax,%rdi
+  4015de:	b8 00 00 00 00       	mov    $0x0,%eax
+  4015e3:	e8 eb fe ff ff       	callq  4014d3 <printf>
+                    break;
+  4015e8:	e9 e2 00 00 00       	jmpq   4016cf <output+0x1af>
+
+                case 'x':
+                    printf(decimal_conversion(va_arg(arguments, unsigned long long), 16));
+  4015ed:	8b 45 00             	mov    0x0(%rbp),%eax
+  4015f0:	83 f8 2f             	cmp    $0x2f,%eax
+  4015f3:	77 0e                	ja     401603 <output+0xe3>
+  4015f5:	89 c2                	mov    %eax,%edx
+  4015f7:	48 03 55 10          	add    0x10(%rbp),%rdx
+  4015fb:	83 c0 08             	add    $0x8,%eax
+  4015fe:	89 45 00             	mov    %eax,0x0(%rbp)
+  401601:	eb 0c                	jmp    40160f <output+0xef>
+  401603:	48 8b 55 08          	mov    0x8(%rbp),%rdx
+  401607:	48 8d 42 08          	lea    0x8(%rdx),%rax
+  40160b:	48 89 45 08          	mov    %rax,0x8(%rbp)
+  40160f:	be 10 00 00 00       	mov    $0x10,%esi
+  401614:	48 8b 3a             	mov    (%rdx),%rdi
+  401617:	e8 52 fe ff ff       	callq  40146e <decimal_conversion>
+  40161c:	48 89 c7             	mov    %rax,%rdi
+  40161f:	b8 00 00 00 00       	mov    $0x0,%eax
+  401624:	e8 aa fe ff ff       	callq  4014d3 <printf>
+                    break;
+  401629:	e9 a1 00 00 00       	jmpq   4016cf <output+0x1af>
+
+                case 's':
+                    printf(va_arg(arguments, char*));
+  40162e:	8b 45 00             	mov    0x0(%rbp),%eax
+  401631:	83 f8 2f             	cmp    $0x2f,%eax
+  401634:	77 0e                	ja     401644 <output+0x124>
+  401636:	89 c2                	mov    %eax,%edx
+  401638:	48 03 55 10          	add    0x10(%rbp),%rdx
+  40163c:	83 c0 08             	add    $0x8,%eax
+  40163f:	89 45 00             	mov    %eax,0x0(%rbp)
+  401642:	eb 0c                	jmp    401650 <output+0x130>
+  401644:	48 8b 55 08          	mov    0x8(%rbp),%rdx
+  401648:	48 8d 42 08          	lea    0x8(%rdx),%rax
+  40164c:	48 89 45 08          	mov    %rax,0x8(%rbp)
+  401650:	48 8b 3a             	mov    (%rdx),%rdi
+  401653:	b8 00 00 00 00       	mov    $0x0,%eax
+  401658:	e8 76 fe ff ff       	callq  4014d3 <printf>
+                    break;
+  40165d:	eb 70                	jmp    4016cf <output+0x1af>
+
+                case 'p':
+                    printf("0x");
+  40165f:	48 8d 3d b3 01 00 00 	lea    0x1b3(%rip),%rdi        # 401819 <write+0x103>
+  401666:	b8 00 00 00 00       	mov    $0x0,%eax
+  40166b:	e8 63 fe ff ff       	callq  4014d3 <printf>
+                    printf(decimal_conversion(va_arg(arguments, unsigned long long), 16));
+  401670:	8b 45 00             	mov    0x0(%rbp),%eax
+  401673:	83 f8 2f             	cmp    $0x2f,%eax
+  401676:	77 0e                	ja     401686 <output+0x166>
+  401678:	89 c2                	mov    %eax,%edx
+  40167a:	48 03 55 10          	add    0x10(%rbp),%rdx
+  40167e:	83 c0 08             	add    $0x8,%eax
+  401681:	89 45 00             	mov    %eax,0x0(%rbp)
+  401684:	eb 0c                	jmp    401692 <output+0x172>
+  401686:	48 8b 55 08          	mov    0x8(%rbp),%rdx
+  40168a:	48 8d 42 08          	lea    0x8(%rdx),%rax
+  40168e:	48 89 45 08          	mov    %rax,0x8(%rbp)
+  401692:	be 10 00 00 00       	mov    $0x10,%esi
+  401697:	48 8b 3a             	mov    (%rdx),%rdi
+  40169a:	e8 cf fd ff ff       	callq  40146e <decimal_conversion>
+  40169f:	48 89 c7             	mov    %rax,%rdi
+  4016a2:	b8 00 00 00 00       	mov    $0x0,%eax
+  4016a7:	e8 27 fe ff ff       	callq  4014d3 <printf>
+                    break;
+  4016ac:	eb 21                	jmp    4016cf <output+0x1af>
+
+                default:
+                    // If no format specifier is matched, write as it is
+                    putchar(*c);
+  4016ae:	bf 25 00 00 00       	mov    $0x25,%edi
+  4016b3:	e8 60 fd ff ff       	callq  401418 <putchar>
+                    putchar(*fmt);
+  4016b8:	0f be 7b 01          	movsbl 0x1(%rbx),%edi
+  4016bc:	e8 57 fd ff ff       	callq  401418 <putchar>
+  4016c1:	eb 0c                	jmp    4016cf <output+0x1af>
+            }
+        } else {
+            putchar(*fmt);
+  4016c3:	40 0f be ff          	movsbl %dil,%edi
+  4016c7:	e8 4c fd ff ff       	callq  401418 <putchar>
+  4016cc:	49 89 dd             	mov    %rbx,%r13
+        }
+        fmt++;
+  4016cf:	49 8d 5d 01          	lea    0x1(%r13),%rbx
+// Handle format specifiers and write to console
+void output(const char *fmt, va_list arguments) {
+    int num;
+    const char *c;
+
+    while (*fmt) {
+  4016d3:	41 0f b6 7d 01       	movzbl 0x1(%r13),%edi
+  4016d8:	40 84 ff             	test   %dil,%dil
+  4016db:	0f 85 62 fe ff ff    	jne    401543 <output+0x23>
+        } else {
+            putchar(*fmt);
+        }
+        fmt++;
+    }
+}
+  4016e1:	48 83 c4 08          	add    $0x8,%rsp
+  4016e5:	5b                   	pop    %rbx
+  4016e6:	5d                   	pop    %rbp
+  4016e7:	41 5c                	pop    %r12
+  4016e9:	41 5d                	pop    %r13
+  4016eb:	c3                   	retq   
+  4016ec:	0f 1f 40 00          	nopl   0x0(%rax)
+
+00000000004016f0 <strlen>:
+#include <sys/defs.h>
+
+size_t strlen(const char *s) {
+    size_t len = 0;
+
+    if (s == NULL) {
+  4016f0:	48 85 ff             	test   %rdi,%rdi
+  4016f3:	74 15                	je     40170a <strlen+0x1a>
+        return 0;
+    }
+
+    while (s[len] != '\0') {
+  4016f5:	80 3f 00             	cmpb   $0x0,(%rdi)
+  4016f8:	74 16                	je     401710 <strlen+0x20>
+  4016fa:	b8 00 00 00 00       	mov    $0x0,%eax
+        len++;
+  4016ff:	48 ff c0             	inc    %rax
+
+    if (s == NULL) {
+        return 0;
+    }
+
+    while (s[len] != '\0') {
+  401702:	80 3c 07 00          	cmpb   $0x0,(%rdi,%rax,1)
+  401706:	75 f7                	jne    4016ff <strlen+0xf>
+  401708:	f3 c3                	repz retq 
+
+size_t strlen(const char *s) {
+    size_t len = 0;
+
+    if (s == NULL) {
+        return 0;
+  40170a:	b8 00 00 00 00       	mov    $0x0,%eax
+  40170f:	c3                   	retq   
+    }
+
+    while (s[len] != '\0') {
+  401710:	b8 00 00 00 00       	mov    $0x0,%eax
+        len++;
+    }
+
+    return len;
+}
+  401715:	c3                   	retq   
+
+0000000000401716 <write>:
+#include <sys/defs.h>
+
+ssize_t write(int fd, const void *buf, size_t count) {
+  401716:	48 89 f1             	mov    %rsi,%rcx
+  401719:	49 89 d1             	mov    %rdx,%r9
+    ssize_t num_bytes;
+
+    __asm__ (
+  40171c:	4c 63 c7             	movslq %edi,%r8
+  40171f:	48 c7 c0 01 00 00 00 	mov    $0x1,%rax
+  401726:	4c 89 c7             	mov    %r8,%rdi
+  401729:	48 89 ce             	mov    %rcx,%rsi
+  40172c:	4c 89 ca             	mov    %r9,%rdx
+  40172f:	cd 80                	int    $0x80
+  401731:	48 89 c1             	mov    %rax,%rcx
+        : "r" ((int64_t)fd), "r" (buf), "r" (count)
+        : "%rax", "%rdi", "%rsi", "%rdx"
+    );
+
+    return num_bytes;
+}
+  401734:	48 89 c8             	mov    %rcx,%rax
+  401737:	c3                   	retq   

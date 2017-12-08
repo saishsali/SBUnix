@@ -520,7 +520,7 @@ int remove_file_name_from_path(char *directory_path, char *file_name) {
 
 /* Sys open to open files: http://pubs.opengroup.org/onlinepubs/009695399/functions/open.html */
 int8_t sys_open(char *file_path, uint8_t flags) {
-    char directory_path[100], file_name[20], path[100], temp[100];;
+    char directory_path[100], file_name[30], path[100], temp[100];
     int i = 0, c = 0, flag = 0, index = 0;
     strcpy(path, file_path);
     if (path == NULL) {
@@ -713,9 +713,6 @@ int8_t sys_execvpe(char *file, char *argv[], char *envp[]) {
     // empty page tables
     remove_page_tables(current->cr3);
 
-    // empty file descriptor
-    memset((void*)current->file_descriptor, 0, MAX_FD * 8);
-
     switch_to_user_mode(task);
 
     return -1;
@@ -738,8 +735,6 @@ void cleanup(task_struct *current) {
     // empty page tables
     remove_page_tables(current->cr3);
 
-    // empty file descriptor
-    memset((void*)current->file_descriptor, 0, MAX_FD * 8);
     current->state = ZOMBIE;
 }
 

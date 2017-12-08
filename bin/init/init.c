@@ -1,4 +1,3 @@
-#include <sys/wait.h>
 #include <unistd.h>
 #include <sys/defs.h>
 #include <stdio.h>
@@ -11,7 +10,7 @@ int main(int argc, char *argv[], char *envp[]) {
     char *arguments[] = {"/rootfs/bin/sbush", "/rootfs/etc/rc", NULL};
 
     pid = fork();
-    if(pid == 0) {
+    if (pid == 0) {
         if (execvpe("/rootfs/bin/sbush", arguments, environment) < 0) {
             printf("-sbush: command not found");
             exit(1);
