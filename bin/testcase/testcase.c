@@ -43,8 +43,8 @@ void readdir_test(){
     int k;
     dentry* curr_dentry = NULL;
     while((curr_dentry = readdir(dir)) != NULL) {
-        for (k = 0; k < strlen(curr_dentry->name); k++) {
-            putchar(curr_dentry->name[k]);
+        for (k = 0; k < strlen(curr_dentry->d_name); k++) {
+            putchar(curr_dentry->d_name[k]);
         }
         putchar(' ');
     }
