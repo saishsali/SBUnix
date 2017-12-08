@@ -182,7 +182,7 @@ void fork_multiple_times_test() {
     int pid;
     int i;
 
-    for(i = 0; i < 500; i++) {
+    for(i = 0; i < 10; i++) {
         pid = fork();
         if(pid == 0) {
             execvpe("/rootfs/bin/echo", s, NULL);
