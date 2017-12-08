@@ -13,7 +13,6 @@ char *getcwd(char *buf, size_t size);
 
 pid_t fork();
 int execvpe(const char *file, char *const argv[], char *const envp[]);
-int execvp(const char *file, char *const argv[]);
 pid_t wait(int *status);
 
 unsigned int sleep(unsigned int seconds);
@@ -27,8 +26,6 @@ int mkdir(const char *pathname, mode_t mode);
 
 // OPTIONAL: implement for ``signals and pipes (+10 pts)''
 int pipe(int pipefd[2]);
-
-int dup2(int oldfd, int newfd);
 
 void yield();
 void ps();
