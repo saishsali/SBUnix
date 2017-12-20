@@ -1,0 +1,242 @@
+------ READ ------
+char buf[1024];
+read(0, buf, 128);
+
+------ WRITE ------
+write(1, "I am here", 9);
+
+
+------ OPENDIR -----
+DIR * dir = opendir("/rootfs/etc1/");
+if(dir == NULL) {
+    puts("Directory does not exist");
+} else {
+    puts("Directory exists");
+}
+
+------ READDIR -----
+DIR * dir = opendir("/rootfs/bin/");
+if(dir == NULL) {
+    puts("Directory does not exist");
+} else {
+    puts("Directory exists");
+}
+
+int k;
+dentry* curr_dentry = NULL;
+while((curr_dentry = readdir(dir)) != NULL) {
+    for (k = 0; k < strlen(curr_dentry->name); k++) {
+        putchar(curr_dentry->name[k]);
+    }
+    putchar(' ');
+}
+closedir(dir);
+
+------ FILE OPEN and CLOSE -----
+int fd = open("/rootfs/bin/ls", O_RDONLY);
+close(fd);
+char c = fd + '0';
+putchar(c);
+
+------ GETCWD and CHDIR
+char buf[1024];
+getcwd(buf, 1024);
+puts(buf);
+
+chdir("/../../../rootfs/bin/../etc/../etc");
+
+getcwd(buf, 1024);
+puts(buf);
+
+
+/* Check mmap, page fault and sys_munmap */
+Case 1:
+char *p = mmap((void *)0x1000, 100, RW_FLAG); // 1 page
+strcpy(p, "Hello");
+puts("After mmap and page fault: - ");
+puts(p);
+sys_munmap(p, 100);
+strcpy(p, "World");
+puts("After sys_unmap (This should not be printed): - ");
+puts(p);
+
+Case 2:
+char *p = mmap((void *)0x1000, 4097, RW_FLAG); // 2 pages
+strcpy(p, "Hello");
+puts("After mmap and page fault: - ");
+puts(p);
+sys_munmap(p, 100);
+p = (char *)0x2000;
+strcpy(p, "World");
+puts("After sys_unmap (This should be printed): - ");
+puts(p);
+
+Case 3:
+char *p = mmap((void *)0x1000, 8193, RW_FLAG); // 3 pages
+strcpy(p, "Hello");
+puts("After mmap and page fault: - ");
+puts(p);
+sys_munmap(p + 0x1000, 100);
+p = (char *)0x3000;
+strcpy(p, "World");
+puts("After sys_unmap (This should be printed): - ");
+puts(p);
+
+Case 4:
+char *p = mmap((void *)0x1000, 4097, RW_FLAG); // 3 pages
+strcpy(p, "Hello");
+puts("After mmap and page fault: - ");
+puts(p);
+sys_munmap(p + 0x1000, 100);
+strcpy(p, "World");
+puts("After sys_unmap (This should be printed): - ");
+puts(p);
+
+
+-----------------------FILE read ---------------
+int fd = open("/rootfs/etc/test/check.c", O_RDONLY);
+char buf[1024];
+read(fd, buf, 10);
+puts("reading file");
+puts(buf);
+read(fd, buf, 10);
+puts("reading file");
+puts(buf);
+
+
+-----------------------FORK--------------------
+Case 1:
+
+int pid = fork();
+if (pid == 0) {
+    write(1, "\nChild 1", 2);
+    yield();
+} else {
+    write(1, "\nParent 1", 2);
+    yield();
+}
+
+Case 2:
+
+int pid = fork();
+if (pid == 0) {
+    write(1, "\nChild 1", 2);
+    yield();
+} else {
+    write(1, "\nParent 1", 2);
+    yield();
+
+    int pid2 = fork();
+    if (pid2 == 0) {
+        write(1, "\nChild 2", 2);
+        yield();
+    } else {
+        write(1, "\nParent 2", 2);
+        yield();
+    }
+}
+
+yield();
+
+Case 3: Check page fault
+
+char *p = mmap((void *)0x1000, 100, RW_FLAG); // 1 page
+strcpy(p, "Hello");
+puts("Before fork: ");
+puts(p);
+
+int pid = fork();
+if (pid == 0) {
+    write(1, "\nChild 1", 2);
+    p[0] = 'W';
+    puts("In child: ");
+    puts(p);
+    yield();
+} else {
+    write(1, "\nParent 1", 2);
+    yield();
+    puts("In parent: ");
+    puts(p);
+}
+
+---------- EXIT-------------
+int pid = fork();
+if (pid == 0) {
+    write(1, "\nChild 1", 2);
+    exit(3);
+} else {
+    write(1, "\nParent 1", 2);
+    yield();
+}
+puts("\nDone");
+
+------------WAITPID-----------
+Case 1:
+
+int pid = fork();
+if (pid == 0) {
+    write(1, "\nChild 1", 2);
+    exit(3);
+} else {
+    write(1, "\nParent 1", 2);
+    waitpid(pid, NULL, 0);
+    yield();
+}
+puts("\nDone");
+
+Case 2:
+
+int pid = fork();
+if (pid == 0) {
+    write(1, "\nChild 1", 2);
+    execvpe("bin/cat", NULL, NULL);
+} else {
+    write(1, "\nParent 1", 2);
+    pid = waitpid(pid, NULL, 0);
+
+    int pid2 = fork();
+    if (pid2 == 0) {
+        write(1, "\nChild 2", 2);
+        execvpe("bin/cat", NULL, NULL);
+    } else {
+        write(1, "\nParent 2", 2);
+        pid2 = waitpid(pid2, NULL, 0);
+    }
+}
+
+---------------EXECVPE------------------
+
+char *args[2] = {"Hello", "World"};
+
+int pid = fork();
+if (pid == 0) {
+    execvpe("bin/cat", args, NULL);
+} else {
+    yield();
+}
+
+
+----------------WAIT-------------------
+
+int pid = fork();
+if (pid == 0) {
+    write(1, "\nChild 1", 2);
+    execvpe("bin/cat", NULL, NULL);
+} else {
+    write(1, "\nParent 1", 2);
+    pid = wait(NULL);
+    putchar(pid + 48);
+
+    int pid2 = fork();
+    if (pid2 == 0) {
+        write(1, "\nChild 2", 2);
+        execvpe("bin/cat", NULL, NULL);
+    } else {
+        write(1, "\nParent 2", 2);
+        pid2 = wait(NULL);
+        putchar(pid2 + 48);
+    }
+}
+
+--------------Execute scripts (files that start with #!sbush)------------------
+sbush /rootfs/etc/test/script.sh

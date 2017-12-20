@@ -10,6 +10,11 @@
 #include <sys/paging.h>
 #include <sys/memory.h>
 #include <sys/process.h>
+#include <sys/tarfs.h>
+#include <sys/elf64.h>
+#include <sys/syscall.h>
+#include <sys/string.h>
+#include <sys/paging.h>
 
 #define INITIAL_STACK_SIZE 4096
 uint8_t initial_stack[INITIAL_STACK_SIZE]__attribute__((aligned(16)));
@@ -36,17 +41,27 @@ void start(uint32_t *modulep, void *physbase, void *physfree) {
     kprintf("physfree %p\n", (uint64_t)physfree);
     kprintf("tarfs in [%p:%p]\n", &_binary_tarfs_start, &_binary_tarfs_end);
 
-    // Paging
-    setup_page_tables((uint64_t)physbase, (uint64_t)physfree, last_physical_address);
-    load_cr3();
+    clear_screen();
 
-    // Free initial pages (0 to physbase) used by the bootloader
+    /* Setup Paging and load CR3 */
+    setup_page_tables((uint64_t)physbase, (uint64_t)physfree, last_physical_address);
+
+    /* Init tarfs and create directory structure */
+    init_tarfs();
+
+    /* Free initial pages (0 to physbase) used by the bootloader */
     // deallocate_initial_pages((uint64_t)physbase);
 
-    // kmalloc(20000000);
-    // kprintf("Allocation works");
-    create_threads();
+    /* AHCI controller */
     // init_pci();
+
+    task_struct *pcb = create_user_process("/rootfs/bin/init", NULL, NULL);
+
+    /* Create Idle process */
+    create_idle_process();
+    if (pcb) {
+        switch_to_user_mode(pcb);
+    }
 }
 
 void boot(void) {

@@ -1,46 +1,43 @@
 #include <unistd.h>
 #include <stdio.h>
-#include <dirent.h>
+#include <sys/dirent.h>
 #include <string.h>
-#include <fcntl.h>
-#define BUFSIZE 1024
+#include <stdlib.h>
+#define BUFSIZE 256
 
-void readdir(int fd)
-{
-    int buffer_position, read_length, k;
-    char dir_buff[BUFSIZE];
-    dirent *current_directory;
-
-    read_length = getdents(fd , dir_buff, 1024);
-
-    for (buffer_position = 0; buffer_position < read_length;) {
-        current_directory = (dirent *) (dir_buff + buffer_position);
-
-        if (current_directory->d_name[0] != '.' && strcmp(current_directory->d_name, "..") != 0) {
-
-            for (k = 0; k < strlen(current_directory->d_name); k++) {
-                putchar(current_directory->d_name[k]);
-            }
-            putchar(' ');
-            putchar(' ');
-        }
-        buffer_position += current_directory->d_reclen;
+void add_slash_at_end(char *path) {
+    int i = strlen(path) - 1;
+    if (path[i] != '/') {
+        path[++i] = '/';
+        path[++i] = '\0';
     }
-
-    putchar('\n');
 }
 
 int main(int argc, char *argv[], char *envp[]) {
-    char cwd[BUFSIZE];
-    int fd;
+    int i;
+    char buf[BUFSIZE];
 
-    if (getcwd(cwd, sizeof(cwd)) != NULL) {
-        fd = open(cwd, 0x0000, 444);
-        readdir(fd);
-        close(fd);
+    if (argv[1]) {
+        add_slash_at_end(argv[1]);
+        strcpy(buf, argv[1]);
+    } else {
+        getcwd(buf, BUFSIZE);
     }
-    else
-        puts("Command failed");
+
+    DIR * dir = opendir(buf);
+    if (dir == NULL) {
+        exit(1);
+    }
+
+    dentry* curr_dentry = NULL;
+    while ((curr_dentry = readdir(dir)) != NULL) {
+        for (i = 0; i < strlen(curr_dentry->d_name); i++) {
+            putchar(curr_dentry->d_name[i]);
+        }
+        putchar(' ');
+    }
+
+    closedir(dir);
 
     return 0;
 }

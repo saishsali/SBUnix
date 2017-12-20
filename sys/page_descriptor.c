@@ -3,6 +3,7 @@
 #include <sys/page_descriptor.h>
 #include <sys/kprintf.h>
 #include <sys/string.h>
+#include <sys/paging.h>
 
 Page *page_free_list, *pages;
 uint64_t holes[50] = {0};
@@ -11,6 +12,18 @@ uint64_t hole_index = 0;
 uint64_t page_to_physical_address(Page *p) {
     /* Offset * 4096 */
     return (p - pages) << PAGE_SHIFT;
+}
+
+void increment_reference_count(uint64_t physical_address) {
+    pages[physical_address / PAGE_SIZE].reference_count++;
+}
+
+uint16_t get_reference_count(uint64_t physical_address) {
+    return pages[physical_address / PAGE_SIZE].reference_count;
+}
+
+void decrement_reference_count(uint64_t physical_address) {
+    pages[physical_address / PAGE_SIZE].reference_count--;
 }
 
 uint64_t page_to_virtual_address(Page *p) {
@@ -83,6 +96,7 @@ Page *allocate_page() {
     Page *free_page = page_free_list;
     page_free_list = page_free_list->next;
     free_page->reference_count = 1;
+    memset((void *)page_to_virtual_address(free_page), 0, PAGE_SIZE);
 
     return free_page;
 }
@@ -95,6 +109,7 @@ Page *allocate_pages(int num_pages) {
     }
     Page *free_pages = page_free_list;
     while (num_pages-- > 0) {
+        memset((void *)page_to_virtual_address(page_free_list), 0, PAGE_SIZE);
         page_free_list->reference_count = 1;
         page_free_list = page_free_list->next;
     }
@@ -123,4 +138,33 @@ void deallocate_initial_pages(uint64_t physbase) {
         p = p->next;
     }
     kprintf("\nNumber of pages: %d\n", count);
+}
+
+/* Add pages back to free list and do not update page table entry for kernel allocated memory */
+void free_kernel_memory(void *virtual_address) {
+    void *pte_entry = get_page_table_entry(virtual_address);
+    if (pte_entry == NULL)
+        return;
+
+    uint64_t physical_address = GET_ADDRESS(*(uint64_t *)pte_entry);
+    uint64_t free_page_index = physical_address / PAGE_SIZE;
+
+    pages[free_page_index].next = page_free_list;
+    pages[free_page_index].reference_count--;
+    page_free_list = &pages[free_page_index];
+}
+
+/* Add pages back to free list and update page table entry for user allocated memory */
+void free_user_memory(void *virtual_address) {
+    void *pte_entry = get_page_table_entry(virtual_address);
+    if (pte_entry == NULL)
+        return;
+
+    uint64_t physical_address = GET_ADDRESS(*(uint64_t *)pte_entry);
+    *(uint64_t *)pte_entry = 0;
+    uint64_t free_page_index = physical_address / PAGE_SIZE;
+
+    pages[free_page_index].next = page_free_list;
+    pages[free_page_index].reference_count--;
+    page_free_list = &pages[free_page_index];
 }

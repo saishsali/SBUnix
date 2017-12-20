@@ -2,12 +2,44 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#define BUFSIZE 512
 
-int execvpe(const char *file, char *const argv[], char *envp[]) {
-    int64_t status;
-    int slash_check = 0, i = 0, truncated_path_len, j = 0, token_len;
-    char *path_env, *token, *slash = "/";
-    char truncated_path[1024];
+char **env;
+
+char *get_environment(const char *name) {
+    int key_length = strlen(name);
+    char initial_envp[BUFSIZE], *result = NULL;
+    int i, j;
+
+    if (name == NULL || env == NULL)
+        return NULL;
+
+    for (i = 0; env[i] != NULL; i++) {
+        j = 0;
+        while (j < key_length) {
+            initial_envp[j] = env[i][j];
+            j++;
+        }
+        initial_envp[key_length] = '\0';
+        if (strcmp(name, initial_envp) == 0) {
+            for (j = 0; env[i][j] != '\0'; j++) {
+                if(env[i][j] == '=') {
+                    result = env[i] + j + 1;
+                }
+            }
+            break;
+        }
+    }
+    return result;
+}
+
+int execvpe(const char *file, char *argv[], char *envp[]) {
+    int64_t status = 0;
+    char *token, *slash = "/";
+    int slash_check = 0, i = 0;
+    char absolute_path[256], path_env[256];
+
+    env = envp;
 
     while (file[i] != '\0') {
         if (file[i++] == '/') {
@@ -17,52 +49,37 @@ int execvpe(const char *file, char *const argv[], char *envp[]) {
     }
 
     if (slash_check == 1) {
-        __asm__ (
-            "movq $59, %%rax;"
+        __asm__ volatile(
+            "movq $21, %%rax;"
             "movq %1, %%rdi;"
             "movq %2, %%rsi;"
             "movq %3, %%rdx;"
-            "syscall;"
+            "int $0x80;"
             "movq %%rax, %0;"
             : "=r" (status)
             : "r" (file), "r" (argv), "r" (envp)
             : "%rax", "%rdi", "%rsi", "%rdx"
         );
     } else {
-        status = 0;
-        path_env = getenv("PATH");
+        strcpy(path_env, get_environment("PATH"));
         token = strtok(path_env, ":");
-        truncated_path_len = strlen(slash) + strlen(file);
 
         while (token != NULL) {
-            i = strlen(token) + 1;
-            token_len = i;
-            j = 0;
-            while (j < truncated_path_len) {
-                truncated_path[j++] = token[i++];
-            }
-            strcat(token, slash);
-            strcat(token, file);
+            strcpy(absolute_path, token);
+            strcat(absolute_path, slash);
+            strcat(absolute_path, file);
 
-            __asm__ (
-                "movq $59, %%rax;"
+            __asm__ volatile(
+                "movq $21, %%rax;"
                 "movq %1, %%rdi;"
                 "movq %2, %%rsi;"
                 "movq %3, %%rdx;"
-                "syscall;"
+                "int $0x80;"
                 "movq %%rax, %0;"
                 : "=r" (status)
-                : "r" (token), "r" (argv), "r" (envp)
+                : "r" (absolute_path), "r" (argv), "r" (envp)
                 : "%rax", "%rdi", "%rsi", "%rdx"
             );
-
-            j = 0;
-            i = token_len;
-            token[i-1] = '\0';
-            while (j < truncated_path_len) {
-                token[i++] = truncated_path[j++];
-            }
-
             token = strtok(NULL, ":");
         }
     }

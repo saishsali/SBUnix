@@ -19,9 +19,14 @@ _x86_64_asm_pic_remapping:
     outb  %al, $0xA1
 
     # Disable interrupts
+    # movb $0x0, %al
+    movb $0x1, %al
+    outb %al, $0x21
+    outb %al, $0xA1
+
+    # Masking interrupts
     movb $0x0, %al
     outb %al, $0x21
     outb %al, $0xA1
 
-    sti
     retq

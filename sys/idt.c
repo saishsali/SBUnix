@@ -3,6 +3,7 @@
 #define SIZE 256
 
 extern void isr0();
+extern void isr14();
 extern void isr32();
 extern void isr33();
 extern void isr128();
@@ -63,6 +64,8 @@ void init_idt() {
     for (i = 0; i < 32; i++)
         set_idt(i, (uint64_t)isr0, type_attr);
 
+    set_idt(14, (uint64_t)isr14, type_attr);
+
     // Timer Interrupt
     set_idt(0x20, (uint64_t)isr32, type_attr);
 
@@ -73,5 +76,5 @@ void init_idt() {
     type_attr = 0xEE;
 
     set_idt(0x80, (uint64_t)isr128, type_attr);
-  
+
 }

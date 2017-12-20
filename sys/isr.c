@@ -1,24 +1,27 @@
 #include <sys/timer.h>
 #include <sys/keyboard.h>
+#include <sys/kprintf.h>
+#include <sys/isr.h>
+#include <sys/page_fault.h>
 #include <sys/syscall.h>
-#include <sys/defs.h>
 
-// Handler for first 32 interrupts (offset 0 - 31)
-void interrupt_handler0() {}
-
-// Handler for timer interrupt (offset 32)
-void interrupt_handler32() {
-    timer_interrupt();
-}
-
-// Handler for keyboard interrupt (offset 33)
-void interrupt_handler33() {
-    keyboard_interrupt();
-}
-
-// Handler for syscall
-void interrupt_handler128() {
-	uint64_t syscall_no;
-	__asm__ __volatile__("movq %%rax, %0;" : "=r"(syscall_no));
-    syscall_handler(syscall_no);
+void interrupt_handler(stack_registers *registers) {
+    switch (registers->interrupt_number) {
+        case 0:
+            kprintf("Divide by zero exception\n");
+            sys_exit();
+            break;
+        case 14:
+            page_fault_exception(registers);
+            break;
+        case 32:
+            timer_interrupt();
+            break;
+        case 33:
+            keyboard_interrupt();
+            break;
+        case 128:
+            syscall_handler(registers);
+            break;
+    }
 }

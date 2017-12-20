@@ -1,11 +1,20 @@
 #include <sys/kprintf.h>
 #include <sys/io.h>
+#include <sys/keyboard.h>
+#include <sys/memcpy.h>
+
 #define ROW 24
 #define COLUMN 55
 #define CONTROL_SC 29
 #define LEFT_SHIFT_SC 0x2A
 #define RIGHT_SHIFT_SC 0x36
 #define SIZE 0x80
+
+char output_buf[1024];
+static volatile int scan_flag = 0;
+static volatile int scan_len = 0;
+static volatile int max_scan_len = 0;
+static volatile int prev = 0;
 
 // Scancode to ASCII mapping (src: https://gist.github.com/davazp/d2fde634503b2a5bc664)
 unsigned char scancode_ascii[SIZE] =
@@ -109,12 +118,15 @@ int control_key(int scancode) {
     return 0;
 }
 
+
 void keyboard_interrupt() {
     int scancode = inb(0x60);
     char ch1 = 0, ch2 = 0;
+    int flag = 0;
 
     // If a key is pressed
     if (scancode < SIZE) {
+
         if (shift_key(scancode)) { // If a shift key is pressed
             return;
         } else if (control_key(scancode)) { // If a control key is pressed
@@ -130,6 +142,65 @@ void keyboard_interrupt() {
             ch1 = scancode_ascii[scancode];
         }
 
+        output_buf[scan_len] = ch1;
+
+        if(scan_flag == 1) {
+
+            if(scancode == BACKSPACE) {
+                if(prev != BACKSPACE) {
+                    prev = BACKSPACE;
+                    kprintf_backspace();
+                }
+                if(scan_len > 0) {
+                    output_buf[scan_len] = '\0';
+                    kprintf_backspace();
+                    scan_len--;
+                }
+
+            } else {
+                if(prev == BACKSPACE) {
+                    video_mem_forward();
+                }
+                kprintf("%c", output_buf[scan_len]);
+                flag = 1;
+            }
+            if(scancode == ENTER) {
+                scan_flag = 0;
+
+                // mark the enter scancode as null
+                output_buf[scan_len] = '\0';
+                if(max_scan_len < scan_len + 1) {
+                    max_scan_len = scan_len + 1;
+                }
+            }
+        }
+
         kprintf_pos(ROW, COLUMN, "Last pressed glyph: %c%c", ch1, ch2);
+        prev = scancode;
+        if(flag) {
+            scan_len++;
+        }
     }
+}
+
+int scanf(void *buff, int len) {
+    scan_flag = 1;
+    __asm__ __volatile__("sti;");
+
+    while (scan_flag == 1);
+
+    if (len <  scan_len)
+        scan_len = len;
+
+    memcpy((void *)buff, (void *)output_buf, scan_len);
+
+    int temp = max_scan_len;
+    while(temp >= 0) {
+        output_buf[temp--] = '\0';
+    }
+
+    temp = scan_len;
+    scan_len = 0;
+    __asm__ __volatile__("cli;");
+    return temp;
 }

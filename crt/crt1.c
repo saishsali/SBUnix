@@ -10,7 +10,7 @@ void _start(void) {
         "call main;"
 
         "movq %rax, %rdi;"
-        "movq $60, %rax;"
-        "syscall;"
+        "movq $13, %rax;"
+        "int $0x80;"
     );
 }
