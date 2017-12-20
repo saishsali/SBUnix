@@ -1,4 +1,23 @@
-https://compas.cs.stonybrook.edu/courses/cse506-operating-systems-fall-17/cse506-project-hints/
+## SBUnix : CSE 506 Project
+
+Professor: [Mike Ferdman](http://compas.cs.stonybrook.edu/~mferdman/)
+
+Course webpage: [Operating systems](https://compas.cs.stonybrook.edu/courses/cse506-operating-systems-fall-17/)
+
+### Project Description
+
+x86_64 Preemptive multitasking operating system with following functionalities:
+
+Markup :  * Memory Subsystem (page descriptors, free list, page tables, kmalloc)
+          * Process Subsystem (kernel threads, context switch)
+          * User-level Subsystem (VMAs/vm_map_entrys, switch to ring 3, page faults)
+          * I/O subsystem (syscalls, terminals, VFS, tarfs file access)
+          * A Shell
+            * Support changing current directory (cd /path)
+            * Execute binaries interactively
+            * Execute scripts (files that start with #!sbush)
+            * Set and use PATH and PS1 variables
+            * Launch background processes (ls &)
 
 * The provided Makefile:
   1) builds a kernel
