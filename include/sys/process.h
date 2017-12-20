@@ -6,13 +6,11 @@
 #define MAX_PROCESS 1000
 
 #define STACK_START 0xF0000000
-#define STACK_LIMIT 0x5000      // 5 * 4096 bytes
+#define STACK_LIMIT 0x10000      // 64 KB (16 Pages each of 4096 bytes)
 
-#define STACK_SIZE  0x800       // 2048 bytes
+#define STACK_SIZE  0x800       // Kernel stack size 2048 bytes
 
-#define MAX_FD 10
-
-#define ROOT "/rootfs/"
+#define MAX_FD 100
 
 typedef struct vm_area_struct vma_struct;
 typedef struct mm_struct mm_struct;
@@ -72,7 +70,7 @@ struct PCB {
 
 typedef struct PCB task_struct;
 
-task_struct *process_list_head, *process_list_tail, *idle_process;
+task_struct *process_list_head, *process_list_tail;
 
 int process_ids[MAX_PROCESS];
 
@@ -103,5 +101,7 @@ void remove_pcb(uint16_t pid);
 void add_child_to_parent(task_struct* child_task, task_struct* parent_task);
 
 void update_siblings(task_struct *old_task, task_struct *new_task);
+
+void check_if_parent_waiting(task_struct *child);
 
 #endif

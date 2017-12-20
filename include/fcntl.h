@@ -2,6 +2,8 @@
 #define _FCNTL_H
 #include <sys/defs.h>
 
-int open(const char *pathname, int flags);
+#define O_RDONLY 0
+#define O_WRONLY 1
+
 
 #endif

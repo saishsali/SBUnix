@@ -54,7 +54,7 @@ void set_current_task(task_struct *pcb) {
 
 /* Free memory allocated for PCB */
 void remove_pcb(uint16_t pid) {
-    task_struct *pcb = process_list_head, *previous = NULL;
+    task_struct *pcb = process_list_head, *previous = NULL, *temp;
     while (pcb != NULL) {
         if (pcb->pid == pid) {
             if (pcb->next == NULL) {
@@ -64,19 +64,26 @@ void remove_pcb(uint16_t pid) {
             } else {
                 previous->next = pcb->next;
             }
-            free_kernel_memory(pcb);
-            return;
+            temp = pcb;
+            pcb = pcb->next;
+            process_ids[temp->pid] = 0;
+            free_kernel_memory(temp);
+        } else {
+            previous = pcb;
+            pcb = pcb->next;
         }
-        previous = pcb;
-        pcb = pcb->next;
     }
 }
 
 /* Pick the first task from the list and put suspended task at the end of the list */
 task_struct *strawman_scheduler() {
-    task_struct *process = process_list_head, *tail;
+    task_struct *process = process_list_head, *tail, *temp = process_list_head;
 
-    while (process->state != READY && process->next != NULL) {
+    if (process->next == NULL) {
+        return process;
+    }
+
+    while (process->state != READY) {
         tail = process;
         process = process->next;
 
@@ -84,6 +91,10 @@ task_struct *strawman_scheduler() {
         tail->next = NULL;
         process_list_tail = tail;
         process_list_head = process;
+
+        if (process == temp) {
+            return temp;
+        }
     }
 
     return process;
@@ -94,12 +105,12 @@ void schedule() {
     task_struct *running_pcb = current;
 
     task_struct *next   = strawman_scheduler();
-    next->state         = RUNNING;
-    current             = next;
 
     if (running_pcb->state == RUNNING) {
         running_pcb->state = READY;
     }
+    next->state         = RUNNING;
+    current             = next;
 
     set_cr3(next->cr3);
     set_tss_rsp((void *)((uint64_t)next->kstack + 0x800 - 0x08));
@@ -188,7 +199,6 @@ task_struct *create_new_task() {
     pcb->siblings = NULL;
     pcb->u_rsp = 0;
     memset(pcb->kstack, 0, STACK_SIZE);
-    memset(pcb->file_descriptor, 0, MAX_FD * sizeof(file_descriptor));
     pcb->pid = get_process_id();
     pcb->state = READY;
     pcb->cr3 = (uint64_t)set_user_address_space();
@@ -197,28 +207,23 @@ task_struct *create_new_task() {
     return pcb;
 }
 
-int count_pcb() {
-    task_struct *pcb = process_list_head;
-    int count = 0;
-    while(pcb != NULL) {
-        if(pcb->state == RUNNING || pcb->state == READY || pcb->state == WAITING)
-            count++;
-        pcb = pcb->next;
-    }
-    return count;
-}
-
-/*
-    - An idle function to schedule tasks in the list
-    - Executed when there are no processes in the list
-*/
+/* An idle function to schedule tasks in the list */
 void idle() {
     while (1) {
-        if(count_pcb() == 1) {
+        schedule();
+        __asm__ __volatile__("sti;");
+        __asm__ __volatile__("hlt;");
+        __asm__ __volatile__("cli;");
+    }
+}
+
+/* An init function that is the root node of the process tree */
+void init() {
+    int status;
+    while (1) {
+        if (sys_wait(&status) == -1) {
             sys_shutdown();
         }
-        schedule();
-        // __asm__ __volatile__("hlt");
     }
 }
 
@@ -232,7 +237,6 @@ void create_idle_process() {
     /* Stack entries from 498 to 510 are reserved for 13 registers pushed/poped in context_switch.s */
     *((uint64_t *)&pcb->kstack[STACK_SIZE - 8 * 15]) = (uint64_t)pcb;    // Push PCB
     pcb->rsp = (uint64_t)&pcb->kstack[STACK_SIZE - 8 * 15];
-    idle_process = pcb;
     add_process(pcb);
 }
 
@@ -358,6 +362,21 @@ void switch_to_user_mode(task_struct *pcb) {
     _switch_to_ring_3(pcb->entry, pcb->u_rsp);
 }
 
+/*
+    check if the parent task is in waiting state. Mark that parent task as ready after validating
+    that it was waiting on the child_task
+*/
+void check_if_parent_waiting(task_struct *child) {
+    task_struct *parent_task = child->parent;
+    if (parent_task->state == WAITING) {
+        if (!parent_task->wait_on_child_pid || parent_task->wait_on_child_pid == child->pid) {
+            parent_task->wait_on_child_pid = child->pid;
+            // since the parent was waiting for this task to finish. After it gets finished state should be READY
+            parent_task->state = READY;
+        }
+    }
+}
+
 void remove_child_from_parent(task_struct *child_task) {
     task_struct *parent_task = child_task->parent;
     task_struct *children = NULL, *prev_child = NULL;
@@ -391,32 +410,25 @@ void remove_child_from_parent(task_struct *child_task) {
         // remove child from its sibling list
         prev_child->siblings = child_task->siblings;
     }
-
-    /*
-        check if the parent task is in waiting state. Mark that parent task as ready after validating
-        that it was waiting on the child_task
-    */
-    if (parent_task->state == WAITING) {
-        if (!parent_task->wait_on_child_pid || parent_task->wait_on_child_pid == child_task->pid) {
-            parent_task->wait_on_child_pid = child_task->pid;
-            // since the parent was waiting for this task to finish. After it gets finished state should be READY
-            parent_task->state = READY;
-        }
-    }
-    child_task->parent = NULL;
-
 }
 
 void remove_parent_from_child(task_struct *parent_task) {
     task_struct *current = parent_task->child_head;
+    task_struct *init_process = process_list_head;
+    while (init_process != NULL) {
+        if (init_process->pid == 1) {
+            break;
+        }
+        init_process = init_process->next;
+    }
 
     while (current->siblings) {
-        current->parent = idle_process;
+        current->parent = init_process;
         current = current->siblings;
     }
-    current->parent = idle_process;
-    current->siblings = idle_process->child_head;
-    idle_process->child_head = parent_task->child_head;
+    current->parent = init_process;
+    current->siblings = init_process->child_head;
+    init_process->child_head = parent_task->child_head;
 }
 
 /*
@@ -492,7 +504,7 @@ void setup_child_task_stack(task_struct *parent_task, task_struct *child_task) {
     *((uint64_t *)&child_task->kstack[STACK_SIZE - 8 * 22]) = *((uint64_t *)&parent_task->kstack[STACK_SIZE - 8 * 24]);
 
     // Return to ISR popping logic
-    *((uint64_t *)&child_task->kstack[STACK_SIZE - 8 * 23]) = (uint64_t)isr_common_stub + 32;
+    *((uint64_t *)&child_task->kstack[STACK_SIZE - 8 * 23]) = (uint64_t)isr_common_stub + 35;
 
     // Leave 13 entries from 18 to 30 to accomodate for pops in context_switch.s
 

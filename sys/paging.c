@@ -177,7 +177,7 @@ void map_kernel_memory(uint64_t physbase, uint64_t physfree) {
 
     while (physical_address < physfree) {
         uint64_t pt_index = PT_INDEX(virtual_address);
-        pt->entries[pt_index] = physical_address | RW_FLAG;
+        pt->entries[pt_index] = physical_address | PTE_P | PTE_W;
         physical_address += PAGE_SIZE;
         virtual_address += PAGE_SIZE;
     }
@@ -189,12 +189,12 @@ void map_available_memory(uint64_t last_physical_address) {
     uint64_t virtual_address = KERNBASE;
 
     while (physical_address < last_physical_address) {
-        map_page(virtual_address, physical_address, RW_FLAG);
+        map_page(virtual_address, physical_address, PTE_P | PTE_W);
         virtual_address += PAGE_SIZE;
         physical_address += PAGE_SIZE;
     }
     /* map the video memory physical address to the virtual address */
-    map_page((uint64_t)(KERNBASE + VIDEO_MEMORY), VIDEO_MEMORY, RW_FLAG);
+    map_page((uint64_t)(KERNBASE + VIDEO_MEMORY), VIDEO_MEMORY, PTE_P | PTE_W);
 }
 
 /* Setup page tables and load cr3 */

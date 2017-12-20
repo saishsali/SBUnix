@@ -43,7 +43,7 @@ char buf[1024];
 getcwd(buf, 1024);
 puts(buf);
 
-chdir("/../../../rootfs/bin/../etc/../rootfs/etc");
+chdir("/../../../rootfs/bin/../etc/../etc");
 
 getcwd(buf, 1024);
 puts(buf);

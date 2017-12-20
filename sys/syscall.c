@@ -69,12 +69,13 @@ void remove_slash_from_start(char *path) {
     strcpy(path, copy_path);
 }
 
-DIR* sys_opendir(char *path) {
+DIR* sys_opendir(char *dir_path) {
     file_node *node;
     char *name;
     int i = 0, flag = 0, c = 0, len;
     DIR* ret_dir;
-    char directory_path[100];
+    char directory_path[100], path[100];
+    strcpy(path, dir_path);
     strcpy(directory_path, path);
 
     node = root_node;
@@ -94,15 +95,21 @@ DIR* sys_opendir(char *path) {
                 break;
             }
         }
-        temp[c-1] = '\0';
+        if (i == len) {
+            temp[c] = '\0';
+        } else {
+            temp[c-1] = '\0';
+        }
 
         if(strcmp(current->current_dir, "/") == 0) {
-            if(strcmp(temp, "rootfs") != 0) {
+            if(strcmp(temp, "rootfs") != 0 && strcmp(temp, ".") != 0 && strcmp(temp, "..") != 0) {
                 return (DIR *)NULL;
+            } else {
+                flag = 1;
             }
         }
 
-        if(strcmp(temp, "rootfs") == 0) {
+        if(strcmp(temp, "rootfs") == 0 || flag) {
 
             // It is a absolute path
             name = strtok(directory_path, "/");
@@ -132,7 +139,6 @@ DIR* sys_opendir(char *path) {
 
         } else {
             // It is a relative path
-
             strcpy(directory_path, current->current_dir);
 
             if (path[0] == '/')
@@ -184,7 +190,7 @@ int sys_getcwd(char *buf, size_t size) {
 
 dentry* sys_readdir(DIR* dir) {
     if (dir->cursor > 1 && dir->node->last > 2 && dir->cursor < dir->node->last) {
-        strcpy(dir->dentry->name, dir->node->child[dir->cursor]->name);
+        strcpy(dir->dentry->d_name, dir->node->child[dir->cursor]->name);
         dir->cursor++;
         return dir->dentry;
     }
@@ -211,13 +217,14 @@ void add_slash_at_end_and_back(char s[100]) {
     strcpy(s, new_path);
 }
 
-int sys_chdir(char *path) {
-
+int sys_chdir(char *dir_path) {
     char curr[100];
     strcpy(curr, current->current_dir);
-    char directory_path[100];
+    char directory_path[100], path[100];
+    char temp[100];
+    strcpy(path, dir_path);
     strcpy(directory_path, path);
-    int i = 0, c = 0;
+    int i = 0, c = 0, len = 0;
 
     if (strcmp(path, "/") == 0) {
         strcpy(current->current_dir, "/");
@@ -233,18 +240,56 @@ int sys_chdir(char *path) {
     }
 
     DIR* current_dir = sys_opendir(path);
+
+
     if (current_dir == NULL) {
-        kprintf("\n%s: It is not a directory", path);
         return -1;
     }
 
-    add_slash_at_end(path);
-    char temp[100];
+    if(path[0] == '/') {
 
+        if (path[0] == '/') {
+            i = 1;
+        } else {
+            i = 0;
+        }
+
+        c = 0;
+        len = strlen(path);
+        for (; i < len; i++) {
+            temp[c] = path[i];
+            c++;
+            if (path[i] == '/') {
+                break;
+            }
+        }
+        if (i == len) {
+            temp[c] = '\0';
+        } else {
+            temp[c-1] = '\0';
+        }
+
+        if (strcmp(temp, "rootfs") != 0) {
+            return -1;
+        }
+
+        // absolute path
+        len = strlen(path) - 1;
+        if(path[len] != '/') {
+            strcat(path, "/");
+        }
+        strcpy(current->current_dir, path);
+        return 0;
+    }
+
+    add_slash_at_end(path);
+
+    c = 0;
+    i = 0;
     if (path[0] == '/') {
         i = 1;
     }
-    int len = strlen(path);
+    len = strlen(path);
     for (; i < len; i++) {
         temp[c] = path[i];
         c++;
@@ -252,7 +297,11 @@ int sys_chdir(char *path) {
             break;
         }
     }
-    temp[c-1] = '\0';
+    if (i == len) {
+        temp[c] = '\0';
+    } else {
+        temp[c-1] = '\0';
+    }
 
     strcpy(directory_path, current->current_dir);
 
@@ -266,7 +315,6 @@ int sys_chdir(char *path) {
     DIR *new_directory = sys_opendir(directory_path);
 
     if (new_directory == NULL) {
-        kprintf("\n%s: It is not a directory", path);
         return -1;
     }
 
@@ -471,10 +519,10 @@ int remove_file_name_from_path(char *directory_path, char *file_name) {
 }
 
 /* Sys open to open files: http://pubs.opengroup.org/onlinepubs/009695399/functions/open.html */
-int8_t sys_open(char *path, uint8_t flags) {
-    char directory_path[100];
-    char file_name[20];
+int8_t sys_open(char *file_path, uint8_t flags) {
+    char directory_path[100], file_name[30], path[100], temp[100];
     int i = 0, c = 0, flag = 0, index = 0;
+    strcpy(path, file_path);
     if (path == NULL) {
         return -1;
     }
@@ -489,7 +537,7 @@ int8_t sys_open(char *path, uint8_t flags) {
     //Check if path is a directory
     DIR *current_dir = sys_opendir(path);
     if(current_dir != NULL) {
-        kprintf("\n%s: Is a directory \n", path);
+        return -1;
     }
 
 
@@ -500,13 +548,11 @@ int8_t sys_open(char *path, uint8_t flags) {
         current_dir = sys_opendir(directory_path);
 
         if(current_dir == NULL) {
-            kprintf("\n%s: It is not a valid path", path);
             return -1;
         }
     }
 
     add_slash_at_end(path);
-    char temp[100];
 
     if(path[0] == '/') {
         i = 1;
@@ -519,7 +565,11 @@ int8_t sys_open(char *path, uint8_t flags) {
             break;
         }
     }
-    temp[c-1] = '\0';
+    if (i == len) {
+        temp[c] = '\0';
+    } else {
+        temp[c-1] = '\0';
+    }
 
     if (strcmp(temp, "rootfs") == 0){
         strcpy(directory_path, path);
@@ -546,7 +596,6 @@ int8_t sys_open(char *path, uint8_t flags) {
         DIR *new_directory = sys_opendir(directory_path);
 
         if (new_directory == NULL) {
-            kprintf("\n%s: It is not a valid path", path);
             return -1;
         }
 
@@ -664,9 +713,6 @@ int8_t sys_execvpe(char *file, char *argv[], char *envp[]) {
     // empty page tables
     remove_page_tables(current->cr3);
 
-    // empty file descriptor
-    memset((void*)current->file_descriptor, 0, MAX_FD * 8);
-
     switch_to_user_mode(task);
 
     return -1;
@@ -674,8 +720,7 @@ int8_t sys_execvpe(char *file, char *argv[], char *envp[]) {
 
 void cleanup(task_struct *current) {
     if (current->parent) {
-        // remove child from its parent and also adjust the siblings list
-        remove_child_from_parent(current);
+        check_if_parent_waiting(current);
     }
 
     // check if children exists for this parent
@@ -690,25 +735,24 @@ void cleanup(task_struct *current) {
     // empty page tables
     remove_page_tables(current->cr3);
 
-    // empty file descriptor
-    memset((void*)current->file_descriptor, 0, MAX_FD * 8);
     current->state = ZOMBIE;
-
-    // remove current task from schedule list
-    // remove_task_from_process_schedule_list(current);
-
 }
 
-void sys_exit() {
+void sys_exit(int status) {
     cleanup(current);
+    current->exit_status = status;
     sys_yield();
 }
 
 int sys_kill(pid_t pid) {
     task_struct * pcb = process_list_head;
-    while(pcb != NULL) {
-        if(pcb->pid == pid && pcb->state != ZOMBIE) {
+    while (pcb != NULL) {
+        if (pcb->pid == pid && pcb->state != ZOMBIE) {
             cleanup(pcb);
+            /* If the process kills itself, switch to some other process */
+            if (current == pcb) {
+                sys_yield();
+            }
             break;
         }
         pcb = pcb->next;
@@ -716,8 +760,26 @@ int sys_kill(pid_t pid) {
     return 0;
 }
 
-int sys_waitpid(int pid, int *status, int options) {
-    // check if the parent has any child
+int sys_waitpid(int pid, int *status) {
+    task_struct *child = current->child_head, *temp;
+
+    /* check if the parent has any child */
+    if (child == NULL || pid == 1 || pid == 2) {
+        return -1;
+    }
+
+    /* Check if there are ZOMBIE childs and free memory */
+    while (child != NULL) {
+        if (child->state == ZOMBIE) {
+            remove_child_from_parent(child);
+            temp = child;
+            child = child->siblings;
+            remove_pcb(temp->pid);
+        } else {
+            child = child->siblings;
+        }
+    }
+
     if (current->child_head == NULL) {
         return -1;
     }
@@ -732,13 +794,43 @@ int sys_waitpid(int pid, int *status, int options) {
 
     sys_yield();
 
-    remove_pcb(current->wait_on_child_pid);
+    /* Unlink child from parent and free pcb of the child */
+    child = current->child_head;
+    while (child != NULL) {
+        if (child->pid == current->wait_on_child_pid) {
+            if (status) {
+                *status = child->exit_status;
+            }
+            remove_child_from_parent(child);
+            remove_pcb(current->wait_on_child_pid);
+            break;
+        }
+        child = child->siblings;
+    }
 
     return current->wait_on_child_pid;
 }
 
 int sys_wait(int *status) {
-    // check if the parent has any child
+    task_struct *child = current->child_head, *temp;
+
+    /* check if the parent has any child */
+    if (child == NULL) {
+        return -1;
+    }
+
+    /* Check if there are ZOMBIE childs and free memory */
+    while (child != NULL) {
+        if (child->state == ZOMBIE) {
+            remove_child_from_parent(child);
+            temp = child;
+            child = child->siblings;
+            remove_pcb(temp->pid);
+        } else {
+            child = child->siblings;
+        }
+    }
+
     if (current->child_head == NULL) {
         return -1;
     }
@@ -748,7 +840,20 @@ int sys_wait(int *status) {
 
     sys_yield();
 
-    remove_pcb(current->wait_on_child_pid);
+    child = current->child_head;
+
+    /* Unlink child from parent and free pcb of the child */
+    while (child != NULL) {
+        if (child->pid == current->wait_on_child_pid) {
+            if (status) {
+                *status = child->exit_status;
+            }
+            remove_child_from_parent(child);
+            remove_pcb(current->wait_on_child_pid);
+            break;
+        }
+        child = child->siblings;
+    }
 
     return current->wait_on_child_pid;
 }
@@ -764,19 +869,18 @@ void sys_ps() {
     };
 
     int i = 0;
-    kprintf("\n ----| ----- |--------- | --------------- "
-            "\n  #  |  PID  | State    |  Process Name "
-            "\n ----| ----- |--------- | --------------- ");
+    kprintf("\n | ----- |--------- | --------------- "
+            "\n |  PID  | State    |  Process Name "
+            "\n | ----- |--------- | --------------- ");
 
 
     while (pcb != NULL) {
         if (pcb->state != 0) {
-            kprintf("\n  %d  |   %d   |  %s  |  %s  ", i, pcb->pid, process_states[pcb->state], pcb->name);
+            kprintf("\n |  %d    |  %s  |  %s  ", pcb->pid, process_states[pcb->state], pcb->name);
             i++;
         }
         pcb = pcb->next;
     }
-    kprintf("\n");
 }
 
 void sys_shutdown() {
@@ -790,10 +894,9 @@ void sys_shutdown() {
         remove_pcb(temp->pid);
     }
 
-    clear_screen();
-    kprintf("\n*****************************************************************************");
-    kprintf("\n********************* SBUnix is now shutting down ***************************");
-    kprintf("\n*****************************************************************************");
+    kprintf("\n********************************************************************************");
+    kprintf("\n************************ SBUNIX IS SHUTTING DOWN *******************************");
+    kprintf("\n********************************************************************************");
     while (1);
 }
 
@@ -854,17 +957,11 @@ void syscall_handler(stack_registers * registers) {
         case 12:
             registers->rax = (uint64_t)sys_fork();
             break;
-        case 59:
-            registers->rax = sys_execvpe((char *)registers->rdi, (char **)registers->rsi, (char **)registers->rdx);
-            break;
         case 13:
             sys_exit(registers->rdi);
             break;
         case 14:
-            registers->rax = sys_waitpid(registers->rdi, (int *)registers->rsi, registers->rdx);
-            break;
-        case 61:
-            registers->rax = sys_wait((int *)registers->rdi);
+            registers->rax = sys_waitpid(registers->rdi, (int *)registers->rsi);
             break;
         case 15:
             sys_ps();
@@ -883,6 +980,12 @@ void syscall_handler(stack_registers * registers) {
             break;
         case 20:
             registers->rax = sys_getppid();
+            break;
+        case 21:
+            registers->rax = sys_execvpe((char *)registers->rdi, (char **)registers->rsi, (char **)registers->rdx);
+            break;
+        case 22:
+            registers->rax = sys_wait((int *)registers->rdi);
             break;
     }
 }

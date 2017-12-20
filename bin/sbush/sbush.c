@@ -3,17 +3,96 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <sys/wait.h>
-#include <fcntl.h>
-#include <sys/dirent.h>
-#include <sys/mman.h>
-#include <sys/paging.h>
-#include <sys/process.h>
 #define BUFSIZE 512
 
 char **env;
 char *ps1;
 int num_env = 16;
+
+char *getenv(const char *name) {
+    int key_length = strlen(name);
+    char initial_envp[BUFSIZE], *result = NULL;
+    int i, j;
+
+    if (name == NULL || env == NULL)
+        return NULL;
+
+    for (i = 0; env[i] != NULL; i++) {
+        j = 0;
+        while (j < key_length) {
+            initial_envp[j] = env[i][j];
+            j++;
+        }
+        initial_envp[key_length] = '\0';
+        if (strcmp(name, initial_envp) == 0) {
+            for (j = 0; env[i][j] != '\0'; j++) {
+                if(env[i][j] == '=') {
+                    result = env[i] + j + 1;
+                }
+            }
+            break;
+        }
+    }
+    return result;
+
+}
+
+void update_envp(const char *name, const char *value) {
+    int i, j, key_length = strlen(name);
+    char initial_envp[BUFSIZE];
+    long int k;
+
+    for (i = 0; env[i] != NULL; i++) {
+        j = 0;
+        while (j < key_length) {
+            initial_envp[j] = env[i][j];
+            j++;
+        }
+        initial_envp[key_length] = '\0';
+
+        if (strcmp(name, initial_envp) == 0) {
+            for (j = 0; env[i][j] != '\0'; j++) {
+                if (env[i][j] == '=') {
+                    j++;
+                    for (k = j; env[i][k] != '\0'; k++) {
+                        env[i][k] = '\0';
+                    }
+                    for(k = 0; k < strlen(value); k++) {
+                        env[i][j+k] = value[k];
+                    }
+                    env[i][j+k] = '\0';
+                    break;
+                }
+            }
+        }
+    }
+}
+
+void set_envp(const char *name, const char *value) {
+    int i = 0;
+    char equal[2] = "=", new_env[BUFSIZE];
+
+    strcpy(new_env, name);
+    strcat(new_env, equal);
+    strcat(new_env, value);
+
+    for (i = 0; env[i] != NULL; i++);
+    if (i < num_env) {
+        env[i] = (char *)malloc(256 * sizeof(char));
+        strcpy(env[i], new_env);
+        env[i + 1] = NULL;
+    }
+}
+
+void setenv(const char *name, const char *value, int overwrite) {
+    if (strlen(getenv(name)) > 0) {
+        if (overwrite == 1) {
+            update_envp(name, value);
+        }
+    } else {
+        set_envp(name, value);
+    }
+}
 
 // Removes leading and trailing quotes from a string
 char *trim_quotes(char *str) {
@@ -87,7 +166,7 @@ int change_directory(char **tokens) {
         strcpy(path, tokens[1]);
     }
     if (chdir(path) != 0) {
-        puts("\nError changing directory");
+        printf("Error changing directory");
     }
     return 1;
 }
@@ -132,23 +211,30 @@ void parse(char *command, int *is_bg, char *tokens[]) {
 
 }
 
-// Check if pipe exists in a command
-int check_pipes(char **tokens) {
-    int i = 0;
-
-    while (tokens[i] != NULL) {
-        if (strcmp(tokens[i++], "|") == 0)
-            return 1;
-    }
-
-    return -1;
-}
-
 void print_path_variables() {
     int i;
     for (i = 0; env[i] != NULL; i++) {
-        puts(env[i]);
+        printf(env[i]);
+        printf("\n");
     }
+}
+
+int read_file(char *filename) {
+    int fd;
+    char c;
+    ssize_t n;
+
+    fd = open(filename, O_RDONLY);
+    if (fd < 0) {
+        return -1;
+    }
+    while ((n = read(fd, &c, 1) != 0)) {
+        putchar(c);
+    }
+
+    close(fd);
+
+    return 1;
 }
 
 // Check for builtin commands
@@ -157,7 +243,6 @@ int builtin_command(char **tokens) {
         if (tokens[1] == NULL) {
             print_path_variables();
             return 1;
-        } else {
         }
         return set_environment_variable(tokens[1]);
     } else if (strcmp(tokens[0], "cd") == 0) {
@@ -166,84 +251,14 @@ int builtin_command(char **tokens) {
         exit(0);
     } else if (strcmp(tokens[0], "shutdown") == 0) {
         shutdown();
+    } else if (strcmp(tokens[0], "ulimits") == 0) {
+        return read_file("/rootfs/etc/ulimits");
+    } else if (strcmp(tokens[0], "help") == 0) {
+        return read_file("/rootfs/etc/help");
     }
 
     return -1;
 }
-
-// Launch pipes
-void execute_pipes(char **tokens) {
-    int num_of_cmnds = 0, i = 0, j = 0, iterate = 0, pipe1[2], pipe2[2];
-    pid_t pid;
-    char *command[BUFSIZE];
-
-    while (tokens[i] != NULL) {
-        if(strcmp(tokens[i++], "|") == 0)
-            num_of_cmnds++;
-    }
-
-    num_of_cmnds++;
-    i = 0;
-    while (tokens[i] != NULL) {
-        j = 0;
-        while(tokens[i] != NULL && strcmp(tokens[i], "|") != 0) {
-            command[j++] = tokens[i++];
-        }
-        command[j] = NULL;
-
-        // pipe1 or pipe2 depends on which pipe was active previously
-        if (iterate & 1) {
-            if (pipe(pipe1) == -1)
-                puts("Pipe failed");
-        } else {
-            if (pipe(pipe2) == -1)
-                puts("Pipe failed");
-        }
-
-        //pipe1 is for even command and pipe2 is for odd command
-        pid = fork();
-
-        if(pid == 0) {
-            if(iterate == 0) {
-                dup2(pipe2[1], 1);
-            } else {
-                if (iterate & 1) { //odd
-                    dup2(pipe2[0], 0);
-                    if (iterate != num_of_cmnds - 1)
-                        dup2(pipe1[1], 1);
-                } else {
-                    dup2(pipe1[0], 0);
-                    if (iterate != num_of_cmnds - 1)
-                        dup2(pipe2[1], 1);
-                }
-            }
-            if (execvpe(command[0], command, env) == -1) {
-                puts("-sbush: command not found\n");
-            }
-        } else {
-            if (iterate == 0){
-                close(pipe2[1]);
-            } else {
-                if (iterate & 1) {
-                    close(pipe2[0]);
-                    if (iterate != num_of_cmnds - 1)
-                        close(pipe1[1]);
-                } else {
-                    close(pipe1[0]);
-                    if (iterate != num_of_cmnds - 1)
-                        close(pipe2[1]);
-                }
-            }
-            waitpid(pid, NULL, 0);
-        }
-
-        if (tokens[i] == NULL)
-            break;
-        i++;
-        iterate++;
-    }
-}
-
 
 // Execute command
 int execute(char **tokens, int is_bg) {
@@ -256,23 +271,17 @@ int execute(char **tokens, int is_bg) {
     if ((builtin = builtin_command(tokens)) != -1)
         return builtin;
 
-    if (check_pipes(tokens) == 1) {
-        execute_pipes(tokens);
+    pid = fork();
+    if (pid == 0) {
+        if (execvpe(tokens[0], tokens, env) < 0) {
+            printf("-sbush: command not found");
+            exit(1);
+        }
+     } else if (pid < 0) {
+        printf("Fork error");
     } else {
-        pid = fork();
-        if (pid == 0) {
-            if (execvpe(tokens[0], tokens, env) < 0) {
-                puts("-sbush: command not found");
-                exit(1);
-            }
-         } else if (pid < 0) {
-            puts("Fork error");
-        } else {
-            if (is_bg == 0) {
-                waitpid(pid, NULL, 0);
-            } else {
-                yield();
-            }
+        if (is_bg == 0) {
+            waitpid(pid, NULL);
         }
     }
 
@@ -302,12 +311,27 @@ void execute_script(int fd) {
     char c, command[BUFSIZE], *tokens[BUFSIZE];
 
     while ((n = read(fd, &c, 1) != 0)) {
+        if (c == '\n') {
+            break;
+        }
+        command[i++] = c;
+    }
+    command[i] = '\0';
+
+    if (strcmp(command, "#!sbush") != 0 && strcmp(command, "#!/rootfs/bin/sbush") != 0) {
+        printf("-sbush: %s: no such file or directory", command);
+        return;
+    }
+
+    i = 0;
+    while ((n = read(fd, &c, 1) != 0)) {
         if (c == '#') {
             comment = 1;
         } else if (c == '\n') {
             if (comment == 1)
                 comment = 0;
             else if (i != 0) {
+                printf("%c", c);
                 command[i] = '\0';
                 i = 0;
                 parse(command, &is_bg, tokens);
@@ -317,13 +341,19 @@ void execute_script(int fd) {
             command[i++] = c;
         }
     }
+
+    if(c != '\n') {
+        printf("\n");
+        command[i] = '\0';
+        parse(command, &is_bg, tokens);
+        execute(tokens, is_bg);
+    }
 }
 
 // Lifetime of a command
 void lifetime(int argc, char* argv[]) {
     char command[BUFSIZE], *tokens[BUFSIZE];
     int flag = 0, fd, is_bg = 0;
-    ssize_t n;
 
     setenv("PS1", "sbush> ", 1);
     ps1 = getenv("PS1");
@@ -334,11 +364,7 @@ void lifetime(int argc, char* argv[]) {
         close_script(fd);
     } else {
         do {
-            n = write(1, ps1, strlen(ps1));
-            if (n == -1) {
-                puts("Command failed");
-            }
-
+            printf("\n%s", ps1);
             get_command(command, sizeof(command));
             parse(command, &is_bg, tokens);
             flag = execute(tokens, is_bg);

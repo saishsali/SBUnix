@@ -57,18 +57,6 @@ uint64_t read_program_header(task_struct *pcb, Elf64_Ehdr *elf_header, Elf64_Phd
     virtual_address = program_header->p_vaddr;
 
     set_cr3(pcb->cr3);
-    // while (virtual_address < (program_header->p_vaddr + program_header->p_memsz)) {
-    //     kmalloc_map(PAGE_SIZE, virtual_address, vm_type == TEXT ? RX_FLAG : RW_FLAG);
-
-    //     page_offset = 0;
-    //     while (page_offset < PAGE_SIZE && copy_offset <= program_header->p_filesz) {
-    //         *((char *)virtual_address + page_offset) = *((char *)elf_header + program_header->p_offset + copy_offset);
-    //         page_offset++;
-    //         copy_offset++;
-    //     }
-    //     virtual_address += PAGE_SIZE;
-    // }
-
 
     /* Alternative to above code: */
     kmalloc_map(program_header->p_memsz, virtual_address, vm_type == TEXT ? RX_FLAG : RW_FLAG);
@@ -77,7 +65,7 @@ uint64_t read_program_header(task_struct *pcb, Elf64_Ehdr *elf_header, Elf64_Phd
 
     set_cr3(current_cr3);
 
-    return virtual_address;
+    return program_header->p_vaddr + program_header->p_memsz;
 }
 
 void load_executable(task_struct *pcb, Elf64_Ehdr *elf_header) {
@@ -98,7 +86,7 @@ void load_executable(task_struct *pcb, Elf64_Ehdr *elf_header) {
     }
 
     // Create VMA for HEAP
-    add_vma(pcb, max_address, PAGE_SIZE, PROT_READ | PROT_WRITE, HEAP);
+    add_vma(pcb, ROUND_UP(max_address, PAGE_SIZE), PAGE_SIZE, PROT_READ | PROT_WRITE, HEAP);
 
     // Create VMA for STACK
     add_vma(pcb, STACK_START - STACK_LIMIT, STACK_LIMIT, PROT_READ | PROT_WRITE, STACK);

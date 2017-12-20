@@ -1,8 +1,36 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#define BUFSIZE 512
 
 char **env;
+
+char *getenv(const char *name) {
+    int key_length = strlen(name);
+    char initial_envp[BUFSIZE], *result = NULL;
+    int i, j;
+
+    if (name == NULL || env == NULL)
+        return NULL;
+
+    for (i = 0; env[i] != NULL; i++) {
+        j = 0;
+        while (j < key_length) {
+            initial_envp[j] = env[i][j];
+            j++;
+        }
+        initial_envp[key_length] = '\0';
+        if (strcmp(name, initial_envp) == 0) {
+            for (j = 0; env[i][j] != '\0'; j++) {
+                if(env[i][j] == '=') {
+                    result = env[i] + j + 1;
+                }
+            }
+            break;
+        }
+    }
+    return result;
+}
 
 void sanitize(char name[256]) {
     char new_name[256];
@@ -23,14 +51,13 @@ int get_environment_variable(char *name) {
         name++;
         value = getenv(name);
 
-        if(value)
-            puts(value);
-        else
-            putchar('\n');
+        if (value) {
+            printf("%s", value);
+        }
 
     } else {
         sanitize(name);
-        puts(name);
+        printf("%s", name);
     }
 
     return 1;
@@ -42,22 +69,22 @@ int main(int argc, char *argv[], char *envp[]) {
     int len, i, index = 1, c = 0;
 
     if (argv[1] == NULL) {
-        puts("\n");
-    } else {
-        if(argv[1][0] == '$') {
-            get_environment_variable(argv[1]);
+        return 0;
+    }
 
-        } else {
-            while (index < argc) {
-                len = strlen(argv[index]);
-                for (i = 0; i < len; i++) {
-                    str[c++] = argv[index][i];
-                }
-                str[c++] = ' ';
-                index++;
+    if (argv[1][0] == '$') {
+        get_environment_variable(argv[1]);
+
+    } else {
+        while (index < argc) {
+            len = strlen(argv[index]);
+            for (i = 0; i < len; i++) {
+                str[c++] = argv[index][i];
             }
-            get_environment_variable(str);
+            str[c++] = ' ';
+            index++;
         }
+        get_environment_variable(str);
     }
 
     exit(0);

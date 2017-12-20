@@ -40,8 +40,7 @@ void page_fault_exception(stack_registers *registers) {
 
         if (vma == NULL) {
             kprintf("Segmentation Fault, Address: %x, Error: %x\n", page_fault_address, registers->error_code);
-            // sys_exit();
-            while(1);
+            sys_exit();
         }
     } else if (registers->error_code & 0x01) {
         /* the fault is caused by a protection violation */

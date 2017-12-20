@@ -184,7 +184,6 @@ void keyboard_interrupt() {
 }
 
 int scanf(void *buff, int len) {
-
     scan_flag = 1;
     __asm__ __volatile__("sti;");
 
@@ -202,5 +201,6 @@ int scanf(void *buff, int len) {
 
     temp = scan_len;
     scan_len = 0;
+    __asm__ __volatile__("cli;");
     return temp;
 }
