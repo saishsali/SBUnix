@@ -6,7 +6,7 @@
 int main(int argc, char *argv[], char *envp[]) {
     pid_t pid;
     int status;
-    char *environment[] = {"PATH=/rootfs/bin:/bin:/random", "PS1=sbush> "};
+    char *environment[] = {"PATH=/rootfs/bin", "PS1=sbush> "};
     char *arguments[] = {"/rootfs/bin/sbush", "/rootfs/etc/rc", NULL};
 
     pid = fork();
