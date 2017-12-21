@@ -75,3 +75,11 @@ gdb ./kernel
 
 * At the (gdb) prompt, connect with:
 target remote localhost:9999
+
+### References
+* http://wiki.osdev.org/Main_Page
+* http://www.jamesmolloy.co.uk/tutorial_html/
+* https://eli.thegreenplace.net/2011/09/06/stack-frame-layout-on-x86-64
+* http://rayseyfarth.com/asm/pdf/ch04-memory-mapping.pdf
+* https://wiki.cdot.senecacollege.ca/wiki/X86_64_Register_and_Instruction_Quick_Start
+* https://en.wikibooks.org/wiki/X86_Assembly/X86_Architecture
