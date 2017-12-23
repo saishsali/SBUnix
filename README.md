@@ -83,3 +83,4 @@ target remote localhost:9999
 * http://rayseyfarth.com/asm/pdf/ch04-memory-mapping.pdf
 * https://wiki.cdot.senecacollege.ca/wiki/X86_64_Register_and_Instruction_Quick_Start
 * https://en.wikibooks.org/wiki/X86_Assembly/X86_Architecture
+* https://gist.github.com/davazp/d2fde634503b2a5bc664
